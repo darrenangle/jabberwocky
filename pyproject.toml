@@ -1,0 +1,18 @@
+[project]
+name = "jabberwocky"
+version = "0.2.1"
+description = "Train a small LLM to write poems in the style of Lewis Carroll's 'Jabberwocky' using an LLM judge."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+tags = ["poetry", "style", "single-turn", "llm-judge", "rl"]
+dependencies = [
+    "verifiers>=0.1.2",
+    "rich>=13.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = ["jabberwocky.py", "README.md"]

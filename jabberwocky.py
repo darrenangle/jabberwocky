@@ -107,63 +107,6 @@ def _install_pretty_printer_once():
     _PRETTY_INSTALLED = True
 
 
-def _patch_vf_eval_max_tokens_once():
-    """Ensure vf-eval uses a generous max_tokens (2048) if smaller.
-
-    This avoids skimpy poems without forcing users to pass flags.
-    """
-    try:
-        import verifiers.scripts.eval as vfe  # type: ignore
-
-        if getattr(vfe, "__jw_patched_max_tokens__", False):
-            return
-
-        _orig = vfe.eval_environment
-
-        def _wrapped_eval_environment(
-            env: str,
-            env_args: dict,
-            env_dir_path: str,
-            endpoints_path: str,
-            model: str,
-            api_key_var: str,
-            api_base_url: str,
-            num_examples: int,
-            rollouts_per_example: int,
-            max_concurrent_requests: int,
-            max_tokens: int,
-            temperature: float | None,
-            verbose: bool,
-            save_dataset: bool,
-            save_to_hf_hub: bool,
-            hf_hub_dataset_name: str,
-        ):
-            if max_tokens is None or max_tokens < 2048:
-                max_tokens = 2048
-            return _orig(
-                env,
-                env_args,
-                env_dir_path,
-                endpoints_path,
-                model,
-                api_key_var,
-                api_base_url,
-                num_examples,
-                rollouts_per_example,
-                max_concurrent_requests,
-                max_tokens,
-                temperature,
-                verbose,
-                save_dataset,
-                save_to_hf_hub,
-                hf_hub_dataset_name,
-            )
-
-        vfe.eval_environment = _wrapped_eval_environment  # type: ignore
-        setattr(vfe, "__jw_patched_max_tokens__", True)
-    except Exception:
-        # If anything fails, don't block loading the environment
-        pass
 
 STYLE_SYSTEM_PROMPT = (
     "You are a playful nonsense poet. When asked, write a poem in the style of "
@@ -802,5 +745,3 @@ def load_environment(
     return env
     # Ensure vf-eval uses a pleasant, compact pretty-printer
     _install_pretty_printer_once()
-    # And ensure vf-eval has a generous token budget
-    _patch_vf_eval_max_tokens_once()

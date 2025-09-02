@@ -51,7 +51,7 @@ export OPENAI_API_KEY="sk-..."
 uv run vf-eval jabberwocky
 ```
 
-Optional: small run with flags (pretty UI still applies):
+Optional: small run with flags:
 
 ```
 uv run vf-eval jabberwocky -n 3 -r 1

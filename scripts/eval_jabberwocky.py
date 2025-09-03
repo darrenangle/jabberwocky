@@ -541,6 +541,39 @@ def main():
         with open(os.path.join(args.outdir, "manifest.json"), "w", encoding="utf-8") as f:
             f.write(_json.dumps(manifest, ensure_ascii=False, indent=2))
 
+        # Create a convenient index.html in the run folder that redirects to the explorer
+        # with the correct manifest query param.
+        try:
+            outdir_norm = os.path.normpath(args.outdir)
+            parts = outdir_norm.split(os.sep)
+            if "docs" in parts:
+                di = parts.index("docs")
+                tail_parts = []
+                explorer_rel_from_outdir = "explorer/index.html"  # default fallback
+                manifest_rel_from_explorer = "manifest.json"
+                if len(parts) > di + 1 and parts[di + 1] == "runs":
+                    # Compute ../../explorer/index.html from docs/runs/<tail...>
+                    tail_parts = parts[di + 2 :]
+                    ups = 1 + len(tail_parts)  # from runs/<tail...> back to docs/
+                    explorer_rel_from_outdir = ("../" * ups) + "explorer/index.html"
+                    # From explorer to the manifest location
+                    if tail_parts:
+                        manifest_rel_from_explorer = "../runs/" + "/".join(tail_parts) + "/manifest.json"
+                    else:
+                        manifest_rel_from_explorer = "../runs/manifest.json"
+                index_html = f"""<!doctype html>
+<html><head><meta charset=\"utf-8\"><title>Jabberwocky Run</title>
+<meta http-equiv=\"refresh\" content=\"0; url={explorer_rel_from_outdir}?manifest={manifest_rel_from_explorer}\">
+</head>
+<body>
+  <p>Open explorer: <a href=\"{explorer_rel_from_outdir}?manifest={manifest_rel_from_explorer}\">View Run</a></p>
+</body></html>"""
+                with open(os.path.join(args.outdir, "index.html"), "w", encoding="utf-8") as f:
+                    f.write(index_html)
+        except Exception as _e:
+            # Non-fatal; the manifest and summaries are already written
+            pass
+
 
 if __name__ == "__main__":
     main()

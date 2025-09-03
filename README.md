@@ -221,8 +221,14 @@ This writes:
 - One folder per model with:
   - `summary.json` (overall reward, label counts, metrics mean)
   - `samples.jsonl` (one row per poem: prompt, poem, reward, label, criteria count, metrics)
+ - `index.html` (redirects to the explorer with the correct manifest parameter)
 
 Explore the run with the static web app:
+
+```
+open docs/runs/run-2025-09-03/index.html
+
+Alternatively, open the generic explorer and pass the manifest path:
 
 ```
 open docs/explorer/index.html?manifest=../runs/run-2025-09-03/manifest.json

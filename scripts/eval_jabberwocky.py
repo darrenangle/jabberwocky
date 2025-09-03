@@ -63,8 +63,12 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--actor-api-key", type=str, default=None, help="Actor API key (or set via env)")
     p.add_argument("--actor-provider", type=str, default=None, choices=["openai", "groq", "openrouter", "vllm"], help="Force provider for single model without registry alias")
     p.add_argument("--actor-registry", type=str, default=None, help="Path to registry file (.toml or .json) for providers/models")
+    # Timeout defaults: keep CLI simple; use env ACTOR_TIMEOUT_SECONDS if needed
     p.add_argument("--openrouter-http-referer", type=str, default=None, help="Optional OpenRouter HTTP-Referer header")
     p.add_argument("--openrouter-x-title", type=str, default=None, help="Optional OpenRouter X-Title header")
+    # Convenience: load all OpenRouter/OpenAI models from registry
+    p.add_argument("--all-openrouter", action="store_true", help="Evaluate all registry models with provider=openrouter (overrides --models/--actor-model)")
+    p.add_argument("--all-openai", action="store_true", help="Evaluate all registry models with provider=openai (overrides --models/--actor-model)")
     # Optional judge endpoint overrides
     p.add_argument("--judge-base-url", type=str, default=None, help="Judge OpenAI-compatible base URL (default: OpenAI)")
     p.add_argument("--judge-api-key", type=str, default=None, help="Judge API key (or set via env OPENAI_API_KEY)")
@@ -93,8 +97,23 @@ def _derive_label_for_i(metrics: Dict[str, list[float]], i: int) -> Optional[str
 
 
 def summarize(results: vf.GenerateOutputs, print_samples: int = 2) -> Dict[str, Any]:
-    # Overall reward
-    overall = mean(results.reward)
+    # Overall reward (ignore empty poems)
+    usable_rewards: list[float] = []
+    n = len(results.prompt)
+    for i in range(n):
+        # completion may be list[ChatMessage]
+        cpl = results.completion[i]
+        if isinstance(cpl, list) and cpl:
+            last_assist = next((m for m in cpl[::-1] if m.get("role") == "assistant"), None)
+            poem = last_assist.get("content") if last_assist else str(cpl)
+        else:
+            poem = str(cpl)
+        if isinstance(poem, str) and poem.strip():
+            try:
+                usable_rewards.append(float(results.reward[i]))
+            except Exception:
+                pass
+    overall = mean(usable_rewards)
     # Per-metric
     metrics_mean = {k: mean(v) for k, v in results.metrics.items()}
     # Extract judge labels from composite metrics if available
@@ -103,6 +122,15 @@ def summarize(results: vf.GenerateOutputs, print_samples: int = 2) -> Dict[str, 
     if "label_high" in results.metrics:
         n = len(results.prompt)
         for i in range(n):
+            # Skip empty poems for label counting as well
+            cpl = results.completion[i]
+            if isinstance(cpl, list) and cpl:
+                last_assist = next((m for m in cpl[::-1] if m.get("role") == "assistant"), None)
+                poem_i = last_assist.get("content") if last_assist else str(cpl)
+            else:
+                poem_i = str(cpl)
+            if not (isinstance(poem_i, str) and poem_i.strip()):
+                continue
             if results.metrics.get("label_high", [0]*n)[i] >= 0.5:
                 label_counts["high"] += 1
             elif results.metrics.get("label_medium", [0]*n)[i] >= 0.5:
@@ -238,7 +266,7 @@ def summarize(results: vf.GenerateOutputs, print_samples: int = 2) -> Dict[str, 
     }
 
 
-def _make_actor_client(cfg) -> OpenAI:
+def _make_actor_client(cfg, timeout: float | None = None) -> OpenAI:
     # Build OpenAI-compatible client with default headers if provided
     # Note: verifiers expects non-streaming OpenAI-compatible client
     kwargs: Dict[str, Any] = {"base_url": cfg.base_url}
@@ -246,6 +274,9 @@ def _make_actor_client(cfg) -> OpenAI:
         kwargs["api_key"] = cfg.api_key
     if cfg.default_headers:
         kwargs["default_headers"] = cfg.default_headers
+    if timeout is not None:
+        # OpenAI Python supports float seconds for default timeout
+        kwargs["timeout"] = float(timeout)
     try:
         return OpenAI(**kwargs)
     except TypeError:
@@ -375,7 +406,26 @@ def main():
         reg.load_file(args.actor_registry)
 
     # Resolve models list
-    models: List[str] = args.models if args.models else [args.actor_model]
+    models: List[str]
+    if args.all_openrouter or args.all_openai:
+        wanted = set()
+        provs = []
+        if args.all_openrouter:
+            provs.append("openrouter")
+        if args.all_openai:
+            provs.append("openai")
+        try:
+            for alias, entry in (reg.models or {}).items():
+                if isinstance(entry, dict) and entry.get("provider") in provs:
+                    wanted.add(alias)
+        except Exception:
+            pass
+        models = sorted(wanted)
+        if not models:
+            raise RuntimeError("No registry models found for providers: " + ", ".join(provs))
+        print(f"[info] selected {len(models)} models for providers: {', '.join(provs)}")
+    else:
+        models = args.models if args.models else [args.actor_model]
 
     # Per-provider default headers from CLI (OpenRouter extras)
     openrouter_hdrs: Dict[str, str] = {}
@@ -385,6 +435,14 @@ def main():
         openrouter_hdrs["X-Title"] = args.openrouter_x_title
 
     # Resolve all ActorConfigs up-front
+    # Reasonable default timeout for slow providers (e.g., Gemini Pro via OpenRouter)
+    ACTOR_TIMEOUT = float(os.getenv("ACTOR_TIMEOUT_SECONDS", "120"))
+    # Effective example/rollout counts (spread rollouts across topics when n=1)
+    effective_n = args.n
+    effective_rollouts = args.rollouts
+    if args.n == 1 and args.rollouts > 1 and not args.topics:
+        effective_n = args.rollouts
+        effective_rollouts = 1
     actor_cfgs: List[Tuple[str, Any]] = []
     for spec in models:
         cfg = reg.resolve(
@@ -392,8 +450,13 @@ def main():
             base_url=args.actor_base_url,
             api_key=args.actor_api_key,
             provider=args.actor_provider,
-            default_headers=openrouter_hdrs if (args.actor_provider == "openrouter" or spec.startswith("openrouter:")) else None,
         )
+        # Attach OpenRouter-specific headers if applicable (supports alias specs)
+        if cfg.provider == 'openrouter' and openrouter_hdrs:
+            try:
+                cfg.default_headers.update(openrouter_hdrs)
+            except Exception:
+                pass
         # Pre-flight key check for OpenRouter to avoid 401 spam
         if cfg.provider == 'openrouter' and not cfg.api_key:
             print(f"[skip] {spec}: OPENROUTER_API_KEY not set; skipping.")
@@ -404,14 +467,20 @@ def main():
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     def _run_one(spec: str, cfg) -> Tuple[str, vf.GenerateOutputs, Dict[str, Any]]:
-        client = _make_actor_client(cfg)
+        client = _make_actor_client(cfg, timeout=ACTOR_TIMEOUT)
         # First attempt
         def run_eval():
+            # Spread rollouts across topics when n=1 for better coverage (reasonable default)
+            eff_n = args.n
+            eff_rollouts = args.rollouts
+            if args.n == 1 and args.rollouts > 1 and not args.topics:
+                eff_n = args.rollouts
+                eff_rollouts = 1
             return env.evaluate(
                 client=client,
                 model=cfg.model,
-                num_examples=args.n,
-                rollouts_per_example=args.rollouts,
+                num_examples=eff_n,
+                rollouts_per_example=eff_rollouts,
                 max_concurrent=args.max_concurrent,
             )
         results = run_eval()
@@ -422,10 +491,14 @@ def main():
         return spec, results, summary
 
     summaries: List[Tuple[str, Dict[str, Any]]] = []
+    cfg_by_spec: Dict[str, Any] = {spec: cfg for spec, cfg in actor_cfgs}
     if len(actor_cfgs) == 1 or args.parallel_models <= 1:
         for spec, cfg in actor_cfgs:
-            _, _, summ = _run_one(spec, cfg)
-            summaries.append((spec, summ))
+            try:
+                _, _, summ = _run_one(spec, cfg)
+                summaries.append((spec, summ))
+            except Exception as e:
+                print(f"[error] model {spec}: {e}")
     else:
         with ThreadPoolExecutor(max_workers=args.parallel_models) as ex:
             futs = {ex.submit(_run_one, spec, cfg): (spec, cfg) for spec, cfg in actor_cfgs}
@@ -462,7 +535,7 @@ def main():
     if args.dump_json and not args.outdir and len(actor_cfgs) == 1:
         spec, cfg = actor_cfgs[0]
         # re-run minimal pack for single dump
-        client = _make_actor_client(cfg)
+        client = _make_actor_client(cfg, timeout=ACTOR_TIMEOUT)
         results = env.evaluate(
             client=client,
             model=cfg.model,
@@ -506,8 +579,8 @@ def main():
             "run_name": run_name,
             "created_utc": datetime.utcnow().isoformat() + "Z",
             "seed": args.seed,
-            "num_examples": args.n,
-            "rollouts_per_example": args.rollouts,
+            "num_examples": effective_n,
+            "rollouts_per_example": effective_rollouts,
             "eval_hint_profile": args.eval_hint_profile,
             "system_prompt_mode": args.system_prompt_mode,
             "judge_model": args.judge_model,
@@ -515,11 +588,12 @@ def main():
             "models": [],
         }
         models_summary = []
-        for spec, cfg in actor_cfgs:
+        # Only include successfully summarized models to avoid broken manifest entries
+        for spec, summ in summaries:
+            cfg = cfg_by_spec.get(spec)
+            if not cfg:
+                continue
             slug = _safe_slug(spec)
-            # Find summary entry we captured earlier
-            row = next((s for s in summaries if s[0] == spec), None)
-            summ = row[1] if row else {}
             models_summary.append({
                 "spec": spec,
                 "provider": cfg.provider,
@@ -540,6 +614,36 @@ def main():
             f.write(_json.dumps(models_summary, ensure_ascii=False, indent=2))
         with open(os.path.join(args.outdir, "manifest.json"), "w", encoding="utf-8") as f:
             f.write(_json.dumps(manifest, ensure_ascii=False, indent=2))
+
+        # Aggregate all samples into a single run-level file for easy exploration
+        try:
+            agg_path = os.path.join(args.outdir, "all_samples.jsonl")
+            with open(agg_path, "w", encoding="utf-8") as agg_f:
+                for m in manifest["models"]:
+                    m_slug = m["slug"]
+                    m_id = m["id"]
+                    m_provider = m["provider"]
+                    m_model = m["model"]
+                    spath = os.path.join(args.outdir, m_slug, "samples.jsonl")
+                    if not os.path.exists(spath):
+                        continue
+                    with open(spath, "r", encoding="utf-8") as sf:
+                        for line in sf:
+                            line = line.strip()
+                            if not line:
+                                continue
+                            try:
+                                row = _json.loads(line)
+                            except Exception:
+                                continue
+                            row["model_id"] = m_id
+                            row["model_slug"] = m_slug
+                            row["provider"] = m_provider
+                            row["model"] = m_model
+                            agg_f.write(_json.dumps(row, ensure_ascii=False) + "\n")
+        except Exception as _e:
+            # Non-fatal; per-model samples remain available
+            pass
 
         # Create a convenient index.html in the run folder that redirects to the explorer
         # with the correct manifest query param.

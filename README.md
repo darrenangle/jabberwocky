@@ -212,12 +212,12 @@ uv run python environments/jabberwocky/scripts/eval_jabberwocky.py \
   --models sonnet gpt4o \
   --n 20 --rollouts 1 --seed 777 \
   --max-concurrent 8 \
-  --outdir docs/runs/run-2025-09-03
+  --outdir environments/jabberwocky/docs/runs/run-2025-09-03
 ```
 
 This writes:
-- `docs/runs/run-2025-09-03/manifest.json`
-- `docs/runs/run-2025-09-03/models_summary.json`
+- `environments/jabberwocky/docs/runs/run-2025-09-03/manifest.json`
+- `environments/jabberwocky/docs/runs/run-2025-09-03/models_summary.json`
 - One folder per model with:
   - `summary.json` (overall reward, label counts, metrics mean)
   - `samples.jsonl` (one row per poem: prompt, poem, reward, label, criteria count, metrics)
@@ -226,12 +226,14 @@ This writes:
 Explore the run with the static web app:
 
 ```
-open docs/runs/run-2025-09-03/index.html
+python -m http.server --directory environments/jabberwocky/docs 8000
+# Then in your browser:
+open http://localhost:8000/runs/run-2025-09-03/
 
 Alternatively, open the generic explorer and pass the manifest path:
 
 ```
-open docs/explorer/index.html?manifest=../runs/run-2025-09-03/manifest.json
+open http://localhost:8000/explorer/index.html?manifest=/runs/run-2025-09-03/manifest.json
 ```
 
 Host on GitHub Pages by serving the `docs/` folder. You can add a `docs/CNAME` with your custom domain.

@@ -101,14 +101,30 @@ class ActorRegistry:
             # Curated OpenRouter top models
             "grok-code-fast-1": {"provider": "openrouter", "model": "x-ai/grok-code-fast-1"},
             "claude-sonnet-4": {"provider": "openrouter", "model": "anthropic/claude-sonnet-4"},
-            "deepseek-chat-v3.1-free": {"provider": "openrouter", "model": "deepseek/deepseek-chat-v3.1:free"},
-            "llama-4-scout-free": {"provider": "openrouter", "model": "meta-llama/llama-4-scout:free"},
-            "llama-4-maverick-free": {"provider": "openrouter", "model": "meta-llama/llama-4-maverick:free"},
+            "deepseek-chat-v3.1": {"provider": "openrouter", "model": "deepseek/deepseek-chat-v3.1"},
+            "llama-4-scout": {"provider": "openrouter", "model": "meta-llama/llama-4-scout"},
+            "llama-4-maverick": {"provider": "openrouter", "model": "meta-llama/llama-4-maverick"},
+            "llama-3.1-405b-instruct": {"provider": "openrouter", "model": "meta-llama/llama-3.1-405b-instruct"},
+            "llama-3.3-70b-instruct": {"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct"},
+            "kimi-k2": {"provider": "openrouter", "model": "moonshotai/kimi-k2"},
+            "kimi-dev-72b": {"provider": "openrouter", "model": "moonshotai/kimi-dev-72b"},
+            "moonlight-16b-a3b-instruct": {"provider": "openrouter", "model": "moonshotai/moonlight-16b-a3b-instruct"},
             "gemini-2.5-flash": {"provider": "openrouter", "model": "google/gemini-2.5-flash"},
             "gemini-2.5-pro": {"provider": "openrouter", "model": "google/gemini-2.5-pro"},
             "gemini-2.5-flash-lite": {"provider": "openrouter", "model": "google/gemini-2.5-flash-lite"},
             "qwen3-30b-a3b": {"provider": "openrouter", "model": "qwen/qwen3-30b-a3b"},
             "claude-3.7-sonnet": {"provider": "openrouter", "model": "anthropic/claude-3.7-sonnet"},
+            # Additional OpenRouter catalog entries requested
+            "deepseek-chat-v3-0324": {"provider": "openrouter", "model": "deepseek/deepseek-chat-v3-0324"},
+            "deepseek-r1-0528": {"provider": "openrouter", "model": "deepseek/deepseek-r1-0528"},
+            "gpt-oss-120b": {"provider": "openrouter", "model": "openai/gpt-oss-120b"},
+            "glm-4.5": {"provider": "openrouter", "model": "z-ai/glm-4.5"},
+            "glm-4.5-air": {"provider": "openrouter", "model": "z-ai/glm-4.5-air"},
+            "hermes-4-405b": {"provider": "openrouter", "model": "nousresearch/hermes-4-405b"},
+            "llama-3.1-nemotron-ultra-253b-v1": {"provider": "openrouter", "model": "nvidia/llama-3.1-nemotron-ultra-253b-v1"},
+            "claude-opus-4.1": {"provider": "openrouter", "model": "anthropic/claude-opus-4.1"},
+            "claude-opus-4": {"provider": "openrouter", "model": "anthropic/claude-opus-4"},
+            "claude-3-opus": {"provider": "openrouter", "model": "anthropic/claude-3-opus"},
         }
 
     def load_file(self, path: str) -> None:

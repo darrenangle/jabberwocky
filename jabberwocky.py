@@ -736,9 +736,9 @@ def load_environment(
         system_prompt=system_prompt,
         parser=parser,
         rubric=rubric,
+        # Allow long generations by default; providers may clamp internally
         sampling_args={
-            # Let providers use their default temperature; encourage length only
-            "max_tokens": 2048,
+            "max_tokens": 32000,
         },
         **kwargs,
     )

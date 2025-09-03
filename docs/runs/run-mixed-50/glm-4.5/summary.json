@@ -1,0 +1,38 @@
+{
+  "overall_reward": 0.7955555555555556,
+  "label_counts": {
+    "very_low": 1,
+    "low": 1,
+    "medium": 19,
+    "high": 29
+  },
+  "metrics_mean": {
+    "composite_score": 0.7955555555555556,
+    "C1_title_present": 0.98,
+    "C2_quatrain_shape": 0.94,
+    "C3_ballad_meter_echo": 0.98,
+    "C4_ballad_rhyme": 0.86,
+    "C5_ring_composition": 0.84,
+    "C6_warning_admonition": 0.96,
+    "C7_preparation_armament": 0.94,
+    "C8_encounter_confrontation": 0.94,
+    "C9_slaying_decisive_action": 0.9,
+    "C10_return_celebration": 0.94,
+    "C11_coinage_count": 0.38,
+    "C12_coinage_spread": 0.48,
+    "C13_creature_naming": 0.78,
+    "C14_onomatopoeia": 0.8,
+    "C15_alliteration_consonance": 0.74,
+    "C16_tone_alignment": 0.82,
+    "C17_no_verbatim_lines": 0.3,
+    "C18_canonical_budget": 0.74,
+    "label_high": 0.58,
+    "label_medium": 0.38,
+    "label_low": 0.02,
+    "label_very_low": 0.02
+  },
+  "spec": "glm-4.5",
+  "provider": "openrouter",
+  "model": "z-ai/glm-4.5",
+  "num_samples": 50
+}

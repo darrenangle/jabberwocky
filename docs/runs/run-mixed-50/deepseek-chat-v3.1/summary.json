@@ -1,0 +1,38 @@
+{
+  "overall_reward": 0.8811111111111111,
+  "label_counts": {
+    "very_low": 0,
+    "low": 1,
+    "medium": 9,
+    "high": 40
+  },
+  "metrics_mean": {
+    "composite_score": 0.8811111111111111,
+    "C1_title_present": 1.0,
+    "C2_quatrain_shape": 0.96,
+    "C3_ballad_meter_echo": 0.98,
+    "C4_ballad_rhyme": 0.94,
+    "C5_ring_composition": 0.88,
+    "C6_warning_admonition": 1.0,
+    "C7_preparation_armament": 0.98,
+    "C8_encounter_confrontation": 0.98,
+    "C9_slaying_decisive_action": 0.88,
+    "C10_return_celebration": 0.96,
+    "C11_coinage_count": 0.7,
+    "C12_coinage_spread": 0.74,
+    "C13_creature_naming": 0.76,
+    "C14_onomatopoeia": 0.94,
+    "C15_alliteration_consonance": 0.92,
+    "C16_tone_alignment": 0.96,
+    "C17_no_verbatim_lines": 0.66,
+    "C18_canonical_budget": 0.62,
+    "label_high": 0.8,
+    "label_medium": 0.18,
+    "label_low": 0.02,
+    "label_very_low": 0.0
+  },
+  "spec": "deepseek-chat-v3.1",
+  "provider": "openrouter",
+  "model": "deepseek/deepseek-chat-v3.1",
+  "num_samples": 50
+}

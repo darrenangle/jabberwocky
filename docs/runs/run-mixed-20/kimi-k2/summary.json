@@ -1,0 +1,38 @@
+{
+  "overall_reward": 0.8833333333333333,
+  "label_counts": {
+    "very_low": 0,
+    "low": 0,
+    "medium": 1,
+    "high": 9
+  },
+  "metrics_mean": {
+    "composite_score": 0.8833333333333333,
+    "C1_title_present": 1.0,
+    "C2_quatrain_shape": 0.9,
+    "C3_ballad_meter_echo": 1.0,
+    "C4_ballad_rhyme": 0.9,
+    "C5_ring_composition": 0.7,
+    "C6_warning_admonition": 1.0,
+    "C7_preparation_armament": 1.0,
+    "C8_encounter_confrontation": 1.0,
+    "C9_slaying_decisive_action": 0.7,
+    "C10_return_celebration": 0.8,
+    "C11_coinage_count": 0.9,
+    "C12_coinage_spread": 0.8,
+    "C13_creature_naming": 0.9,
+    "C14_onomatopoeia": 0.8,
+    "C15_alliteration_consonance": 1.0,
+    "C16_tone_alignment": 1.0,
+    "C17_no_verbatim_lines": 0.8,
+    "C18_canonical_budget": 0.7,
+    "label_high": 0.9,
+    "label_medium": 0.1,
+    "label_low": 0.0,
+    "label_very_low": 0.0
+  },
+  "spec": "kimi-k2",
+  "provider": "openrouter",
+  "model": "moonshotai/kimi-k2",
+  "num_samples": 10
+}

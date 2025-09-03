@@ -1,0 +1,38 @@
+{
+  "overall_reward": 0.6944444444444444,
+  "label_counts": {
+    "very_low": 0,
+    "low": 2,
+    "medium": 5,
+    "high": 3
+  },
+  "metrics_mean": {
+    "composite_score": 0.6944444444444444,
+    "C1_title_present": 1.0,
+    "C2_quatrain_shape": 0.8,
+    "C3_ballad_meter_echo": 0.9,
+    "C4_ballad_rhyme": 0.7,
+    "C5_ring_composition": 0.9,
+    "C6_warning_admonition": 1.0,
+    "C7_preparation_armament": 1.0,
+    "C8_encounter_confrontation": 0.8,
+    "C9_slaying_decisive_action": 0.7,
+    "C10_return_celebration": 0.8,
+    "C11_coinage_count": 0.1,
+    "C12_coinage_spread": 0.1,
+    "C13_creature_naming": 0.5,
+    "C14_onomatopoeia": 0.5,
+    "C15_alliteration_consonance": 0.6,
+    "C16_tone_alignment": 0.7,
+    "C17_no_verbatim_lines": 0.5,
+    "C18_canonical_budget": 0.9,
+    "label_high": 0.3,
+    "label_medium": 0.5,
+    "label_low": 0.2,
+    "label_very_low": 0.0
+  },
+  "spec": "gemini-2.5-flash-lite",
+  "provider": "openrouter",
+  "model": "google/gemini-2.5-flash-lite",
+  "num_samples": 10
+}

@@ -1,58 +1,458 @@
 [
   {
-    "spec": "grok-code-fast-1",
+    "spec": "gemini-2.5-flash",
     "provider": "openrouter",
-    "model": "x-ai/grok-code-fast-1",
+    "model": "google/gemini-2.5-flash",
     "summary": {
-      "overall_reward": 0.7777777777777778,
+      "overall_reward": 0.8055555555555556,
       "label_counts": {
         "very_low": 0,
-        "low": 0,
-        "medium": 2,
+        "low": 2,
+        "medium": 1,
+        "high": 7
+      },
+      "metrics_mean": {
+        "composite_score": 0.8055555555555556,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.8,
+        "C3_ballad_meter_echo": 0.8,
+        "C4_ballad_rhyme": 0.8,
+        "C5_ring_composition": 0.8,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 0.7,
+        "C8_encounter_confrontation": 0.9,
+        "C9_slaying_decisive_action": 0.9,
+        "C10_return_celebration": 0.8,
+        "C11_coinage_count": 0.7,
+        "C12_coinage_spread": 0.6,
+        "C13_creature_naming": 0.8,
+        "C14_onomatopoeia": 0.9,
+        "C15_alliteration_consonance": 0.9,
+        "C16_tone_alignment": 0.9,
+        "C17_no_verbatim_lines": 0.7,
+        "C18_canonical_budget": 0.5,
+        "label_high": 0.7,
+        "label_medium": 0.1,
+        "label_low": 0.2,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "gemini-2.5-flash/"
+  },
+  {
+    "spec": "gemini-2.5-flash-lite",
+    "provider": "openrouter",
+    "model": "google/gemini-2.5-flash-lite",
+    "summary": {
+      "overall_reward": 0.7055555555555555,
+      "label_counts": {
+        "very_low": 0,
+        "low": 2,
+        "medium": 5,
         "high": 3
       },
       "metrics_mean": {
-        "composite_score": 0.7777777777777778,
+        "composite_score": 0.7055555555555555,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.9,
+        "C3_ballad_meter_echo": 0.8,
+        "C4_ballad_rhyme": 0.6,
+        "C5_ring_composition": 0.7,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 1.0,
+        "C8_encounter_confrontation": 0.8,
+        "C9_slaying_decisive_action": 0.7,
+        "C10_return_celebration": 0.9,
+        "C11_coinage_count": 0.2,
+        "C12_coinage_spread": 0.3,
+        "C13_creature_naming": 0.6,
+        "C14_onomatopoeia": 0.7,
+        "C15_alliteration_consonance": 0.6,
+        "C16_tone_alignment": 0.7,
+        "C17_no_verbatim_lines": 0.5,
+        "C18_canonical_budget": 0.7,
+        "label_high": 0.3,
+        "label_medium": 0.5,
+        "label_low": 0.2,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "gemini-2.5-flash-lite/"
+  },
+  {
+    "spec": "claude-3.7-sonnet",
+    "provider": "openrouter",
+    "model": "anthropic/claude-3.7-sonnet",
+    "summary": {
+      "overall_reward": 0.9,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 1,
+        "high": 9
+      },
+      "metrics_mean": {
+        "composite_score": 0.9,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 1.0,
+        "C5_ring_composition": 0.9,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 1.0,
+        "C8_encounter_confrontation": 0.9,
+        "C9_slaying_decisive_action": 0.9,
+        "C10_return_celebration": 1.0,
+        "C11_coinage_count": 0.7,
+        "C12_coinage_spread": 0.9,
+        "C13_creature_naming": 0.9,
+        "C14_onomatopoeia": 0.9,
+        "C15_alliteration_consonance": 1.0,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 0.7,
+        "C18_canonical_budget": 0.4,
+        "label_high": 0.9,
+        "label_medium": 0.1,
+        "label_low": 0.0,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "claude-3.7-sonnet/"
+  },
+  {
+    "spec": "claude-opus-4",
+    "provider": "openrouter",
+    "model": "anthropic/claude-opus-4",
+    "summary": {
+      "overall_reward": 0.8444444444444444,
+      "label_counts": {
+        "very_low": 0,
+        "low": 1,
+        "medium": 1,
+        "high": 8
+      },
+      "metrics_mean": {
+        "composite_score": 0.8444444444444444,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 0.9,
+        "C5_ring_composition": 0.9,
+        "C6_warning_admonition": 0.9,
+        "C7_preparation_armament": 0.8,
+        "C8_encounter_confrontation": 0.9,
+        "C9_slaying_decisive_action": 0.9,
+        "C10_return_celebration": 1.0,
+        "C11_coinage_count": 0.5,
+        "C12_coinage_spread": 0.7,
+        "C13_creature_naming": 0.9,
+        "C14_onomatopoeia": 0.9,
+        "C15_alliteration_consonance": 0.8,
+        "C16_tone_alignment": 0.9,
+        "C17_no_verbatim_lines": 0.5,
+        "C18_canonical_budget": 0.7,
+        "label_high": 0.8,
+        "label_medium": 0.1,
+        "label_low": 0.1,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "claude-opus-4/"
+  },
+  {
+    "spec": "claude-3-opus",
+    "provider": "openrouter",
+    "model": "anthropic/claude-3-opus",
+    "summary": {
+      "overall_reward": 0.7833333333333333,
+      "label_counts": {
+        "very_low": 0,
+        "low": 1,
+        "medium": 4,
+        "high": 5
+      },
+      "metrics_mean": {
+        "composite_score": 0.7833333333333333,
         "C1_title_present": 1.0,
         "C2_quatrain_shape": 0.8,
-        "C3_ballad_meter_echo": 0.6,
-        "C4_ballad_rhyme": 0.6,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 1.0,
         "C5_ring_composition": 0.8,
-        "C6_warning_admonition": 0.8,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 1.0,
+        "C9_slaying_decisive_action": 0.9,
+        "C10_return_celebration": 1.0,
+        "C11_coinage_count": 0.4,
+        "C12_coinage_spread": 0.4,
+        "C13_creature_naming": 0.5,
+        "C14_onomatopoeia": 0.9,
+        "C15_alliteration_consonance": 0.7,
+        "C16_tone_alignment": 0.8,
+        "C17_no_verbatim_lines": 0.5,
+        "C18_canonical_budget": 0.5,
+        "label_high": 0.5,
+        "label_medium": 0.4,
+        "label_low": 0.1,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "claude-3-opus/"
+  },
+  {
+    "spec": "deepseek-chat-v3-0324",
+    "provider": "openrouter",
+    "model": "deepseek/deepseek-chat-v3-0324",
+    "summary": {
+      "overall_reward": 0.7222222222222222,
+      "label_counts": {
+        "very_low": 0,
+        "low": 2,
+        "medium": 4,
+        "high": 4
+      },
+      "metrics_mean": {
+        "composite_score": 0.7222222222222222,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 0.7,
+        "C5_ring_composition": 0.1,
+        "C6_warning_admonition": 0.9,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 0.8,
+        "C9_slaying_decisive_action": 0.2,
+        "C10_return_celebration": 0.4,
+        "C11_coinage_count": 0.6,
+        "C12_coinage_spread": 0.6,
+        "C13_creature_naming": 0.7,
+        "C14_onomatopoeia": 0.6,
+        "C15_alliteration_consonance": 0.8,
+        "C16_tone_alignment": 0.9,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.8,
+        "label_high": 0.4,
+        "label_medium": 0.4,
+        "label_low": 0.2,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "deepseek-chat-v3-0324/"
+  },
+  {
+    "spec": "deepseek-chat-v3.1",
+    "provider": "openrouter",
+    "model": "deepseek/deepseek-chat-v3.1",
+    "summary": {
+      "overall_reward": 0.8555555555555555,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 3,
+        "high": 7
+      },
+      "metrics_mean": {
+        "composite_score": 0.8555555555555555,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 1.0,
+        "C5_ring_composition": 0.9,
+        "C6_warning_admonition": 1.0,
         "C7_preparation_armament": 1.0,
         "C8_encounter_confrontation": 1.0,
         "C9_slaying_decisive_action": 1.0,
-        "C10_return_celebration": 0.8,
-        "C11_coinage_count": 0.4,
-        "C12_coinage_spread": 0.4,
+        "C10_return_celebration": 0.9,
+        "C11_coinage_count": 0.5,
+        "C12_coinage_spread": 0.5,
         "C13_creature_naming": 0.8,
-        "C14_onomatopoeia": 1.0,
-        "C15_alliteration_consonance": 0.8,
-        "C16_tone_alignment": 0.8,
-        "C17_no_verbatim_lines": 0.4,
-        "C18_canonical_budget": 1.0,
+        "C14_onomatopoeia": 0.9,
+        "C15_alliteration_consonance": 0.9,
+        "C16_tone_alignment": 0.9,
+        "C17_no_verbatim_lines": 0.5,
+        "C18_canonical_budget": 0.6,
+        "label_high": 0.7,
+        "label_medium": 0.3,
+        "label_low": 0.0,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "deepseek-chat-v3.1/"
+  },
+  {
+    "spec": "claude-opus-4.1",
+    "provider": "openrouter",
+    "model": "anthropic/claude-opus-4.1",
+    "summary": {
+      "overall_reward": 0.8333333333333333,
+      "label_counts": {
+        "very_low": 1,
+        "low": 0,
+        "medium": 1,
+        "high": 8
+      },
+      "metrics_mean": {
+        "composite_score": 0.8333333333333333,
+        "C1_title_present": 0.9,
+        "C2_quatrain_shape": 0.9,
+        "C3_ballad_meter_echo": 0.9,
+        "C4_ballad_rhyme": 0.9,
+        "C5_ring_composition": 0.9,
+        "C6_warning_admonition": 0.9,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 0.9,
+        "C9_slaying_decisive_action": 0.9,
+        "C10_return_celebration": 0.9,
+        "C11_coinage_count": 0.6,
+        "C12_coinage_spread": 0.8,
+        "C13_creature_naming": 0.9,
+        "C14_onomatopoeia": 0.8,
+        "C15_alliteration_consonance": 0.9,
+        "C16_tone_alignment": 0.9,
+        "C17_no_verbatim_lines": 0.5,
+        "C18_canonical_budget": 0.6,
+        "label_high": 0.8,
+        "label_medium": 0.1,
+        "label_low": 0.0,
+        "label_very_low": 0.1
+      }
+    },
+    "path": "claude-opus-4.1/"
+  },
+  {
+    "spec": "gpt-4.1-mini",
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "summary": {
+      "overall_reward": 0.8333333333333334,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 4,
+        "high": 6
+      },
+      "metrics_mean": {
+        "composite_score": 0.8333333333333334,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 0.8,
+        "C5_ring_composition": 0.6,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 1.0,
+        "C8_encounter_confrontation": 0.9,
+        "C9_slaying_decisive_action": 0.8,
+        "C10_return_celebration": 0.7,
+        "C11_coinage_count": 0.7,
+        "C12_coinage_spread": 0.7,
+        "C13_creature_naming": 0.9,
+        "C14_onomatopoeia": 0.5,
+        "C15_alliteration_consonance": 1.0,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 0.9,
+        "C18_canonical_budget": 0.5,
         "label_high": 0.6,
         "label_medium": 0.4,
         "label_low": 0.0,
         "label_very_low": 0.0
       }
     },
-    "path": "grok-code-fast-1/"
+    "path": "gpt-4.1-mini/"
   },
   {
-    "spec": "gemini-2.5-flash",
-    "provider": "openrouter",
-    "model": "google/gemini-2.5-flash",
+    "spec": "gpt-4.1-nano",
+    "provider": "openai",
+    "model": "gpt-4.1-nano",
     "summary": {
-      "overall_reward": 0.8333333333333334,
+      "overall_reward": 0.49444444444444446,
+      "label_counts": {
+        "very_low": 0,
+        "low": 6,
+        "medium": 4,
+        "high": 0
+      },
+      "metrics_mean": {
+        "composite_score": 0.49444444444444446,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.5,
+        "C3_ballad_meter_echo": 0.5,
+        "C4_ballad_rhyme": 0.0,
+        "C5_ring_composition": 0.1,
+        "C6_warning_admonition": 0.3,
+        "C7_preparation_armament": 0.3,
+        "C8_encounter_confrontation": 0.0,
+        "C9_slaying_decisive_action": 0.0,
+        "C10_return_celebration": 0.0,
+        "C11_coinage_count": 1.0,
+        "C12_coinage_spread": 0.7,
+        "C13_creature_naming": 0.3,
+        "C14_onomatopoeia": 0.6,
+        "C15_alliteration_consonance": 0.7,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.9,
+        "label_high": 0.0,
+        "label_medium": 0.4,
+        "label_low": 0.6,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "gpt-4.1-nano/"
+  },
+  {
+    "spec": "claude-sonnet-4",
+    "provider": "openrouter",
+    "model": "anthropic/claude-sonnet-4",
+    "summary": {
+      "overall_reward": 0.85,
       "label_counts": {
         "very_low": 0,
         "low": 0,
-        "medium": 1,
-        "high": 4
+        "medium": 2,
+        "high": 8
       },
       "metrics_mean": {
-        "composite_score": 0.8333333333333334,
+        "composite_score": 0.85,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 0.9,
+        "C5_ring_composition": 1.0,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 1.0,
+        "C8_encounter_confrontation": 1.0,
+        "C9_slaying_decisive_action": 0.9,
+        "C10_return_celebration": 1.0,
+        "C11_coinage_count": 0.4,
+        "C12_coinage_spread": 0.6,
+        "C13_creature_naming": 0.7,
+        "C14_onomatopoeia": 0.8,
+        "C15_alliteration_consonance": 1.0,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 0.3,
+        "C18_canonical_budget": 0.7,
+        "label_high": 0.8,
+        "label_medium": 0.2,
+        "label_low": 0.0,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "claude-sonnet-4/"
+  },
+  {
+    "spec": "gpt-4.1",
+    "provider": "openai",
+    "model": "gpt-4.1",
+    "summary": {
+      "overall_reward": 0.9388888888888889,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 0,
+        "high": 10
+      },
+      "metrics_mean": {
+        "composite_score": 0.9388888888888889,
         "C1_title_present": 1.0,
         "C2_quatrain_shape": 1.0,
         "C3_ballad_meter_echo": 1.0,
@@ -61,15 +461,175 @@
         "C6_warning_admonition": 1.0,
         "C7_preparation_armament": 1.0,
         "C8_encounter_confrontation": 1.0,
-        "C9_slaying_decisive_action": 1.0,
-        "C10_return_celebration": 1.0,
-        "C11_coinage_count": 0.0,
-        "C12_coinage_spread": 0.2,
-        "C13_creature_naming": 0.8,
+        "C9_slaying_decisive_action": 0.9,
+        "C10_return_celebration": 0.8,
+        "C11_coinage_count": 0.9,
+        "C12_coinage_spread": 0.9,
+        "C13_creature_naming": 1.0,
         "C14_onomatopoeia": 0.8,
         "C15_alliteration_consonance": 1.0,
         "C16_tone_alignment": 1.0,
-        "C17_no_verbatim_lines": 0.4,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.6,
+        "label_high": 1.0,
+        "label_medium": 0.0,
+        "label_low": 0.0,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "gpt-4.1/"
+  },
+  {
+    "spec": "gemini-2.5-pro",
+    "provider": "openrouter",
+    "model": "google/gemini-2.5-pro",
+    "summary": {
+      "overall_reward": 0.8666666666666667,
+      "label_counts": {
+        "very_low": 0,
+        "low": 1,
+        "medium": 2,
+        "high": 7
+      },
+      "metrics_mean": {
+        "composite_score": 0.8666666666666667,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 0.8,
+        "C5_ring_composition": 0.8,
+        "C6_warning_admonition": 0.8,
+        "C7_preparation_armament": 0.8,
+        "C8_encounter_confrontation": 0.8,
+        "C9_slaying_decisive_action": 0.7,
+        "C10_return_celebration": 0.8,
+        "C11_coinage_count": 0.9,
+        "C12_coinage_spread": 0.9,
+        "C13_creature_naming": 0.9,
+        "C14_onomatopoeia": 0.6,
+        "C15_alliteration_consonance": 1.0,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 0.9,
+        "C18_canonical_budget": 0.9,
+        "label_high": 0.7,
+        "label_medium": 0.2,
+        "label_low": 0.1,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "gemini-2.5-pro/"
+  },
+  {
+    "spec": "gpt-4o",
+    "provider": "openrouter",
+    "model": "openai/gpt-4o",
+    "summary": {
+      "overall_reward": 0.9111111111111111,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 1,
+        "high": 9
+      },
+      "metrics_mean": {
+        "composite_score": 0.9111111111111111,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 0.9,
+        "C5_ring_composition": 0.9,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 0.9,
+        "C9_slaying_decisive_action": 0.8,
+        "C10_return_celebration": 0.9,
+        "C11_coinage_count": 1.0,
+        "C12_coinage_spread": 1.0,
+        "C13_creature_naming": 1.0,
+        "C14_onomatopoeia": 0.7,
+        "C15_alliteration_consonance": 1.0,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.4,
+        "label_high": 0.9,
+        "label_medium": 0.1,
+        "label_low": 0.0,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "gpt-4o/"
+  },
+  {
+    "spec": "glm-4.5-air",
+    "provider": "openrouter",
+    "model": "z-ai/glm-4.5-air",
+    "summary": {
+      "overall_reward": 0.7388888888888889,
+      "label_counts": {
+        "very_low": 0,
+        "low": 1,
+        "medium": 6,
+        "high": 3
+      },
+      "metrics_mean": {
+        "composite_score": 0.7388888888888889,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.6,
+        "C3_ballad_meter_echo": 0.9,
+        "C4_ballad_rhyme": 0.7,
+        "C5_ring_composition": 0.6,
+        "C6_warning_admonition": 0.9,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 0.9,
+        "C9_slaying_decisive_action": 0.7,
+        "C10_return_celebration": 0.8,
+        "C11_coinage_count": 0.4,
+        "C12_coinage_spread": 0.2,
+        "C13_creature_naming": 0.7,
+        "C14_onomatopoeia": 0.8,
+        "C15_alliteration_consonance": 0.9,
+        "C16_tone_alignment": 0.9,
+        "C17_no_verbatim_lines": 0.5,
+        "C18_canonical_budget": 0.9,
+        "label_high": 0.3,
+        "label_medium": 0.6,
+        "label_low": 0.1,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "glm-4.5-air/"
+  },
+  {
+    "spec": "glm-4.5",
+    "provider": "openrouter",
+    "model": "z-ai/glm-4.5",
+    "summary": {
+      "overall_reward": 0.8444444444444444,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 2,
+        "high": 8
+      },
+      "metrics_mean": {
+        "composite_score": 0.8444444444444444,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 1.0,
+        "C5_ring_composition": 1.0,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 1.0,
+        "C9_slaying_decisive_action": 1.0,
+        "C10_return_celebration": 1.0,
+        "C11_coinage_count": 0.1,
+        "C12_coinage_spread": 0.4,
+        "C13_creature_naming": 1.0,
+        "C14_onomatopoeia": 0.9,
+        "C15_alliteration_consonance": 0.8,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 0.3,
         "C18_canonical_budget": 0.8,
         "label_high": 0.8,
         "label_medium": 0.2,
@@ -77,6 +637,606 @@
         "label_very_low": 0.0
       }
     },
-    "path": "gemini-2.5-flash/"
+    "path": "glm-4.5/"
+  },
+  {
+    "spec": "gpt-5-mini",
+    "provider": "openai",
+    "model": "gpt-5-mini",
+    "summary": {
+      "overall_reward": 0.9166666666666666,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 2,
+        "high": 8
+      },
+      "metrics_mean": {
+        "composite_score": 0.9166666666666666,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.9,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 0.8,
+        "C5_ring_composition": 0.8,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 0.9,
+        "C9_slaying_decisive_action": 0.9,
+        "C10_return_celebration": 0.8,
+        "C11_coinage_count": 1.0,
+        "C12_coinage_spread": 0.9,
+        "C13_creature_naming": 0.8,
+        "C14_onomatopoeia": 0.9,
+        "C15_alliteration_consonance": 1.0,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.9,
+        "label_high": 0.8,
+        "label_medium": 0.2,
+        "label_low": 0.0,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "gpt-5-mini/"
+  },
+  {
+    "spec": "hermes-4-405b",
+    "provider": "openrouter",
+    "model": "nousresearch/hermes-4-405b",
+    "summary": {
+      "overall_reward": 0.6777777777777778,
+      "label_counts": {
+        "very_low": 0,
+        "low": 2,
+        "medium": 5,
+        "high": 3
+      },
+      "metrics_mean": {
+        "composite_score": 0.6777777777777778,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.7,
+        "C3_ballad_meter_echo": 0.8,
+        "C4_ballad_rhyme": 0.5,
+        "C5_ring_composition": 0.5,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 0.8,
+        "C9_slaying_decisive_action": 0.8,
+        "C10_return_celebration": 0.8,
+        "C11_coinage_count": 0.4,
+        "C12_coinage_spread": 0.2,
+        "C13_creature_naming": 0.6,
+        "C14_onomatopoeia": 0.7,
+        "C15_alliteration_consonance": 0.6,
+        "C16_tone_alignment": 0.6,
+        "C17_no_verbatim_lines": 0.6,
+        "C18_canonical_budget": 0.7,
+        "label_high": 0.3,
+        "label_medium": 0.5,
+        "label_low": 0.2,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "hermes-4-405b/"
+  },
+  {
+    "spec": "gpt-oss-120b",
+    "provider": "openrouter",
+    "model": "openai/gpt-oss-120b",
+    "summary": {
+      "overall_reward": 0.6055555555555555,
+      "label_counts": {
+        "very_low": 0,
+        "low": 4,
+        "medium": 4,
+        "high": 2
+      },
+      "metrics_mean": {
+        "composite_score": 0.6055555555555555,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.6,
+        "C3_ballad_meter_echo": 0.6,
+        "C4_ballad_rhyme": 0.4,
+        "C5_ring_composition": 0.0,
+        "C6_warning_admonition": 0.8,
+        "C7_preparation_armament": 0.5,
+        "C8_encounter_confrontation": 0.5,
+        "C9_slaying_decisive_action": 0.5,
+        "C10_return_celebration": 0.1,
+        "C11_coinage_count": 1.0,
+        "C12_coinage_spread": 0.6,
+        "C13_creature_naming": 0.7,
+        "C14_onomatopoeia": 0.4,
+        "C15_alliteration_consonance": 0.5,
+        "C16_tone_alignment": 0.9,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.8,
+        "label_high": 0.2,
+        "label_medium": 0.4,
+        "label_low": 0.4,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "gpt-oss-120b/"
+  },
+  {
+    "spec": "grok-code-fast-1",
+    "provider": "openrouter",
+    "model": "x-ai/grok-code-fast-1",
+    "summary": {
+      "overall_reward": 0.6666666666666666,
+      "label_counts": {
+        "very_low": 1,
+        "low": 2,
+        "medium": 3,
+        "high": 4
+      },
+      "metrics_mean": {
+        "composite_score": 0.6666666666666666,
+        "C1_title_present": 0.9,
+        "C2_quatrain_shape": 0.7,
+        "C3_ballad_meter_echo": 0.7,
+        "C4_ballad_rhyme": 0.7,
+        "C5_ring_composition": 0.7,
+        "C6_warning_admonition": 0.9,
+        "C7_preparation_armament": 0.7,
+        "C8_encounter_confrontation": 0.8,
+        "C9_slaying_decisive_action": 0.8,
+        "C10_return_celebration": 0.7,
+        "C11_coinage_count": 0.3,
+        "C12_coinage_spread": 0.4,
+        "C13_creature_naming": 0.8,
+        "C14_onomatopoeia": 0.9,
+        "C15_alliteration_consonance": 0.5,
+        "C16_tone_alignment": 0.7,
+        "C17_no_verbatim_lines": 0.1,
+        "C18_canonical_budget": 0.7,
+        "label_high": 0.4,
+        "label_medium": 0.3,
+        "label_low": 0.2,
+        "label_very_low": 0.1
+      }
+    },
+    "path": "grok-code-fast-1/"
+  },
+  {
+    "spec": "gpt-5-nano",
+    "provider": "openai",
+    "model": "gpt-5-nano",
+    "summary": {
+      "overall_reward": 0.4444444444444444,
+      "label_counts": {
+        "very_low": 2,
+        "low": 3,
+        "medium": 5,
+        "high": 0
+      },
+      "metrics_mean": {
+        "composite_score": 0.4444444444444444,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.4,
+        "C3_ballad_meter_echo": 0.6,
+        "C4_ballad_rhyme": 0.2,
+        "C5_ring_composition": 0.0,
+        "C6_warning_admonition": 0.4,
+        "C7_preparation_armament": 0.3,
+        "C8_encounter_confrontation": 0.2,
+        "C9_slaying_decisive_action": 0.1,
+        "C10_return_celebration": 0.4,
+        "C11_coinage_count": 0.7,
+        "C12_coinage_spread": 0.3,
+        "C13_creature_naming": 0.2,
+        "C14_onomatopoeia": 0.4,
+        "C15_alliteration_consonance": 0.6,
+        "C16_tone_alignment": 0.8,
+        "C17_no_verbatim_lines": 0.8,
+        "C18_canonical_budget": 0.6,
+        "label_high": 0.0,
+        "label_medium": 0.5,
+        "label_low": 0.3,
+        "label_very_low": 0.2
+      }
+    },
+    "path": "gpt-5-nano/"
+  },
+  {
+    "spec": "llama-4-scout",
+    "provider": "openrouter",
+    "model": "meta-llama/llama-4-scout",
+    "summary": {
+      "overall_reward": 0.37222222222222223,
+      "label_counts": {
+        "very_low": 2,
+        "low": 6,
+        "medium": 2,
+        "high": 0
+      },
+      "metrics_mean": {
+        "composite_score": 0.37222222222222223,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.5,
+        "C3_ballad_meter_echo": 0.4,
+        "C4_ballad_rhyme": 0.1,
+        "C5_ring_composition": 0.0,
+        "C6_warning_admonition": 0.6,
+        "C7_preparation_armament": 0.5,
+        "C8_encounter_confrontation": 0.1,
+        "C9_slaying_decisive_action": 0.1,
+        "C10_return_celebration": 0.3,
+        "C11_coinage_count": 0.5,
+        "C12_coinage_spread": 0.2,
+        "C13_creature_naming": 0.4,
+        "C14_onomatopoeia": 0.1,
+        "C15_alliteration_consonance": 0.3,
+        "C16_tone_alignment": 0.1,
+        "C17_no_verbatim_lines": 0.9,
+        "C18_canonical_budget": 0.6,
+        "label_high": 0.0,
+        "label_medium": 0.2,
+        "label_low": 0.6,
+        "label_very_low": 0.2
+      }
+    },
+    "path": "llama-4-scout/"
+  },
+  {
+    "spec": "kimi-k2",
+    "provider": "openrouter",
+    "model": "moonshotai/kimi-k2",
+    "summary": {
+      "overall_reward": 0.9444444444444444,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 1,
+        "high": 9
+      },
+      "metrics_mean": {
+        "composite_score": 0.9444444444444444,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.9,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 0.8,
+        "C5_ring_composition": 0.9,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 1.0,
+        "C8_encounter_confrontation": 1.0,
+        "C9_slaying_decisive_action": 1.0,
+        "C10_return_celebration": 1.0,
+        "C11_coinage_count": 1.0,
+        "C12_coinage_spread": 0.9,
+        "C13_creature_naming": 1.0,
+        "C14_onomatopoeia": 0.9,
+        "C15_alliteration_consonance": 1.0,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.6,
+        "label_high": 0.9,
+        "label_medium": 0.1,
+        "label_low": 0.0,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "kimi-k2/"
+  },
+  {
+    "spec": "llama-3.3-70b-instruct",
+    "provider": "openrouter",
+    "model": "meta-llama/llama-3.3-70b-instruct",
+    "summary": {
+      "overall_reward": 0.34444444444444444,
+      "label_counts": {
+        "very_low": 1,
+        "low": 9,
+        "medium": 0,
+        "high": 0
+      },
+      "metrics_mean": {
+        "composite_score": 0.34444444444444444,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.5,
+        "C3_ballad_meter_echo": 0.4,
+        "C4_ballad_rhyme": 0.0,
+        "C5_ring_composition": 0.0,
+        "C6_warning_admonition": 0.7,
+        "C7_preparation_armament": 0.5,
+        "C8_encounter_confrontation": 0.1,
+        "C9_slaying_decisive_action": 0.0,
+        "C10_return_celebration": 0.1,
+        "C11_coinage_count": 0.5,
+        "C12_coinage_spread": 0.1,
+        "C13_creature_naming": 0.3,
+        "C14_onomatopoeia": 0.1,
+        "C15_alliteration_consonance": 0.2,
+        "C16_tone_alignment": 0.1,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.6,
+        "label_high": 0.0,
+        "label_medium": 0.0,
+        "label_low": 0.9,
+        "label_very_low": 0.1
+      }
+    },
+    "path": "llama-3.3-70b-instruct/"
+  },
+  {
+    "spec": "llama-3.1-405b-instruct",
+    "provider": "openrouter",
+    "model": "meta-llama/llama-3.1-405b-instruct",
+    "summary": {
+      "overall_reward": 0.43333333333333335,
+      "label_counts": {
+        "very_low": 0,
+        "low": 8,
+        "medium": 2,
+        "high": 0
+      },
+      "metrics_mean": {
+        "composite_score": 0.43333333333333335,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.4,
+        "C3_ballad_meter_echo": 0.4,
+        "C4_ballad_rhyme": 0.1,
+        "C5_ring_composition": 0.1,
+        "C6_warning_admonition": 0.9,
+        "C7_preparation_armament": 0.6,
+        "C8_encounter_confrontation": 0.3,
+        "C9_slaying_decisive_action": 0.0,
+        "C10_return_celebration": 0.4,
+        "C11_coinage_count": 0.5,
+        "C12_coinage_spread": 0.2,
+        "C13_creature_naming": 0.7,
+        "C14_onomatopoeia": 0.0,
+        "C15_alliteration_consonance": 0.3,
+        "C16_tone_alignment": 0.5,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.4,
+        "label_high": 0.0,
+        "label_medium": 0.2,
+        "label_low": 0.8,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "llama-3.1-405b-instruct/"
+  },
+  {
+    "spec": "llama-4-maverick",
+    "provider": "openrouter",
+    "model": "meta-llama/llama-4-maverick",
+    "summary": {
+      "overall_reward": 0.4,
+      "label_counts": {
+        "very_low": 1,
+        "low": 8,
+        "medium": 1,
+        "high": 0
+      },
+      "metrics_mean": {
+        "composite_score": 0.4,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.5,
+        "C3_ballad_meter_echo": 0.6,
+        "C4_ballad_rhyme": 0.0,
+        "C5_ring_composition": 0.0,
+        "C6_warning_admonition": 0.8,
+        "C7_preparation_armament": 0.6,
+        "C8_encounter_confrontation": 0.1,
+        "C9_slaying_decisive_action": 0.2,
+        "C10_return_celebration": 0.1,
+        "C11_coinage_count": 0.4,
+        "C12_coinage_spread": 0.2,
+        "C13_creature_naming": 0.4,
+        "C14_onomatopoeia": 0.2,
+        "C15_alliteration_consonance": 0.2,
+        "C16_tone_alignment": 0.3,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.6,
+        "label_high": 0.0,
+        "label_medium": 0.1,
+        "label_low": 0.8,
+        "label_very_low": 0.1
+      }
+    },
+    "path": "llama-4-maverick/"
+  },
+  {
+    "spec": "llama-3.1-nemotron-ultra-253b-v1",
+    "provider": "openrouter",
+    "model": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+    "summary": {
+      "overall_reward": 0.6944444444444444,
+      "label_counts": {
+        "very_low": 0,
+        "low": 1,
+        "medium": 7,
+        "high": 2
+      },
+      "metrics_mean": {
+        "composite_score": 0.6944444444444444,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.7,
+        "C3_ballad_meter_echo": 0.6,
+        "C4_ballad_rhyme": 0.7,
+        "C5_ring_composition": 0.1,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 0.8,
+        "C8_encounter_confrontation": 0.8,
+        "C9_slaying_decisive_action": 0.5,
+        "C10_return_celebration": 0.4,
+        "C11_coinage_count": 1.0,
+        "C12_coinage_spread": 0.4,
+        "C13_creature_naming": 0.6,
+        "C14_onomatopoeia": 0.6,
+        "C15_alliteration_consonance": 0.9,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.4,
+        "label_high": 0.2,
+        "label_medium": 0.7,
+        "label_low": 0.1,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "llama-3.1-nemotron-ultra-253b-v1/"
+  },
+  {
+    "spec": "gpt-5",
+    "provider": "openai",
+    "model": "gpt-5",
+    "summary": {
+      "overall_reward": 0.9388888888888889,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 1,
+        "high": 9
+      },
+      "metrics_mean": {
+        "composite_score": 0.9388888888888889,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 1.0,
+        "C5_ring_composition": 0.9,
+        "C6_warning_admonition": 0.9,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 0.9,
+        "C9_slaying_decisive_action": 0.8,
+        "C10_return_celebration": 0.9,
+        "C11_coinage_count": 1.0,
+        "C12_coinage_spread": 1.0,
+        "C13_creature_naming": 0.9,
+        "C14_onomatopoeia": 0.8,
+        "C15_alliteration_consonance": 1.0,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.9,
+        "label_high": 0.9,
+        "label_medium": 0.1,
+        "label_low": 0.0,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "gpt-5/"
+  },
+  {
+    "spec": "sonnet-3.5",
+    "provider": "openrouter",
+    "model": "anthropic/claude-3.5-sonnet",
+    "summary": {
+      "overall_reward": 0.8444444444444444,
+      "label_counts": {
+        "very_low": 0,
+        "low": 0,
+        "medium": 3,
+        "high": 7
+      },
+      "metrics_mean": {
+        "composite_score": 0.8444444444444444,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 1.0,
+        "C3_ballad_meter_echo": 1.0,
+        "C4_ballad_rhyme": 0.9,
+        "C5_ring_composition": 0.9,
+        "C6_warning_admonition": 1.0,
+        "C7_preparation_armament": 0.9,
+        "C8_encounter_confrontation": 0.8,
+        "C9_slaying_decisive_action": 0.8,
+        "C10_return_celebration": 0.9,
+        "C11_coinage_count": 0.5,
+        "C12_coinage_spread": 0.5,
+        "C13_creature_naming": 0.7,
+        "C14_onomatopoeia": 0.7,
+        "C15_alliteration_consonance": 1.0,
+        "C16_tone_alignment": 1.0,
+        "C17_no_verbatim_lines": 0.9,
+        "C18_canonical_budget": 0.7,
+        "label_high": 0.7,
+        "label_medium": 0.3,
+        "label_low": 0.0,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "sonnet-3.5/"
+  },
+  {
+    "spec": "qwen3-30b-a3b",
+    "provider": "openrouter",
+    "model": "qwen/qwen3-30b-a3b",
+    "summary": {
+      "overall_reward": 0.5111111111111111,
+      "label_counts": {
+        "very_low": 0,
+        "low": 6,
+        "medium": 3,
+        "high": 1
+      },
+      "metrics_mean": {
+        "composite_score": 0.5111111111111111,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.3,
+        "C3_ballad_meter_echo": 0.4,
+        "C4_ballad_rhyme": 0.0,
+        "C5_ring_composition": 0.0,
+        "C6_warning_admonition": 0.8,
+        "C7_preparation_armament": 0.4,
+        "C8_encounter_confrontation": 0.6,
+        "C9_slaying_decisive_action": 0.5,
+        "C10_return_celebration": 0.1,
+        "C11_coinage_count": 0.8,
+        "C12_coinage_spread": 0.2,
+        "C13_creature_naming": 0.8,
+        "C14_onomatopoeia": 0.8,
+        "C15_alliteration_consonance": 0.4,
+        "C16_tone_alignment": 0.8,
+        "C17_no_verbatim_lines": 1.0,
+        "C18_canonical_budget": 0.3,
+        "label_high": 0.1,
+        "label_medium": 0.3,
+        "label_low": 0.6,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "qwen3-30b-a3b/"
+  },
+  {
+    "spec": "kimi-dev-72b",
+    "provider": "openrouter",
+    "model": "moonshotai/kimi-dev-72b",
+    "summary": {
+      "overall_reward": 0.5277777777777778,
+      "label_counts": {
+        "very_low": 0,
+        "low": 6,
+        "medium": 4,
+        "high": 0
+      },
+      "metrics_mean": {
+        "composite_score": 0.5277777777777778,
+        "C1_title_present": 1.0,
+        "C2_quatrain_shape": 0.6,
+        "C3_ballad_meter_echo": 0.4,
+        "C4_ballad_rhyme": 0.3,
+        "C5_ring_composition": 0.1,
+        "C6_warning_admonition": 0.5,
+        "C7_preparation_armament": 0.7,
+        "C8_encounter_confrontation": 0.7,
+        "C9_slaying_decisive_action": 0.6,
+        "C10_return_celebration": 0.6,
+        "C11_coinage_count": 0.4,
+        "C12_coinage_spread": 0.2,
+        "C13_creature_naming": 0.6,
+        "C14_onomatopoeia": 0.2,
+        "C15_alliteration_consonance": 0.4,
+        "C16_tone_alignment": 0.4,
+        "C17_no_verbatim_lines": 0.9,
+        "C18_canonical_budget": 0.9,
+        "label_high": 0.0,
+        "label_medium": 0.4,
+        "label_low": 0.6,
+        "label_very_low": 0.0
+      }
+    },
+    "path": "kimi-dev-72b/"
   }
 ]

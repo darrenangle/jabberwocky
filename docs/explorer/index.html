@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jabberwocky Runs Explorer</title>
+    <link rel="stylesheet" href="styles.css?v=4" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Jabberwocky Runs Explorer</h1>
+      <div class="controls">
+        <label>Manifest URL
+          <input id="manifestInput" type="text" placeholder="/runs/<run-name>/manifest.json" />
+        </label>
+        <button id="loadBtn">Load</button>
+      </div>
+    </header>
+
+    <main>
+      <div id="errorBox" class="error" style="display:none;"></div>
+      <section id="summary">
+        <h2>Run Summary</h2>
+        <div id="runMeta"></div>
+        <div id="legend" class="legend"></div>
+        <div id="rewardChartWrap" class="chart-wrap">
+          <canvas id="rewardChart"></canvas>
+        </div>
+      </section>
+
+      <section id="models">
+        <h2>Models</h2>
+        <div id="modelList"></div>
+      </section>
+
+      <section id="samples">
+        <h2>Samples</h2>
+        <div class="filters">
+          <label>Model:
+            <select id="modelSelect"></select>
+          </label>
+          <label>Min Reward:
+            <input id="minReward" type="number" step="0.01" value="0" />
+          </label>
+          <label>Label:
+            <select id="labelFilter">
+              <option value="">(any)</option>
+              <option value="very_low">very_low</option>
+              <option value="low">low</option>
+              <option value="medium">medium</option>
+              <option value="high">high</option>
+            </select>
+          </label>
+          <button id="applyFilters">Apply</button>
+          <button id="loadMore">Load more</button>
+        </div>
+        <div id="sampleList"></div>
+      </section>
+    </main>
+
+    <script src="app.js?v=6" defer></script>
+  </body>
+  </html>

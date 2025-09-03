@@ -1,0 +1,38 @@
+{
+  "overall_reward": 0.8,
+  "label_counts": {
+    "very_low": 0,
+    "low": 0,
+    "medium": 6,
+    "high": 4
+  },
+  "metrics_mean": {
+    "composite_score": 0.8,
+    "C1_title_present": 1.0,
+    "C2_quatrain_shape": 1.0,
+    "C3_ballad_meter_echo": 1.0,
+    "C4_ballad_rhyme": 1.0,
+    "C5_ring_composition": 1.0,
+    "C6_warning_admonition": 1.0,
+    "C7_preparation_armament": 1.0,
+    "C8_encounter_confrontation": 1.0,
+    "C9_slaying_decisive_action": 1.0,
+    "C10_return_celebration": 1.0,
+    "C11_coinage_count": 0.2,
+    "C12_coinage_spread": 0.2,
+    "C13_creature_naming": 0.6,
+    "C14_onomatopoeia": 0.9,
+    "C15_alliteration_consonance": 0.8,
+    "C16_tone_alignment": 0.8,
+    "C17_no_verbatim_lines": 0.0,
+    "C18_canonical_budget": 0.9,
+    "label_high": 0.4,
+    "label_medium": 0.6,
+    "label_low": 0.0,
+    "label_very_low": 0.0
+  },
+  "spec": "claude-3-opus",
+  "provider": "openrouter",
+  "model": "anthropic/claude-3-opus",
+  "num_samples": 10
+}

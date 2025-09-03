@@ -15,6 +15,13 @@ from rich.text import Text
 import verifiers as vf
 from openai import OpenAI
 
+# Make the environment module available without requiring installation
+import sys as _sys, os as _os
+from pathlib import Path as _Path
+_ENV_ROOT = str(_Path(__file__).resolve().parents[1])  # environments/jabberwocky
+if _ENV_ROOT not in _sys.path:
+    _sys.path.insert(0, _ENV_ROOT)
+
 
 def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Eval jabberwocky with Groq actor + OpenAI judge")

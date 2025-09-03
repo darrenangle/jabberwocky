@@ -1,0 +1,32 @@
+{
+  "run_name": "run-20250903T174419Z",
+  "created_utc": "2025-09-03T17:44:19.830704Z",
+  "seed": 777,
+  "num_examples": 5,
+  "rollouts_per_example": 1,
+  "eval_hint_profile": "minimal",
+  "system_prompt_mode": "neutral",
+  "judge_model": "gpt-4.1-mini",
+  "actor_models": [
+    "grok-code-fast-1",
+    "gemini-2.5-flash"
+  ],
+  "models": [
+    {
+      "id": "grok-code-fast-1",
+      "slug": "grok-code-fast-1",
+      "provider": "openrouter",
+      "model": "x-ai/grok-code-fast-1",
+      "summary_path": "grok-code-fast-1/summary.json",
+      "samples_path": "grok-code-fast-1/samples.jsonl"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "slug": "gemini-2.5-flash",
+      "provider": "openrouter",
+      "model": "google/gemini-2.5-flash",
+      "summary_path": "gemini-2.5-flash/summary.json",
+      "samples_path": "gemini-2.5-flash/samples.jsonl"
+    }
+  ]
+}

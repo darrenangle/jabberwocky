@@ -127,6 +127,109 @@ Notes:
 - No streaming; the environment expects non-streamed responses.
  - If you see a missing API key error, set `OPENAI_API_KEY` or pass `judge_api_key_var` to `load_environment`.
 
+## OpenRouter Actor (single or many) + OpenAI Judge
+
+Evaluate one or many OpenRouter models with a friendly registry and pretty output. You can pass either provider-qualified specs like `openrouter:openai/gpt-4o` or use aliases from a registry file.
+
+- Env vars:
+
+```
+export OPENAI_API_KEY="sk-OPENAI-..."         # judge (OpenAI)
+export OPENROUTER_API_KEY="sk-or-v1-..."      # actor (OpenRouter)
+# Optional for OpenRouter rankings
+export OPENROUTER_HTTP_REFERER="https://your.site"
+export OPENROUTER_X_TITLE="Your Site"
+```
+
+- Single model:
+
+```
+uv run python environments/jabberwocky/scripts/eval_jabberwocky.py \
+  --n 5 --rollouts 1 \
+  --models openrouter:openai/gpt-4o \
+  --eval-hint-profile minimal \
+  --system-prompt-mode neutral \
+  --max-concurrent 8
+```
+
+- Multiple models (sequential by default; add `--parallel-models N` to parallelize across models):
+
+```
+uv run python environments/jabberwocky/scripts/eval_jabberwocky.py \
+  --n 10 --rollouts 1 \
+  --models \
+    openrouter:anthropic/claude-3.5-sonnet \
+    openrouter:openai/gpt-4o \
+    openrouter:google/gemma-2-27b-it \
+  --max-concurrent 8 \
+  --parallel-models 2
+```
+
+- Optional registry file (TOML or JSON):
+
+`models.toml`
+
+```
+[providers.openrouter]
+base_url = "https://openrouter.ai/api/v1"
+api_key_env = "OPENROUTER_API_KEY"
+
+[models.sonnet]
+provider = "openrouter"
+model = "anthropic/claude-3.5-sonnet"
+
+[models.gpt4o]
+provider = "openrouter"
+model = "openai/gpt-4o"
+```
+
+Use the registry aliases:
+
+```
+uv run python environments/jabberwocky/scripts/eval_jabberwocky.py \
+  --actor-registry models.toml \
+  --models sonnet gpt4o \
+  --n 20 --rollouts 1 --max-concurrent 8
+```
+
+Notes:
+- The registry also supports JSON. You can still override `--actor-base-url`, `--actor-provider`, or `--actor-api-key` on the CLI.
+- For parallelism across models, start with small `--parallel-models` to avoid rate-limits. Within-model rollout concurrency is controlled by `--max-concurrent`.
+- The eval script and environment never set `temperature` for actors or judge; providers use their defaults. You can override `max_tokens` if needed.
+- Ensure `OPENROUTER_API_KEY` is set for OpenRouter models; otherwise they will be skipped.
+
+Curated aliases available in the registry by default:
+- OpenRouter: `grok-code-fast-1`, `claude-sonnet-4`, `deepseek-chat-v3.1-free`, `llama-4-scout-free`, `llama-4-maverick-free`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`, `qwen3-30b-a3b`, `claude-3.7-sonnet`, `sonnet-3.5`, `gpt-4o`.
+- OpenAI: `gpt-4.1-nano`, `gpt-4.1-mini`, `gpt-4.1`, `gpt-5-nano`, `gpt-5-mini`, `gpt-5`.
+
+## Per-Model Dumps + Web Explorer
+
+To generate a multi-model run with per-model JSONL and a manifest suitable for a static explorer:
+
+```
+uv run python environments/jabberwocky/scripts/eval_jabberwocky.py \
+  --actor-registry models.toml \
+  --models sonnet gpt4o \
+  --n 20 --rollouts 1 --seed 777 \
+  --max-concurrent 8 \
+  --outdir docs/runs/run-2025-09-03
+```
+
+This writes:
+- `docs/runs/run-2025-09-03/manifest.json`
+- `docs/runs/run-2025-09-03/models_summary.json`
+- One folder per model with:
+  - `summary.json` (overall reward, label counts, metrics mean)
+  - `samples.jsonl` (one row per poem: prompt, poem, reward, label, criteria count, metrics)
+
+Explore the run with the static web app:
+
+```
+open docs/explorer/index.html?manifest=../runs/run-2025-09-03/manifest.json
+```
+
+Host on GitHub Pages by serving the `docs/` folder. You can add a `docs/CNAME` with your custom domain.
+
 ## prime-rl usage
 
 In your `orch.toml`:
@@ -154,14 +257,12 @@ vf-vllm --model google/gemma-2-2b --port 8000 --enforce-eager --disable-log-requ
 ```
 export OPENAI_API_KEY="sk-..."
 accelerate launch --num-processes 1 \
-  --config-file docs/verifiers/configs/zero3.yaml \
   scripts/train_jabberwocky_grpo.py
 ```
 
 Notes:
 - Configure via ENV: `MODEL_NAME` (policy), `RUN_NAME` (default jabberwocky), `VLLM_HOST/PORT`, `JUDGE_MODEL`.
 - GRPO requires ≥2 generations; effective generation batch must be divisible by `num_generations`.
-- Keep judge temperature ~0.0; actor ~0.7 for exploration.
 - For longer runs, prefer LoRA/ZeRO; this example mirrors verifiers examples for compatibility.
 
 ## Config options (load_environment)
@@ -170,7 +271,7 @@ Notes:
 - `judge_model` (str): judge model id (default `gpt-4.1-mini`)
 - `judge_base_url` (str): judge API base (default OpenAI)
 - `judge_api_key_var` (str): env var for judge key (default `OPENAI_API_KEY`)
-- `judge_sampling_args` (dict): overrides for the judge call (default `{temperature: 0.0}`)
+- `judge_sampling_args` (dict): overrides for the judge call (default `{}`)
 - `topics` (list[str]): topics sampled for prompts (defaults to a curated list of ~120). When unspecified, eval uses a held-out subset.
 - `seed` (int): seed for topic sampling and dataset generation (default 777)
 - `topic_holdout_n` (int): number of topics reserved for eval when using default topics (default 20; capped to 20% of list)
@@ -182,11 +283,11 @@ Notes:
 - `eval_hint_mix` (dict|None): proportions for eval mixed profile.
 - `system_prompt_mode` (str): `always_style` (default) or `neutral` to remove global style bias.
 - `eval_force_style` (bool): force eval prompts to include Jabberwocky cue (default True). Minimal remains style‑conditional.
-- Judge runs with a generous timeout (60s) and supports reasoning in the prompt (scratchpad + example analyses). No max token cap is enforced by default.
+- Judge runs with a generous timeout (60s) and supports reasoning in the prompt (scratchpad + example analyses). No sampling parameters are set by default.
 
 ## Notes
 - The original poem is embedded as a string within the module for portability.
-- For consistent judging, consider lowering judge temperature and fixing seeds at the caller.
+- For consistent judging, consider fixing seeds at the caller.
 - This module follows Verifiers' `SingleTurnEnv` pattern and should be compatible with both `verifiers` and `prime-rl` trainers.
 - The judge prompt contains few-shot examples (high, medium, low, very_low) with short rationales and a strict 18-point binary rubric; it reasons briefly (<scratchpad>) before emitting the XML yes/no tags.
 - Mixed training + style-conditional eval works well if your goal is to teach the skill “on request” rather than always produce Jabberwocky-like text.

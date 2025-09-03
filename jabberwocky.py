@@ -552,7 +552,8 @@ def load_environment(
             f"Missing judge API key. Set {judge_api_key_var} or override judge_api_key_var."
         )
     judge_client = OpenAI(api_key=api_key, base_url=judge_base_url)
-    judge_sampling_args = judge_sampling_args or {"temperature": 0.0, "max_tokens": 256}
+    # Do not set temperature or other sampling knobs for the judge by default
+    judge_sampling_args = judge_sampling_args or {}
     logger = logging.getLogger("jabberwocky")
 
     # Composite binary rubric keys (descriptive) — keep in sync with XML prompt
@@ -736,8 +737,7 @@ def load_environment(
         parser=parser,
         rubric=rubric,
         sampling_args={
-            # Encourage creative, fuller generations by default for vf-eval
-            "temperature": 0.8,
+            # Let providers use their default temperature; encourage length only
             "max_tokens": 2048,
         },
         **kwargs,

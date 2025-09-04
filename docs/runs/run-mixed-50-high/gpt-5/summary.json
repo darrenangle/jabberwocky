@@ -1,0 +1,38 @@
+{
+  "overall_reward": 0.9966666666666667,
+  "label_counts": {
+    "very_low": 0,
+    "low": 0,
+    "medium": 0,
+    "high": 50
+  },
+  "metrics_mean": {
+    "composite_score": 0.9966666666666667,
+    "C1_title_present": 1.0,
+    "C2_quatrain_shape": 1.0,
+    "C3_ballad_meter_echo": 1.0,
+    "C4_ballad_rhyme": 1.0,
+    "C5_ring_composition": 1.0,
+    "C6_warning_admonition": 0.94,
+    "C7_preparation_armament": 1.0,
+    "C8_encounter_confrontation": 1.0,
+    "C9_slaying_decisive_action": 1.0,
+    "C10_return_celebration": 1.0,
+    "C11_coinage_count": 1.0,
+    "C12_coinage_spread": 1.0,
+    "C13_creature_naming": 1.0,
+    "C14_onomatopoeia": 1.0,
+    "C15_alliteration_consonance": 1.0,
+    "C16_tone_alignment": 1.0,
+    "C17_no_verbatim_lines": 1.0,
+    "C18_canonical_budget": 1.0,
+    "label_high": 1.0,
+    "label_medium": 0.0,
+    "label_low": 0.0,
+    "label_very_low": 0.0
+  },
+  "spec": "gpt-5",
+  "provider": "openai",
+  "model": "gpt-5",
+  "num_samples": 50
+}

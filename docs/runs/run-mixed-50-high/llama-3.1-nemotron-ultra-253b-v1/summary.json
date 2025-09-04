@@ -1,0 +1,38 @@
+{
+  "overall_reward": 0.8788888888888889,
+  "label_counts": {
+    "very_low": 6,
+    "low": 0,
+    "medium": 0,
+    "high": 44
+  },
+  "metrics_mean": {
+    "composite_score": 0.8788888888888889,
+    "C1_title_present": 0.88,
+    "C2_quatrain_shape": 0.88,
+    "C3_ballad_meter_echo": 0.88,
+    "C4_ballad_rhyme": 0.88,
+    "C5_ring_composition": 0.86,
+    "C6_warning_admonition": 0.88,
+    "C7_preparation_armament": 0.88,
+    "C8_encounter_confrontation": 0.88,
+    "C9_slaying_decisive_action": 0.88,
+    "C10_return_celebration": 0.88,
+    "C11_coinage_count": 0.88,
+    "C12_coinage_spread": 0.88,
+    "C13_creature_naming": 0.88,
+    "C14_onomatopoeia": 0.88,
+    "C15_alliteration_consonance": 0.88,
+    "C16_tone_alignment": 0.88,
+    "C17_no_verbatim_lines": 0.88,
+    "C18_canonical_budget": 0.88,
+    "label_high": 0.88,
+    "label_medium": 0.0,
+    "label_low": 0.0,
+    "label_very_low": 0.12
+  },
+  "spec": "llama-3.1-nemotron-ultra-253b-v1",
+  "provider": "openrouter",
+  "model": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+  "num_samples": 50
+}

@@ -1,0 +1,38 @@
+{
+  "overall_reward": 0.4488888888888889,
+  "label_counts": {
+    "very_low": 5,
+    "low": 32,
+    "medium": 12,
+    "high": 1
+  },
+  "metrics_mean": {
+    "composite_score": 0.4488888888888889,
+    "C1_title_present": 0.98,
+    "C2_quatrain_shape": 0.26,
+    "C3_ballad_meter_echo": 0.28,
+    "C4_ballad_rhyme": 0.1,
+    "C5_ring_composition": 0.04,
+    "C6_warning_admonition": 0.56,
+    "C7_preparation_armament": 0.54,
+    "C8_encounter_confrontation": 0.14,
+    "C9_slaying_decisive_action": 0.08,
+    "C10_return_celebration": 0.5,
+    "C11_coinage_count": 0.94,
+    "C12_coinage_spread": 0.3,
+    "C13_creature_naming": 0.58,
+    "C14_onomatopoeia": 0.08,
+    "C15_alliteration_consonance": 0.38,
+    "C16_tone_alignment": 0.76,
+    "C17_no_verbatim_lines": 0.98,
+    "C18_canonical_budget": 0.58,
+    "label_high": 0.02,
+    "label_medium": 0.24,
+    "label_low": 0.64,
+    "label_very_low": 0.1
+  },
+  "spec": "llama-3.3-70b-instruct",
+  "provider": "openrouter",
+  "model": "meta-llama/llama-3.3-70b-instruct",
+  "num_samples": 50
+}

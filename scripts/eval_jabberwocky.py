@@ -377,28 +377,9 @@ def main():
         _os.environ.setdefault("JUDGE_API_KEY_CLI", args.judge_api_key)
         judge_kwargs["judge_api_key_var"] = "JUDGE_API_KEY_CLI"
 
-    env = vf.load_environment(
-        "jabberwocky",
-        judge_model=args.judge_model,
-        target_stanzas_min=args.stanzas_min,
-        target_stanzas_max=args.stanzas_max,
-        topics=args.topics,
-        hint_profile=args.hint_profile,
-        eval_hint_profile=args.eval_hint_profile,
-        system_prompt_mode=args.system_prompt_mode,
-        eval_force_style=(not args.no_eval_force_style),
-        seed=args.seed,
-        **judge_kwargs,
-    )
-
-    # Apply actor max_tokens override only (we never set temperature)
-    if hasattr(env, 'sampling_args') and isinstance(env.sampling_args, dict):
-        sa = dict(env.sampling_args)
-        # Ensure no lingering temperature key
-        sa.pop('temperature', None)
-        if args.actor_max_tokens is not None:
-            sa['max_tokens'] = int(args.actor_max_tokens)
-        env.sampling_args = sa
+    # We intentionally create an identical environment per model (inside _run_one)
+    # to avoid any shared-state or concurrency effects. The parameters here are
+    # captured in the closure and reused for each local clone.
 
     # Build registry and load optional file
     reg = ActorRegistry()
@@ -467,6 +448,28 @@ def main():
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     def _run_one(spec: str, cfg) -> Tuple[str, vf.GenerateOutputs, Dict[str, Any]]:
+        # Create a local environment clone to ensure the exact same prompts
+        # (topics, order, templates) are used independently per model.
+        local_env = vf.load_environment(
+            "jabberwocky",
+            judge_model=args.judge_model,
+            target_stanzas_min=args.stanzas_min,
+            target_stanzas_max=args.stanzas_max,
+            topics=args.topics,
+            hint_profile=args.hint_profile,
+            eval_hint_profile=args.eval_hint_profile,
+            system_prompt_mode=args.system_prompt_mode,
+            eval_force_style=(not args.no_eval_force_style),
+            seed=args.seed,
+            **judge_kwargs,
+        )
+        # Apply actor max_tokens override (temperature is never set)
+        if hasattr(local_env, 'sampling_args') and isinstance(local_env.sampling_args, dict):
+            sa = dict(local_env.sampling_args)
+            sa.pop('temperature', None)
+            if args.actor_max_tokens is not None:
+                sa['max_tokens'] = int(args.actor_max_tokens)
+            local_env.sampling_args = sa
         client = _make_actor_client(cfg, timeout=ACTOR_TIMEOUT)
         # First attempt
         def run_eval():
@@ -476,7 +479,7 @@ def main():
             if args.n == 1 and args.rollouts > 1 and not args.topics:
                 eff_n = args.rollouts
                 eff_rollouts = 1
-            return env.evaluate(
+            return local_env.evaluate(
                 client=client,
                 model=cfg.model,
                 num_examples=eff_n,

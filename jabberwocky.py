@@ -576,10 +576,11 @@ def load_environment(
         "C16_tone_alignment",
         "C17_no_verbatim_lines",
         "C18_canonical_budget",
+        "C19_syllable_tightness",
     ]
     # Short tags to make formatting easy for small judges
     RUBRIC_SHORT = [
-        "C1","C2","C3","C4","C5","C6","C7","C8","C9","C10","C11","C12","C13","C14","C15","C16","C17","C18"
+        "C1","C2","C3","C4","C5","C6","C7","C8","C9","C10","C11","C12","C13","C14","C15","C16","C17","C18","C19"
     ]
     # XML field definitions: canonical name + alternative short tag
     RUBRIC_FIELDS = [(RUBRIC_KEYS[i], RUBRIC_SHORT[i]) for i in range(len(RUBRIC_KEYS))]
@@ -591,29 +592,30 @@ def load_environment(
         "First, think briefly in <scratchpad> for a few lines. Then output exactly and only "
         "the XML tags listed below, using lowercase 'yes' or 'no' inside each, one tag per line, "
         "in the same order. Do not include any other text after the XML tags.\n\n"
-        "Criteria (binary):\n"
-        "- C1_title_present: Non-empty title preceding the first stanza.\n"
-        "- C2_quatrain_shape: Majority (≥70%) 4-line stanzas; total ≈3–8 stanzas (one deviation allowed).\n"
-        "- C3_ballad_meter_echo: In ≥60% stanzas, alternating longer/shorter line lengths (contrast ≥2 words).\n"
-        "- C4_ballad_rhyme: In ≥60% stanzas, (2,4) rhyme; ABAB if also (1,3) rhyme. AABB does not count; allow slant rhyme.\n"
-        "- C5_ring_composition: Final stanza echoes opening (≥2 repeated content words/phrases) or refrain.\n"
-        "- C6_warning_admonition: Early admonition (e.g., Beware …) or equivalent caution.\n"
-        "- C7_preparation_armament: Protagonist prepares (tool/resolve/wait/plan).\n"
-        "- C8_encounter_confrontation: Clear meeting with the adversary/obstacle.\n"
-        "- C9_slaying_decisive_action: Climactic act resolves tension (strike/capture/overcoming).\n"
-        "- C10_return_celebration: Homecoming/reunion and jubilant acknowledgement.\n"
-        "- C11_coinage_count: ≥8 distinct invented coinages not in canonical lexicon or standard English.\n"
-        "- C12_coinage_spread: Each stanza has ≥1 coinage.\n"
+        "Criteria (binary). For each item, mark 'yes' only if the concrete test passes; otherwise 'no'.\n"
+        "- C1_title_present: Has a non-empty title line before the first stanza (not part of stanza text).\n"
+        "- C2_quatrain_shape: Majority (≥70%) of stanzas are 4 lines; total stanza count ≈3–8 (allow one deviation).\n"
+        "- C3_ballad_meter_echo: In ≥60% stanzas, alternating longer/shorter lines (≥2 content-word difference between adjacent lines).\n"
+        "- C4_ballad_rhyme: In ≥60% stanzas, lines (2,4) rhyme (allow slant rhyme). If (1,3) also rhyme, prefer ABAB/ABCB; AABB does not count.\n"
+        "- C5_ring_composition: Final stanza echoes opening with ≥2 repeated content words/phrases OR a clear refrain.\n"
+        "- C6_warning_admonition: Has an early admonition (e.g., 'Beware …') or equivalent caution directed to the protagonist.\n"
+        "- C7_preparation_armament: Shows preparation (tool/resolve/wait/plan) before the encounter.\n"
+        "- C8_encounter_confrontation: Contains a clear meeting between protagonist and adversary/obstacle.\n"
+        "- C9_slaying_decisive_action: Has a decisive act that resolves tension (strike/capture/overcoming).\n"
+        "- C10_return_celebration: Returns to home or figures and shows jubilant acknowledgement.\n"
+        "- C11_coinage_count: Uses ≥8 distinct invented coinages (not in canonical lexicon or standard English).\n"
+        "- C12_coinage_spread: Each stanza includes ≥1 coinage (count a coined word once per stanza).\n"
         "- C13_creature_naming: Introduces a named non-canonical creature/entity central to action (not 'Jabberwock').\n"
-        "- C14_onomatopoeia: ≥2 onomatopoeic bursts (e.g., snicker‑snack!, Pop! Hiss!).\n"
-        "- C15_alliteration_consonance: ≥2 stanzas show clear within-line alliteration/consonance.\n"
-        "- C16_tone_alignment: Whimsical/playful mythic tone; not generic promotional copy.\n"
+        "- C14_onomatopoeia: Includes ≥2 onomatopoeic bursts (e.g., 'snicker‑snack!', 'Pop!', 'Hiss!').\n"
+        "- C15_alliteration_consonance: ≥2 stanzas show clear within-line alliteration/consonance beyond incidental repeats.\n"
+        "- C16_tone_alignment: Whimsical/playful mythic tone; not generic promotional or flat prose.\n"
         "- C17_no_verbatim_lines: No line exactly matches the canonical poem.\n"
-        "- C18_canonical_budget: Distinct canonical tokens ≤8; new coinages encouraged.\n\n"
+        "- C18_canonical_budget: Distinct canonical tokens ≤8; prefer new coinages over canonical terms.\n"
+        "- C19_syllable_tightness: In ≥60% stanzas, longer lines ≈8–10 syllables and shorter lines ≈6–8; avoid long-winded lines. Minor variation allowed.\n\n"
         "Canonical lexicon: "
         + ", ".join(CANONICAL_LEXICON)
         + "\n\n"
-        "<scratchpad>Explain your reasoning concisely.</scratchpad>\n\n"
+        "<scratchpad>Explain your reasoning concisely. If uncertain, choose 'no'.</scratchpad>\n\n"
         "Now output only the following XML tags (one per line) filled with yes/no, in order: \n"
         + "\n".join([f"<{k}>yes|no</{k}>" for k in RUBRIC_SHORT])
         + "\n"
@@ -671,11 +673,14 @@ def load_environment(
             bit = 1 if str(v or "").strip().lower() == "yes" else 0
             out[k] = bit
             s += bit
-        if s >= 15:
+        # Label thresholds proportional to rubric length
+        total = len(RUBRIC_KEYS)
+        ratio = s / total if total else 0.0
+        if ratio >= 0.83:
             label = "high"
-        elif s >= 10:
+        elif ratio >= 0.56:
             label = "medium"
-        elif s >= 5:
+        elif ratio >= 0.33:
             label = "low"
         else:
             label = "very_low"

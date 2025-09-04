@@ -58,7 +58,7 @@ function Header({ activeTab, onTabChange }) {
         <header className="header">
             <div className="header-content">
                 <div className="header-left">
-                    <h1 className="app-title">Jabberwocky Eval</h1>
+                    <h1 className="app-title">Jabberwocky Bench</h1>
                     <p className="app-subtitle">{subtitles[subtitle]}</p>
                 </div>
                 <nav className="header-nav">
@@ -86,8 +86,8 @@ function Hero({ manifest, models, onPrimary, onSecondary }) {
         <section className="hero">
             <div className="hero-inner">
                 <div>
-                    <div className="hero-kicker">Creative constraint benchmarking</div>
-                    <h2 className="hero-title">Can your model write Jabberwocky on command?</h2>
+                    <div className="hero-kicker">Jabberwocky Bench</div>
+                    <h2 className="hero-title">How well do LLMs imitate difficult poetry?</h2>
                     <p className="hero-copy">
                         A focused test of instruction‑following and inventiveness under hard‑to‑verify constraints. Models must match
                         style, keep meter, invent believable words, and build a narrative arc — without copying the original.
@@ -271,6 +271,14 @@ function About() {
                 </div>
             </div>
             <div className="card">
+                <h3>When High instructions saturate</h3>
+                <p>
+                    Seeing High‑instruction scores cluster near the ceiling is expected. It shows that with a clear rubric,
+                    modern LLMs can execute. The useful signal is the guidance required to get there — the <strong>instruction sensitivity</strong>.
+                    Minimal reflects “cold‑start” prior and self‑prompting ability; Medium shows how quickly the model aligns with partial hints.
+                </p>
+            </div>
+            <div className="card">
                 <h3>Secondary purpose</h3>
                 <p>
                     This site doubles as a template for <strong>non‑verifiable reward modeling</strong> in creative domains. Even when “ground truth”
@@ -287,10 +295,10 @@ function Methodology() {
         <div className="methodology-content">
             <div className="card">
                 <h3>How scoring works</h3>
-                <p className="intro">Reward is the mean of 18 binary checks applied by an LLM judge. The checks cover form, style, coinage, and story arc. No gold labels; just crisp, reproducible constraints.</p>
+                <p className="intro">Reward is the mean of 19 binary checks applied by an LLM judge. The checks cover form, style, coinage, arc, and syllable tightness. No gold labels; just crisp, reproducible constraints.</p>
             </div>
             <div className="card">
-                <h3>The 18 checks (glance)</h3>
+                <h3>The 19 checks (glance)</h3>
                 <div className="rubric-grid">
                     <div className="rubric-item"><div className="rubric-score">C1 Title</div><div className="rubric-desc">Non‑empty title preceding the first stanza.</div></div>
                     <div className="rubric-item"><div className="rubric-score">C2 Quatrains</div><div className="rubric-desc">Mostly 4‑line stanzas; sensible count overall.</div></div>
@@ -310,6 +318,7 @@ function Methodology() {
                     <div className="rubric-item"><div className="rubric-score">C16 Tone</div><div className="rubric-desc">Whimsical, brisk, and adventurous.</div></div>
                     <div className="rubric-item"><div className="rubric-score">C17 No verbatim</div><div className="rubric-desc">Avoids copying canonical lines.</div></div>
                     <div className="rubric-item"><div className="rubric-score">C18 Canonical budget</div><div className="rubric-desc">Stays under allowed canonical reuse.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C19 Syllable tightness</div><div className="rubric-desc">Most stanzas keep ~8–10 syllables for long lines and ~6–8 for short lines.</div></div>
                 </div>
             </div>
             <div className="card">
@@ -327,10 +336,27 @@ function Methodology() {
 }
 
 // Model Leaderboard
-function Leaderboard({ models, onModelClick }) {
+function Leaderboard({ models, onModelClick, instructionLevel, onInstructionLevelChange, hasMedium, hasHigh, minimalModels, mediumModels, highModels }) {
+    const [sortMode, setSortMode] = React.useState('score'); // 'score' | 'deltaH'
     const sortedModels = useMemo(() => 
-        [...models].sort((a, b) => (b.summary?.overall_reward || 0) - (a.summary?.overall_reward || 0)),
-        [models]
+        {
+            const arr = [...models];
+            if (sortMode === 'deltaH') {
+                const toMap = (xs) => { const m={}; (xs||[]).forEach(x=>m[x.slug]=x); return m; };
+                const minMap = toMap(minimalModels);
+                const highMap = toMap(highModels);
+                return arr.sort((a,b)=>{
+                    const aMin = minMap[a.slug]?.summary?.overall_reward; const aHigh = highMap[a.slug]?.summary?.overall_reward;
+                    const bMin = minMap[b.slug]?.summary?.overall_reward; const bHigh = highMap[b.slug]?.summary?.overall_reward;
+                    const aD = (aMin!=null && aHigh!=null) ? (aHigh - aMin) : Number.POSITIVE_INFINITY;
+                    const bD = (bMin!=null && bHigh!=null) ? (bHigh - bMin) : Number.POSITIVE_INFINITY;
+                    if (aD === bD) return (b.summary?.overall_reward || 0) - (a.summary?.overall_reward || 0);
+                    return aD - bD; // smaller delta first
+                });
+            }
+            return arr.sort((a, b) => (b.summary?.overall_reward || 0) - (a.summary?.overall_reward || 0));
+        },
+        [models, sortMode, minimalModels, highModels]
     );
     
     const maxScore = sortedModels[0]?.summary?.overall_reward || 1;
@@ -342,14 +368,62 @@ function Leaderboard({ models, onModelClick }) {
         return 'rank-default';
     };
     
+    const avg = (arr) => arr && arr.length ? (arr.reduce((s,m)=>s+(m.summary?.overall_reward||0),0)/arr.length) : null;
+    const avgMin = avg(minimalModels||[]);
+    const avgMed = avg(mediumModels||[]);
+    const avgHigh = avg(highModels||[]);
+
+    const toMap = (arr) => {
+        const map = {};
+        (arr||[]).forEach(m => { map[m.slug] = m; });
+        return map;
+    };
+    const minMap = useMemo(() => toMap(minimalModels), [minimalModels]);
+    const medMap = useMemo(() => toMap(mediumModels), [mediumModels]);
+    const highMap = useMemo(() => toMap(highModels), [highModels]);
+    
     return (
         <>
             <div className="card benchmark-intro">
-                <h3>Jabberwocky Benchmark</h3>
+                <h3>Jabberwocky Bench</h3>
                 <p>Structured creativity under pressure: match Carroll’s form, coin words that feel right, and carry a story arc — no copying. If a model can do that on demand, it’s probably good at following tricky instructions while inventing.</p>
-                <p className="intro-meta">18 binary checks • LLM judge • built with verifiers</p>
+                <p className="intro-meta">19 binary checks • LLM judge • built with verifiers</p>
             </div>
             
+            <div className="card" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'1rem',flexWrap:'wrap'}}>
+                <div className="intro-meta">Instruction level</div>
+                <div className="segmented">
+                    <button className={instructionLevel==='minimal' ? 'active' : ''} onClick={() => onInstructionLevelChange('minimal')}>Minimal</button>
+                    <button className={instructionLevel==='medium' ? 'active' : ''} onClick={() => hasMedium && onInstructionLevelChange('medium')} disabled={!hasMedium}>Medium</button>
+                    <button className={instructionLevel==='high' ? 'active' : ''} onClick={() => hasHigh && onInstructionLevelChange('high')} disabled={!hasHigh}>High</button>
+                </div>
+                <div className="intro-meta" style={{opacity:.7}}>Sparkline: light=min • mid=med • dark=high</div>
+                <div className="segmented" aria-label="Sort">
+                    <button className={sortMode==='score' ? 'active' : ''} onClick={() => setSortMode('score')}>Sort: Score</button>
+                    <button className={sortMode==='deltaH' ? 'active' : ''} onClick={() => setSortMode('deltaH')} disabled={(minimalModels||[]).length===0 || (highModels||[]).length===0}>Sort: ΔH</button>
+                </div>
+            </div>
+
+            <div className="card">
+                <h3>Why three levels?</h3>
+                <p className="intro">
+                    High instructions often saturate — most capable models hit the ceiling when the rubric is explicit.
+                    The signal we want is how much guidance a model needs to get there.
+                    Treat High as the ceiling, Minimal as cold‑start inventiveness, and Medium as coaching.
+                </p>
+                <p className="intro">
+                    A quick read on this run:
+                    {avgMin!=null && <> Minimal avg {normalizeScore(avgMin)}</>}
+                    {avgMed!=null && <> • Medium avg {normalizeScore(avgMed)}</>}
+                    {avgHigh!=null && <> • High avg {normalizeScore(avgHigh)}</>}
+                    {(avgMin!=null && avgHigh!=null) && <> • Δ(min→high) +{normalizeScore(avgHigh-avgMin)}</>}
+                </p>
+                <p className="intro">
+                    If High clusters near 1000, that’s expected — it shows models can execute when fully briefed.
+                    The gap from Minimal to High is the “instruction sensitivity” of the style: lower gaps mean strong internalized priors; bigger gaps mean the model relies on coaching.
+                </p>
+            </div>
+
             <div className="leaderboard">
                 {sortedModels.map((model, index) => {
                 const rank = index + 1;
@@ -371,24 +445,53 @@ function Leaderboard({ models, onModelClick }) {
                             <div className="model-meta">
                                 <span className="model-provider">{model.provider}</span>
                                 <span className="click-hint">View poems →</span>
+                                {/* per-model sparkline */}
+                                {(() => {
+                                    const minS = minMap[model.slug]?.summary?.overall_reward ?? null;
+                                    const medS = medMap[model.slug]?.summary?.overall_reward ?? null;
+                                    const highS = highMap[model.slug]?.summary?.overall_reward ?? null;
+                                    const y = (v) => 20 - Math.max(0, Math.min(1, v||0)) * 16; // 0..1 -> 20..4
+                                    const pts = [minS, medS, highS];
+                                    if (pts.every(v => v == null)) return null;
+                                    const path = [
+                                        `5,${y(minS)}`,
+                                        `50,${y(medS)}`,
+                                        `95,${y(highS)}`
+                                    ].join(' ');
+                                    return (
+                                        <svg className="model-spark" viewBox="0 0 100 24" aria-label="instruction sensitivity sparkline">
+                                            <polyline points={path} fill="none" stroke="#111" strokeWidth="1" opacity="0.5" />
+                                            {minS!=null && <circle cx="5" cy={y(minS)} r="2.2" fill="#c8c2b6" title={`Minimal ${normalizeScore(minS)}`} />}
+                                            {medS!=null && <circle cx="50" cy={y(medS)} r="2.2" fill="#8f8676" title={`Medium ${normalizeScore(medS)}`} />}
+                                            {highS!=null && <circle cx="95" cy={y(highS)} r="2.2" fill="#111" title={`High ${normalizeScore(highS)}`} />}
+                                        </svg>
+                                    );
+                                })()}
                             </div>
                         </div>
                         
                         <div className="score-bar-container">
-                            <div 
-                                className="score-bar"
-                                style={{ 
-                                    width: `${scorePercent}%`,
-                                    background: `linear-gradient(90deg, 
-                                        rgba(124, 58, 237, ${0.3 + (scorePercent/100) * 0.7}) 0%, 
-                                        rgba(37, 99, 235, ${0.2 + (scorePercent/100) * 0.6}) 100%)`
-                                }}
-                            />
+                            <div className="score-bar" style={{ width: `${scorePercent}%` }} />
                         </div>
                         
                         <div className="score-display">
                             <div className="score-value">{normalizeScore(score)}</div>
                             <div className="score-label">SCORE</div>
+                            {(() => {
+                                const minS = minMap[model.slug]?.summary?.overall_reward ?? null;
+                                const medS = medMap[model.slug]?.summary?.overall_reward ?? null;
+                                const highS = highMap[model.slug]?.summary?.overall_reward ?? null;
+                                const badges = [];
+                                if (minS!=null && medS!=null) {
+                                    const d = normalizeScore(medS - minS); const sign = d>=0?'+':'';
+                                    badges.push(<div key="m" className="isi-badge" title="Instruction Sensitivity (Medium − Minimal)">ΔM {sign}{d}</div>);
+                                }
+                                if (minS!=null && highS!=null) {
+                                    const d = normalizeScore(highS - minS); const sign = d>=0?'+':'';
+                                    badges.push(<div key="h" className="isi-badge" title="Instruction Sensitivity (High − Minimal)">ΔH {sign}{d}</div>);
+                                }
+                                return badges;
+                            })()}
                         </div>
                     </div>
                 );
@@ -450,6 +553,25 @@ function ModelModal({ model, samples, onClose }) {
     }, [currentIndex]);
     
     const currentSample = sortedSamples[currentIndex];
+
+    const parsePoem = (poem) => {
+        const lines = (poem || '').split('\n');
+        let i = 0;
+        while (i < lines.length && lines[i].trim() === '') i++;
+        let title = '';
+        if (i < lines.length && lines[i].trim().startsWith('##')) {
+            title = lines[i].replace(/^#+\s*/, '').trim();
+            i++;
+            if (lines[i] && lines[i].trim() === '') i++;
+        } else if (i < lines.length && lines[i].trim().length <= 60) {
+            // Treat first short line as title when plausible
+            title = lines[i].trim();
+            i++;
+            if (lines[i] && lines[i].trim() === '') i++;
+        }
+        const body = lines.slice(i).join('\n');
+        return { title, body };
+    };
     
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -464,60 +586,47 @@ function ModelModal({ model, samples, onClose }) {
                     </button>
                 </div>
                 
-                <div 
+                <div
                     className="modal-body swipeable"
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                 >
-                    {currentSample && (
-                        <div className="verse-card">
-                            <div className="modal-poem-meta">
-                                <div className="poem-score">
-                                    <span className="score-big">{normalizeScore(currentSample.reward)}</span>
-                                    <span className="score-label">SCORE</span>
+                    {currentSample && (() => {
+                        const parsed = parsePoem(currentSample.poem);
+                        const topic = currentSample.info?.topic || '—';
+                        const label = currentSample.label || '—';
+                        const score = normalizeScore(currentSample.reward);
+                        const stanzas = (parsed.body || '').split(/\n\s*\n/);
+                        return (
+                            <div className="verse-card">
+                                <div className="modal-poem-meta">
+                                    <div>
+                                        {parsed.title && <div className="poem-title">{parsed.title}</div>}
+                                        <div className="meta-right">
+                                            <span className="tag">{topic}</span>
+                                            <span className="tag">Label: {label}</span>
+                                            <span className="tag badge-score">{score}</span>
+                                        </div>
+                                    </div>
+                                    <div className="modal-nav">
+                                        <button className="nav-btn" disabled={currentIndex===0} onClick={() => currentIndex>0 && setCurrentIndex(currentIndex-1)} aria-label="Previous">‹</button>
+                                        <span className="modal-index">{currentIndex+1}/{sortedSamples.length}</span>
+                                        <button className="nav-btn" disabled={currentIndex===sortedSamples.length-1} onClick={() => currentIndex<sortedSamples.length-1 && setCurrentIndex(currentIndex+1)} aria-label="Next">›</button>
+                                    </div>
                                 </div>
-                                <div className="poem-details">
-                                    <div className="poem-topic">Topic: {currentSample.info?.topic || 'Unknown'}</div>
-                                    <div className="poem-label">Quality: <span className={`label-${currentSample.label || 'none'}`}>{currentSample.label || '—'}</span></div>
-                                    <div className="poem-criteria">Criteria: {currentSample.criteria_yes || 0}/18</div>
+                                <div className="modal-poem-content">
+                                    <div className="verse-content">
+                                        {stanzas.map((s, idx) => (
+                                            <p key={idx} className="stanza" dangerouslySetInnerHTML={{
+                                                __html: s.split('\n').map(line => line.replace(/\*(.*?)\*/g, '<em>$1</em>')).join('<br />')
+                                            }} />
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div className="modal-poem-content">
-                                <div className="verse-content" dangerouslySetInnerHTML={{
-                                    __html: currentSample.poem.split('\n').map(line => 
-                                        line.replace(/\*(.*?)\*/g, '<em>$1</em>')
-                                    ).join('<br />')
-                                }} />
-                            </div>
-                        </div>
-                    )}
-                    
-                    <div className="modal-navigation">
-                        <button 
-                            className="nav-arrow nav-prev" 
-                            onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
-                            disabled={currentIndex === 0}
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="15 18 9 12 15 6"></polyline>
-                            </svg>
-                        </button>
-                        <div className="nav-center">
-                            <div className="nav-counter">{currentIndex + 1} of {sortedSamples.length}</div>
-                            <div className="nav-hint">Swipe or use arrow keys</div>
-                        </div>
-                        <button 
-                            className="nav-arrow nav-next" 
-                            onClick={() => setCurrentIndex(Math.min(sortedSamples.length - 1, currentIndex + 1))}
-                            disabled={currentIndex === sortedSamples.length - 1}
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </button>
-                    </div>
+                        );
+                    })()}
                 </div>
             </div>
         </div>
@@ -656,102 +765,94 @@ function Verses({ models, samples, loadSamples }) {
 
 // Main App Component
 function App() {
-    const [manifest, setManifest] = useState(null);
-    const [models, setModels] = useState([]);
-    const [samples, setSamples] = useState({});
+    const [manifests, setManifests] = useState({ minimal: null, high: null });
+    const [modelsByLevel, setModelsByLevel] = useState({ minimal: [], high: [] });
+    const [samplesByLevel, setSamplesByLevel] = useState({ minimal: {}, high: {} });
+    const [manifestUrls, setManifestUrls] = useState({ minimal: null, high: null });
+    const [instructionLevel, setInstructionLevel] = useState('minimal');
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('leaderboard');
     const [selectedModel, setSelectedModel] = useState(null);
     const [modelSamples, setModelSamples] = useState([]);
-    const [manifestUrlState, setManifestUrlState] = useState(null);
-    
-    // Load manifest and models
-    const loadManifest = useCallback(async (url) => {
-        try {
-            setLoading(true);
-            setError(null);
-            
-            setManifestUrlState(url);
-            const manifestData = await fetchJSON(addCacheBust(url));
-            setManifest(manifestData);
-            
-            // Load model summaries
-            const loadedModels = [];
-            for (const entry of manifestData.models) {
-                const summaryUrl = addCacheBust(
-                    new URL(entry.summary_path, new URL(url, window.location.href)).toString()
-                );
-                const summary = await fetchJSON(summaryUrl);
-                
-                loadedModels.push({
-                    ...entry,
-                    summary
-                });
-            }
-            
-            // Sort by score
-            loadedModels.sort((a, b) => (b.summary?.overall_reward || 0) - (a.summary?.overall_reward || 0));
-            
-            setModels(loadedModels);
-            setLoading(false);
-        } catch (err) {
-            setError(err.message);
-            setLoading(false);
+
+    // Load one manifest+summaries
+    const loadOneManifest = useCallback(async (url, level) => {
+        const manifestData = await fetchJSON(addCacheBust(url));
+        const loadedModels = [];
+        for (const entry of manifestData.models) {
+            const summaryUrl = addCacheBust(new URL(entry.summary_path, new URL(url, window.location.href)).toString());
+            const summary = await fetchJSON(summaryUrl);
+            loadedModels.push({ ...entry, summary });
         }
+        loadedModels.sort((a, b) => (b.summary?.overall_reward || 0) - (a.summary?.overall_reward || 0));
+        setManifests(prev => ({ ...prev, [level]: manifestData }));
+        setModelsByLevel(prev => ({ ...prev, [level]: loadedModels }));
+        setManifestUrls(prev => ({ ...prev, [level]: url }));
     }, []);
-    
-    // Load samples for a model
-    const loadSamples = useCallback(async (model) => {
-        if (samples[model.slug]) return samples[model.slug];
-        
+
+    // Load samples for a model at an instruction level
+    const loadSamples = useCallback(async (model, level) => {
+        const lvl = level || instructionLevel;
+        const cache = samplesByLevel[lvl] || {};
+        if (cache[model.slug]) return cache[model.slug];
         try {
-            const manifestUrl = getQueryParam('manifest') || manifestUrlState;
+            const manifestUrl = manifestUrls[lvl];
             if (!manifestUrl) return [];
-            
-            const url = addCacheBust(
-                new URL(model.samples_path, new URL(manifestUrl, window.location.href)).toString()
-            );
+            const url = addCacheBust(new URL(model.samples_path, new URL(manifestUrl, window.location.href)).toString());
             const res = await fetch(url);
-            
-            if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const text = await res.text();
-            const rows = text.trim().split('\n')
-                .map(line => { 
-                    try { 
-                        return JSON.parse(line); 
-                    } catch { 
-                        return null; 
-                    } 
-                })
-                .filter(Boolean);
-            
-            setSamples(prev => ({ ...prev, [model.slug]: rows }));
+            const rows = text.trim().split('\n').map(line => { try { return JSON.parse(line); } catch { return null; } }).filter(Boolean);
+            setSamplesByLevel(prev => ({ ...prev, [lvl]: { ...(prev[lvl]||{}), [model.slug]: rows } }));
             return rows;
         } catch (err) {
-            console.error(`Failed to load samples for ${model.id}:`, err);
-            setSamples(prev => ({ ...prev, [model.slug]: [] }));
+            console.error(`Failed to load samples for ${model.id} (${lvl}):`, err);
+            setSamplesByLevel(prev => ({ ...prev, [lvl]: { ...(prev[lvl]||{}), [model.slug]: [] } }));
             return [];
         }
-    }, [samples, manifestUrlState]);
+    }, [samplesByLevel, instructionLevel, manifestUrls]);
     
     // Handle model click
     const handleModelClick = async (model) => {
-        const modelSamples = await loadSamples(model);
+        const modelSamples = await loadSamples(model, instructionLevel);
         setSelectedModel(model);
         setModelSamples(modelSamples);
     };
     
-    // Initialize using ?manifest=... with a sensible default
+    // Initialize instruction levels (minimal + medium + high)
     useEffect(() => {
-        const url = getQueryParam('manifest') || '../runs/run-mixed-50/manifest.json';
-        loadManifest(url);
-    }, [loadManifest]);
+        const urlMinimal = getQueryParam('manifest') || '../runs/run-mixed-50/manifest.json';
+        const urlMedium = getQueryParam('manifest_medium') || '../runs/run-mixed-50-medium/manifest.json';
+        const urlHigh = getQueryParam('manifest_high') || '../runs/run-mixed-50-high/manifest.json';
+        (async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                await loadOneManifest(urlMinimal, 'minimal');
+            } catch (e) {
+                console.error('Failed loading minimal manifest', e);
+                setError(`Failed loading minimal run: ${e.message}`);
+            } finally {
+                setLoading(false);
+            }
+            try {
+                await loadOneManifest(urlMedium, 'medium');
+            } catch (e) {
+                console.warn('Medium-instruction run not available:', e?.message || e);
+            }
+            try {
+                await loadOneManifest(urlHigh, 'high');
+            } catch (e) {
+                console.warn('High-instruction run not available:', e?.message || e);
+            }
+        })();
+    }, [loadOneManifest]);
     
     const renderContent = () => {
+        const models = modelsByLevel[instructionLevel] || [];
+        const manifest = manifests[instructionLevel];
         if (loading) return <Loading />;
         if (!manifest) {
             return (
@@ -763,13 +864,25 @@ function App() {
         
         switch (activeTab) {
             case 'leaderboard':
-                return <Leaderboard models={models} onModelClick={handleModelClick} />;
+                return (
+                    <Leaderboard
+                        models={models}
+                        onModelClick={handleModelClick}
+                        instructionLevel={instructionLevel}
+                        onInstructionLevelChange={setInstructionLevel}
+                        hasMedium={(modelsByLevel.medium || []).length > 0}
+                        hasHigh={(modelsByLevel.high || []).length > 0}
+                        minimalModels={modelsByLevel.minimal || []}
+                        mediumModels={modelsByLevel.medium || []}
+                        highModels={modelsByLevel.high || []}
+                    />
+                );
             case 'trends':
-                return <Trends models={models} loadSamples={loadSamples} />;
+                return <Trends models={modelsByLevel[instructionLevel] || []} loadSamples={(m)=>loadSamples(m, instructionLevel)} />;
             case 'methodology':
                 return <Methodology />;
             case 'verses':
-                return <Verses models={models} samples={samples} loadSamples={loadSamples} />;
+                return <Verses models={modelsByLevel[instructionLevel] || []} samples={samplesByLevel[instructionLevel] || {}} loadSamples={(m)=>loadSamples(m, instructionLevel)} />;
             case 'about':
                 return <About />;
             default:
@@ -778,10 +891,11 @@ function App() {
     };
     
     const shareResults = () => {
+        const models = modelsByLevel[instructionLevel] || [];
         const topModel = models[0];
         if (!topModel) return;
         
-        const text = `${topModel.id} leads the Jabberwocky benchmark with a score of ${normalizeScore(topModel.summary?.overall_reward)}!`;
+        const text = `${topModel.id} leads the Jabberwocky Bench (${instructionLevel}) with a score of ${normalizeScore(topModel.summary?.overall_reward)}!`;
         const url = window.location.href;
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
     };
@@ -799,8 +913,8 @@ function App() {
             <main className="main-content">
                 {activeTab === 'leaderboard' && (
                     <Hero
-                        manifest={manifest}
-                        models={models}
+                        manifest={manifests[instructionLevel]}
+                        models={modelsByLevel[instructionLevel] || []}
                         onPrimary={() => setActiveTab('verses')}
                         onSecondary={() => window.scrollTo({ top: document.body.scrollHeight / 3, behavior: 'smooth' })}
                     />
@@ -808,7 +922,7 @@ function App() {
                 {renderContent()}
             </main>
             
-            {manifest && (
+            {manifests[instructionLevel] && (
                 <button className="share-fab" onClick={shareResults}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />

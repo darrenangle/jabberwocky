@@ -41,7 +41,6 @@ function Header({ activeTab, onTabChange }) {
     
     const tabs = [
         { id: 'leaderboard', label: 'Overview' },
-        { id: 'trends', label: 'Trends' },
         { id: 'verses', label: 'Verses' },
         { id: 'about', label: 'Why' },
         { id: 'methodology', label: 'Methods' }
@@ -78,10 +77,12 @@ function Header({ activeTab, onTabChange }) {
 }
 
 // Hero section for Overview
-function Hero({ manifest, models, onPrimary, onSecondary }) {
+function Hero({ manifest, models, onPrimary, onSecondary, onOpenRadar }) {
     const topModel = models[0];
     const attempts = (manifest?.num_examples || 0) * (manifest?.rollouts_per_example || 1);
     const topScore = normalizeScore(topModel?.summary?.overall_reward || 0);
+    const top10 = (models || []).slice(0, 10);
+    const maxScore = top10.length ? (top10[0].summary?.overall_reward || 1) : 1;
     return (
         <section className="hero">
             <div className="hero-inner">
@@ -98,10 +99,150 @@ function Hero({ manifest, models, onPrimary, onSecondary }) {
                     </div>
                 </div>
                 <div className="hero-art">
+                    {top10.length > 0 && (
+                        <RadarViz models={top10} onOpenModal={onOpenRadar} />
+                    )}
                     <div className="hero-ribbon">{topModel ? `${topModel.id} • ${topScore} score • ${attempts} attempts` : 'Loading run...'}</div>
                 </div>
             </div>
         </section>
+    );
+}
+
+// Criteria keys (must mirror environment rubric)
+const CRITERIA_KEYS = [
+    'C1_title_present',
+    'C2_quatrain_shape',
+    'C3_ballad_meter_echo',
+    'C4_ballad_rhyme',
+    'C5_ring_composition',
+    'C6_warning_admonition',
+    'C7_preparation_armament',
+    'C8_encounter_confrontation',
+    'C9_slaying_decisive_action',
+    'C10_return_celebration',
+    'C11_coinage_count',
+    'C12_coinage_spread',
+    'C13_creature_naming',
+    'C14_onomatopoeia',
+    'C15_alliteration_consonance',
+    'C16_tone_alignment',
+    'C17_no_verbatim_lines',
+    'C18_canonical_budget',
+    'C19_syllable_tightness',
+];
+const CRITERIA_SHORT = CRITERIA_KEYS.map((k, i) => `C${i+1}`);
+const RADAR_COLORS = [
+    '#111111', '#1f78b4', '#e4572e', '#2a9d8f', '#8a6a2a',
+    '#7b2cbf', '#f4a261', '#0ea5e9', '#ef476f', '#06d6a0'
+];
+
+function RadarViz({ models, onOpenModal, showLegend = true }) {
+    const colors = RADAR_COLORS;
+    const size = 100; const cx = 50; const cy = 50; const r = 40; const n = CRITERIA_KEYS.length;
+
+    const getVec = (m) => {
+        const mm = m.summary?.metrics_mean || {}; // 0..1
+        return CRITERIA_KEYS.map(k => {
+            const v = mm[k];
+            return typeof v === 'number' ? Math.max(0, Math.min(1, v)) : 0;
+        });
+    };
+
+    const angleFor = (i) => ((-90 + (360 * i / n)) * Math.PI / 180);
+    const xy = (t, ang) => [cx + r * t * Math.cos(ang), cy + r * t * Math.sin(ang)];
+
+    return (
+        <div className="hero-viz" aria-label="Top criteria radar" onClick={onOpenModal} title="Click to expand">
+            <svg viewBox={`0 0 ${size} ${size}`} className="hero-viz-svg">
+                <defs>
+                    <linearGradient id="radarFade" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgba(255,255,255,0.92)"/>
+                        <stop offset="100%" stopColor="rgba(255,255,255,0.82)"/>
+                    </linearGradient>
+                </defs>
+                <circle cx={cx} cy={cy} r={r+6} fill="url(#radarFade)" stroke="var(--hair)" />
+                {[0.25,0.5,0.75,1].map((t,i)=>(
+                    <circle key={i} cx={cx} cy={cy} r={r*t} fill="none" stroke="#c9c3b6" strokeDasharray="1,3" />
+                ))}
+                {CRITERIA_KEYS.map((_, i) => {
+                    const a = angleFor(i);
+                    const [x,y] = xy(1, a);
+                    const [lx,ly] = xy(1.12, a);
+                    return (
+                        <g key={`axis-${i}`}>
+                            <line x1={cx} y1={cy} x2={x} y2={y} stroke="#d9d3c6" strokeWidth={0.5} />
+                            <text x={lx} y={ly} fontSize="2.6" textAnchor={Math.cos(a)>0? 'start':'end'} dominantBaseline="middle" fill="#6f6658">{CRITERIA_SHORT[i]}</text>
+                        </g>
+                    );
+                })}
+                {models.map((m, idx) => {
+                    const vec = getVec(m);
+                    const pts = vec.map((t, i) => {
+                        const a = angleFor(i);
+                        const [x,y] = xy(t, a); return `${x},${y}`;
+                    }).join(' ');
+                    const color = colors[idx % colors.length];
+                    return (
+                        <g key={m.slug}>
+                            <polyline points={pts} fill={color} opacity={0.12} stroke={color} strokeWidth={1.1} />
+                        </g>
+                    );
+                })}
+            </svg>
+            {showLegend && (
+                <div className="hero-legend">
+                    {models.map((m, idx)=> (
+                        <div key={m.slug} className="legend-line"><span className="legend-dot" style={{background: colors[idx%colors.length]}} />{m.id}</div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function RadarPanel({ models }) {
+    const [selected, setSelected] = useState(() => new Set(models.map(m=>m.slug)));
+    const toggle = (slug) => setSelected(prev => { const n = new Set(prev); if (n.has(slug)) n.delete(slug); else n.add(slug); return n; });
+    const chosen = models.filter(m => selected.has(m.slug));
+    return (
+        <div className="radar-wrap">
+            <RadarViz models={chosen} showLegend={false} />
+            <div className="radar-controls">
+                <div className="radar-grid">
+                    {models.map((m, idx)=> (
+                        <label key={m.slug} className="legend-check">
+                            <input type="checkbox" checked={selected.has(m.slug)} onChange={()=>toggle(m.slug)} />
+                            <span className="legend-swatch" style={{background: RADAR_COLORS[idx%RADAR_COLORS.length]}} />
+                            <span>{m.id}</span>
+                        </label>
+                    ))}
+                </div>
+                <div className="radar-note">Toggle models to compare shapes. Axes map to C1–C19.</div>
+            </div>
+        </div>
+    );
+}
+
+function RadarModal({ models, onClose }) {
+    const top10 = (models||[]).slice(0,10);
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content wide" onClick={e=>e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2 className="modal-title">Top Models — Criteria Radar</h2>
+                    <button className="modal-close" onClick={onClose}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div className="modal-body">
+                    <RadarPanel models={top10} />
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -776,6 +917,7 @@ function App() {
     const [activeTab, setActiveTab] = useState('leaderboard');
     const [selectedModel, setSelectedModel] = useState(null);
     const [modelSamples, setModelSamples] = useState([]);
+    const [radarOpen, setRadarOpen] = useState(false);
 
     // Load one manifest+summaries
     const loadOneManifest = useCallback(async (url, level) => {
@@ -823,7 +965,7 @@ function App() {
     
     // Initialize instruction levels (minimal + medium + high)
     useEffect(() => {
-        const urlMinimal = getQueryParam('manifest') || '../runs/run-mixed-50/manifest.json';
+        const urlMinimal = getQueryParam('manifest') || '../runs/run-mixed/manifest.json';
         const urlMedium = getQueryParam('manifest_medium') || '../runs/run-mixed-50-medium/manifest.json';
         const urlHigh = getQueryParam('manifest_high') || '../runs/run-mixed-50-high/manifest.json';
         (async () => {
@@ -877,8 +1019,6 @@ function App() {
                         highModels={modelsByLevel.high || []}
                     />
                 );
-            case 'trends':
-                return <Trends models={modelsByLevel[instructionLevel] || []} loadSamples={(m)=>loadSamples(m, instructionLevel)} />;
             case 'methodology':
                 return <Methodology />;
             case 'verses':
@@ -917,6 +1057,7 @@ function App() {
                         models={modelsByLevel[instructionLevel] || []}
                         onPrimary={() => setActiveTab('verses')}
                         onSecondary={() => window.scrollTo({ top: document.body.scrollHeight / 3, behavior: 'smooth' })}
+                        onOpenRadar={() => setRadarOpen(true)}
                     />
                 )}
                 {renderContent()}
@@ -940,6 +1081,13 @@ function App() {
                         setSelectedModel(null);
                         setModelSamples([]);
                     }}
+                />
+            )}
+
+            {radarOpen && (
+                <RadarModal
+                    models={modelsByLevel[instructionLevel] || []}
+                    onClose={() => setRadarOpen(false)}
                 />
             )}
         </div>

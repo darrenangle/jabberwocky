@@ -1,5 +1,5 @@
 {
-  "overall_reward": 0.9966666666666667,
+  "overall_reward": 1.0,
   "label_counts": {
     "very_low": 0,
     "low": 0,
@@ -7,7 +7,7 @@
     "high": 50
   },
   "metrics_mean": {
-    "composite_score": 0.9966666666666667,
+    "composite_score": 1.0,
     "C1_title_present": 1.0,
     "C2_quatrain_shape": 1.0,
     "C3_ballad_meter_echo": 1.0,
@@ -21,11 +21,12 @@
     "C11_coinage_count": 1.0,
     "C12_coinage_spread": 1.0,
     "C13_creature_naming": 1.0,
-    "C14_onomatopoeia": 0.98,
+    "C14_onomatopoeia": 1.0,
     "C15_alliteration_consonance": 1.0,
     "C16_tone_alignment": 1.0,
     "C17_no_verbatim_lines": 1.0,
-    "C18_canonical_budget": 0.96,
+    "C18_canonical_budget": 1.0,
+    "C19_syllable_tightness": 1.0,
     "label_high": 1.0,
     "label_medium": 0.0,
     "label_low": 0.0,

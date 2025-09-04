@@ -1,6 +1,6 @@
 {
-  "run_name": "run-20250904T194806Z",
-  "created_utc": "2025-09-04T19:48:06.900617Z",
+  "run_name": "run-20250904T205432Z",
+  "created_utc": "2025-09-04T20:54:32.104096Z",
   "seed": 19659174126,
   "num_examples": 50,
   "rollouts_per_example": 1,
@@ -8,52 +8,34 @@
   "system_prompt_mode": "neutral",
   "judge_model": "gpt-4.1-mini",
   "actor_models": [
-    "gpt-4.1-mini",
-    "gemini-2.5-flash-lite",
     "gpt-4.1-nano",
-    "hermes-4-405b",
-    "claude-3.7-sonnet",
-    "claude-opus-4.1",
-    "gpt-4o",
-    "deepseek-chat-v3.1",
-    "claude-opus-4",
-    "kimi-k2",
-    "grok-code-fast-1",
-    "claude-sonnet-4",
     "gemini-2.5-flash",
-    "claude-3-opus",
-    "gemini-2.5-pro",
+    "claude-3.7-sonnet",
+    "gemini-2.5-flash-lite",
+    "gpt-4.1-mini",
     "gpt-4.1",
+    "claude-sonnet-4",
+    "claude-3-opus",
+    "hermes-4-405b",
+    "gpt-4o",
+    "claude-opus-4.1",
+    "grok-code-fast-1",
+    "claude-opus-4",
+    "deepseek-chat-v3.1",
+    "kimi-k2",
+    "deepseek-chat-v3-0324",
+    "gemini-2.5-pro",
     "gpt-oss-120b",
-    "gpt-5-nano",
     "llama-4-maverick",
     "llama-4-scout",
-    "sonnet-3.5",
-    "llama-3.1-nemotron-ultra-253b-v1",
     "llama-3.3-70b-instruct",
-    "deepseek-chat-v3-0324",
+    "sonnet-3.5",
     "gpt-5-mini",
-    "llama-3.1-405b-instruct",
-    "gpt-5",
-    "qwen3-30b-a3b"
+    "llama-3.1-nemotron-ultra-253b-v1",
+    "gpt-5-nano",
+    "gpt-5"
   ],
   "models": [
-    {
-      "id": "gpt-4.1-mini",
-      "slug": "gpt-4.1-mini",
-      "provider": "openai",
-      "model": "gpt-4.1-mini",
-      "summary_path": "gpt-4.1-mini/summary.json",
-      "samples_path": "gpt-4.1-mini/samples.jsonl"
-    },
-    {
-      "id": "gemini-2.5-flash-lite",
-      "slug": "gemini-2.5-flash-lite",
-      "provider": "openrouter",
-      "model": "google/gemini-2.5-flash-lite",
-      "summary_path": "gemini-2.5-flash-lite/summary.json",
-      "samples_path": "gemini-2.5-flash-lite/samples.jsonl"
-    },
     {
       "id": "gpt-4.1-nano",
       "slug": "gpt-4.1-nano",
@@ -61,78 +43,6 @@
       "model": "gpt-4.1-nano",
       "summary_path": "gpt-4.1-nano/summary.json",
       "samples_path": "gpt-4.1-nano/samples.jsonl"
-    },
-    {
-      "id": "hermes-4-405b",
-      "slug": "hermes-4-405b",
-      "provider": "openrouter",
-      "model": "nousresearch/hermes-4-405b",
-      "summary_path": "hermes-4-405b/summary.json",
-      "samples_path": "hermes-4-405b/samples.jsonl"
-    },
-    {
-      "id": "claude-3.7-sonnet",
-      "slug": "claude-3.7-sonnet",
-      "provider": "openrouter",
-      "model": "anthropic/claude-3.7-sonnet",
-      "summary_path": "claude-3.7-sonnet/summary.json",
-      "samples_path": "claude-3.7-sonnet/samples.jsonl"
-    },
-    {
-      "id": "claude-opus-4.1",
-      "slug": "claude-opus-4.1",
-      "provider": "openrouter",
-      "model": "anthropic/claude-opus-4.1",
-      "summary_path": "claude-opus-4.1/summary.json",
-      "samples_path": "claude-opus-4.1/samples.jsonl"
-    },
-    {
-      "id": "gpt-4o",
-      "slug": "gpt-4o",
-      "provider": "openrouter",
-      "model": "openai/gpt-4o",
-      "summary_path": "gpt-4o/summary.json",
-      "samples_path": "gpt-4o/samples.jsonl"
-    },
-    {
-      "id": "deepseek-chat-v3.1",
-      "slug": "deepseek-chat-v3.1",
-      "provider": "openrouter",
-      "model": "deepseek/deepseek-chat-v3.1",
-      "summary_path": "deepseek-chat-v3.1/summary.json",
-      "samples_path": "deepseek-chat-v3.1/samples.jsonl"
-    },
-    {
-      "id": "claude-opus-4",
-      "slug": "claude-opus-4",
-      "provider": "openrouter",
-      "model": "anthropic/claude-opus-4",
-      "summary_path": "claude-opus-4/summary.json",
-      "samples_path": "claude-opus-4/samples.jsonl"
-    },
-    {
-      "id": "kimi-k2",
-      "slug": "kimi-k2",
-      "provider": "openrouter",
-      "model": "moonshotai/kimi-k2",
-      "summary_path": "kimi-k2/summary.json",
-      "samples_path": "kimi-k2/samples.jsonl"
-    },
-    {
-      "id": "grok-code-fast-1",
-      "slug": "grok-code-fast-1",
-      "provider": "openrouter",
-      "model": "x-ai/grok-code-fast-1",
-      "summary_path": "grok-code-fast-1/summary.json",
-      "samples_path": "grok-code-fast-1/samples.jsonl"
-    },
-    {
-      "id": "claude-sonnet-4",
-      "slug": "claude-sonnet-4",
-      "provider": "openrouter",
-      "model": "anthropic/claude-sonnet-4",
-      "summary_path": "claude-sonnet-4/summary.json",
-      "samples_path": "claude-sonnet-4/samples.jsonl"
     },
     {
       "id": "gemini-2.5-flash",
@@ -143,20 +53,28 @@
       "samples_path": "gemini-2.5-flash/samples.jsonl"
     },
     {
-      "id": "claude-3-opus",
-      "slug": "claude-3-opus",
+      "id": "claude-3.7-sonnet",
+      "slug": "claude-3.7-sonnet",
       "provider": "openrouter",
-      "model": "anthropic/claude-3-opus",
-      "summary_path": "claude-3-opus/summary.json",
-      "samples_path": "claude-3-opus/samples.jsonl"
+      "model": "anthropic/claude-3.7-sonnet",
+      "summary_path": "claude-3.7-sonnet/summary.json",
+      "samples_path": "claude-3.7-sonnet/samples.jsonl"
     },
     {
-      "id": "gemini-2.5-pro",
-      "slug": "gemini-2.5-pro",
+      "id": "gemini-2.5-flash-lite",
+      "slug": "gemini-2.5-flash-lite",
       "provider": "openrouter",
-      "model": "google/gemini-2.5-pro",
-      "summary_path": "gemini-2.5-pro/summary.json",
-      "samples_path": "gemini-2.5-pro/samples.jsonl"
+      "model": "google/gemini-2.5-flash-lite",
+      "summary_path": "gemini-2.5-flash-lite/summary.json",
+      "samples_path": "gemini-2.5-flash-lite/samples.jsonl"
+    },
+    {
+      "id": "gpt-4.1-mini",
+      "slug": "gpt-4.1-mini",
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "summary_path": "gpt-4.1-mini/summary.json",
+      "samples_path": "gpt-4.1-mini/samples.jsonl"
     },
     {
       "id": "gpt-4.1",
@@ -167,20 +85,100 @@
       "samples_path": "gpt-4.1/samples.jsonl"
     },
     {
+      "id": "claude-sonnet-4",
+      "slug": "claude-sonnet-4",
+      "provider": "openrouter",
+      "model": "anthropic/claude-sonnet-4",
+      "summary_path": "claude-sonnet-4/summary.json",
+      "samples_path": "claude-sonnet-4/samples.jsonl"
+    },
+    {
+      "id": "claude-3-opus",
+      "slug": "claude-3-opus",
+      "provider": "openrouter",
+      "model": "anthropic/claude-3-opus",
+      "summary_path": "claude-3-opus/summary.json",
+      "samples_path": "claude-3-opus/samples.jsonl"
+    },
+    {
+      "id": "hermes-4-405b",
+      "slug": "hermes-4-405b",
+      "provider": "openrouter",
+      "model": "nousresearch/hermes-4-405b",
+      "summary_path": "hermes-4-405b/summary.json",
+      "samples_path": "hermes-4-405b/samples.jsonl"
+    },
+    {
+      "id": "gpt-4o",
+      "slug": "gpt-4o",
+      "provider": "openrouter",
+      "model": "openai/gpt-4o",
+      "summary_path": "gpt-4o/summary.json",
+      "samples_path": "gpt-4o/samples.jsonl"
+    },
+    {
+      "id": "claude-opus-4.1",
+      "slug": "claude-opus-4.1",
+      "provider": "openrouter",
+      "model": "anthropic/claude-opus-4.1",
+      "summary_path": "claude-opus-4.1/summary.json",
+      "samples_path": "claude-opus-4.1/samples.jsonl"
+    },
+    {
+      "id": "grok-code-fast-1",
+      "slug": "grok-code-fast-1",
+      "provider": "openrouter",
+      "model": "x-ai/grok-code-fast-1",
+      "summary_path": "grok-code-fast-1/summary.json",
+      "samples_path": "grok-code-fast-1/samples.jsonl"
+    },
+    {
+      "id": "claude-opus-4",
+      "slug": "claude-opus-4",
+      "provider": "openrouter",
+      "model": "anthropic/claude-opus-4",
+      "summary_path": "claude-opus-4/summary.json",
+      "samples_path": "claude-opus-4/samples.jsonl"
+    },
+    {
+      "id": "deepseek-chat-v3.1",
+      "slug": "deepseek-chat-v3.1",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-chat-v3.1",
+      "summary_path": "deepseek-chat-v3.1/summary.json",
+      "samples_path": "deepseek-chat-v3.1/samples.jsonl"
+    },
+    {
+      "id": "kimi-k2",
+      "slug": "kimi-k2",
+      "provider": "openrouter",
+      "model": "moonshotai/kimi-k2",
+      "summary_path": "kimi-k2/summary.json",
+      "samples_path": "kimi-k2/samples.jsonl"
+    },
+    {
+      "id": "deepseek-chat-v3-0324",
+      "slug": "deepseek-chat-v3-0324",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-chat-v3-0324",
+      "summary_path": "deepseek-chat-v3-0324/summary.json",
+      "samples_path": "deepseek-chat-v3-0324/samples.jsonl"
+    },
+    {
+      "id": "gemini-2.5-pro",
+      "slug": "gemini-2.5-pro",
+      "provider": "openrouter",
+      "model": "google/gemini-2.5-pro",
+      "summary_path": "gemini-2.5-pro/summary.json",
+      "samples_path": "gemini-2.5-pro/samples.jsonl"
+    },
+    {
       "id": "gpt-oss-120b",
       "slug": "gpt-oss-120b",
       "provider": "openrouter",
       "model": "openai/gpt-oss-120b",
       "summary_path": "gpt-oss-120b/summary.json",
       "samples_path": "gpt-oss-120b/samples.jsonl"
-    },
-    {
-      "id": "gpt-5-nano",
-      "slug": "gpt-5-nano",
-      "provider": "openai",
-      "model": "gpt-5-nano",
-      "summary_path": "gpt-5-nano/summary.json",
-      "samples_path": "gpt-5-nano/samples.jsonl"
     },
     {
       "id": "llama-4-maverick",
@@ -199,22 +197,6 @@
       "samples_path": "llama-4-scout/samples.jsonl"
     },
     {
-      "id": "sonnet-3.5",
-      "slug": "sonnet-3.5",
-      "provider": "openrouter",
-      "model": "anthropic/claude-3.5-sonnet",
-      "summary_path": "sonnet-3.5/summary.json",
-      "samples_path": "sonnet-3.5/samples.jsonl"
-    },
-    {
-      "id": "llama-3.1-nemotron-ultra-253b-v1",
-      "slug": "llama-3.1-nemotron-ultra-253b-v1",
-      "provider": "openrouter",
-      "model": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
-      "summary_path": "llama-3.1-nemotron-ultra-253b-v1/summary.json",
-      "samples_path": "llama-3.1-nemotron-ultra-253b-v1/samples.jsonl"
-    },
-    {
       "id": "llama-3.3-70b-instruct",
       "slug": "llama-3.3-70b-instruct",
       "provider": "openrouter",
@@ -223,12 +205,12 @@
       "samples_path": "llama-3.3-70b-instruct/samples.jsonl"
     },
     {
-      "id": "deepseek-chat-v3-0324",
-      "slug": "deepseek-chat-v3-0324",
+      "id": "sonnet-3.5",
+      "slug": "sonnet-3.5",
       "provider": "openrouter",
-      "model": "deepseek/deepseek-chat-v3-0324",
-      "summary_path": "deepseek-chat-v3-0324/summary.json",
-      "samples_path": "deepseek-chat-v3-0324/samples.jsonl"
+      "model": "anthropic/claude-3.5-sonnet",
+      "summary_path": "sonnet-3.5/summary.json",
+      "samples_path": "sonnet-3.5/samples.jsonl"
     },
     {
       "id": "gpt-5-mini",
@@ -239,12 +221,20 @@
       "samples_path": "gpt-5-mini/samples.jsonl"
     },
     {
-      "id": "llama-3.1-405b-instruct",
-      "slug": "llama-3.1-405b-instruct",
+      "id": "llama-3.1-nemotron-ultra-253b-v1",
+      "slug": "llama-3.1-nemotron-ultra-253b-v1",
       "provider": "openrouter",
-      "model": "meta-llama/llama-3.1-405b-instruct",
-      "summary_path": "llama-3.1-405b-instruct/summary.json",
-      "samples_path": "llama-3.1-405b-instruct/samples.jsonl"
+      "model": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+      "summary_path": "llama-3.1-nemotron-ultra-253b-v1/summary.json",
+      "samples_path": "llama-3.1-nemotron-ultra-253b-v1/samples.jsonl"
+    },
+    {
+      "id": "gpt-5-nano",
+      "slug": "gpt-5-nano",
+      "provider": "openai",
+      "model": "gpt-5-nano",
+      "summary_path": "gpt-5-nano/summary.json",
+      "samples_path": "gpt-5-nano/samples.jsonl"
     },
     {
       "id": "gpt-5",
@@ -253,14 +243,6 @@
       "model": "gpt-5",
       "summary_path": "gpt-5/summary.json",
       "samples_path": "gpt-5/samples.jsonl"
-    },
-    {
-      "id": "qwen3-30b-a3b",
-      "slug": "qwen3-30b-a3b",
-      "provider": "openrouter",
-      "model": "qwen/qwen3-30b-a3b",
-      "summary_path": "qwen3-30b-a3b/summary.json",
-      "samples_path": "qwen3-30b-a3b/samples.jsonl"
     }
   ]
 }

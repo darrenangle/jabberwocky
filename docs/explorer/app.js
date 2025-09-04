@@ -1,4 +1,4 @@
-const { useState, useEffect, useMemo, useCallback } = React;
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
 // Utility functions
 function addCacheBust(url, cacheBust) {
@@ -18,77 +18,90 @@ async function fetchJSON(url) {
     return res.json();
 }
 
-// Get query param helper
 function getQueryParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
 }
 
-// Corner ornaments component
-function CornerOrnaments() {
-    return (
-        <>
-            <div className="corner-ornament-tl" />
-            <div className="corner-ornament-tr" />
-            <div className="corner-ornament-bl" />
-            <div className="corner-ornament-br" />
-        </>
-    );
+// Normalize score to display format (multiply by 100)
+function normalizeScore(score) {
+    return Math.round((score || 0) * 1000);
 }
 
-// Header component
-function CodexHeader({ manifestUrl, onManifestLoad, error }) {
-    const [inputValue, setInputValue] = useState(manifestUrl || '');
-    const [subtitle, setSubtitle] = useState("'Twas brillig, and the slithy models...");
+// Header component with integrated navigation
+function Header({ activeTab, onTabChange }) {
+    const [subtitle, setSubtitle] = useState(0);
     
     const subtitles = [
-        "'Twas brillig, and the slithy models...",
-        "All mimsy were the benchmarks...",
-        "Beware the overfit, my son!",
-        "O frabjous score! Callooh! Callay!",
-        "And the mome RAGs outgrabe...",
-        "Through the looking glass of evals..."
+        "Instruction-following under creative constraints",
+        "Can models invent and obey?",
+        "A benchmark for non‑verifiable rewards",
+        "Style, structure, and surprise"
+    ];
+    
+    const tabs = [
+        { id: 'leaderboard', label: 'Overview' },
+        { id: 'trends', label: 'Trends' },
+        { id: 'verses', label: 'Verses' },
+        { id: 'about', label: 'Why' },
+        { id: 'methodology', label: 'Methods' }
     ];
     
     useEffect(() => {
         const interval = setInterval(() => {
-            setSubtitle(prev => {
-                const currentIndex = subtitles.indexOf(prev);
-                return subtitles[(currentIndex + 1) % subtitles.length];
-            });
-        }, 5000);
+            setSubtitle(prev => (prev + 1) % subtitles.length);
+        }, 4000);
         return () => clearInterval(interval);
     }, []);
     
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (inputValue) onManifestLoad(inputValue);
-    };
-    
     return (
-        <header className="codex-header">
-            <h1 className="codex-title">The Jabberwocky Codex</h1>
-            <p className="codex-subtitle">{subtitle}</p>
-            
-            <form className="manifest-controls" onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    className="manifest-input"
-                    placeholder="/runs/thy-quest-name/manifest.json"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                />
-                <button type="submit" className="load-button">
-                    Embark Upon Quest
-                </button>
-            </form>
-            
-            {error && (
-                <div className="error-message">
-                    ⚜️ {error}
+        <header className="header">
+            <div className="header-content">
+                <div className="header-left">
+                    <h1 className="app-title">Jabberwocky Eval</h1>
+                    <p className="app-subtitle">{subtitles[subtitle]}</p>
                 </div>
-            )}
+                <nav className="header-nav">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            className={`nav-button ${activeTab === tab.id ? 'active' : ''}`}
+                            onClick={() => onTabChange(tab.id)}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </nav>
+            </div>
         </header>
+    );
+}
+
+// Hero section for Overview
+function Hero({ manifest, models, onPrimary, onSecondary }) {
+    const topModel = models[0];
+    const attempts = (manifest?.num_examples || 0) * (manifest?.rollouts_per_example || 1);
+    const topScore = normalizeScore(topModel?.summary?.overall_reward || 0);
+    return (
+        <section className="hero">
+            <div className="hero-inner">
+                <div>
+                    <div className="hero-kicker">Creative constraint benchmarking</div>
+                    <h2 className="hero-title">Can your model write Jabberwocky on command?</h2>
+                    <p className="hero-copy">
+                        A focused test of instruction‑following and inventiveness under hard‑to‑verify constraints. Models must match
+                        style, keep meter, invent believable words, and build a narrative arc — without copying the original.
+                    </p>
+                    <div className="hero-cta">
+                        <button className="btn" onClick={onPrimary}>Browse poems</button>
+                        <button className="btn secondary" onClick={onSecondary}>See leaderboard</button>
+                    </div>
+                </div>
+                <div className="hero-art">
+                    <div className="hero-ribbon">{topModel ? `${topModel.id} • ${topScore} score • ${attempts} attempts` : 'Loading run...'}</div>
+                </div>
+            </div>
+        </section>
     );
 }
 
@@ -97,102 +110,230 @@ function Loading() {
     return (
         <div className="loading-container">
             <div className="loading-spinner" />
-            <div className="loading-text">Consulting the ancient scrolls...</div>
+            <div>Loading data...</div>
         </div>
     );
 }
 
-// Tab navigation
-function TabNav({ activeTab, onTabChange }) {
-    const tabs = [
-        { id: 'quest', label: 'Quest Log' },
-        { id: 'champions', label: 'Champions' },
-        { id: 'verses', label: 'Verses' }
-    ];
-    
-    return (
-        <nav className="tab-nav">
-            {tabs.map(tab => (
-                <button
-                    key={tab.id}
-                    className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-                    onClick={() => onTabChange(tab.id)}
-                >
-                    {tab.label}
-                </button>
-            ))}
-        </nav>
-    );
-}
 
-// Quest info component
-function QuestLog({ manifest }) {
-    if (!manifest) return null;
+// Trends component - line graphs
+function Trends({ models, loadSamples }) {
+    const [chartData, setChartData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [selectedModels, setSelectedModels] = useState([]);
     
-    const shareQuest = () => {
-        const text = `Behold! The ${manifest.run_name} quest hath ${manifest.models.length} noble models competing in the Jabberwocky trials!`;
-        const url = window.location.href;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    useEffect(() => {
+        async function loadChartData() {
+            setLoading(true);
+            const data = [];
+            
+            // Load top 10 models
+            const topModels = models.slice(0, 10);
+            for (const model of topModels) {
+                try {
+                    const samples = await loadSamples(model);
+                    if (samples && samples.length > 0) {
+                        const points = samples.map((s, i) => ({
+                            x: i + 1,
+                            y: (s.reward || 0) * 1000
+                        }));
+                        data.push({
+                            id: model.id,
+                            provider: model.provider,
+                            color: getModelColor(data.length),
+                            points: points,
+                            average: points.reduce((sum, p) => sum + p.y, 0) / points.length
+                        });
+                    }
+                } catch (err) {
+                    console.error('Error loading samples for', model.id, err);
+                }
+            }
+            
+            setChartData(data);
+            setSelectedModels(data.slice(0, 5).map(d => d.id));
+            setLoading(false);
+        }
+        
+        if (models.length > 0) {
+            loadChartData();
+        }
+    }, [models, loadSamples]);
+    
+    const getModelColor = (index) => {
+        const colors = [
+            '#8b5cf6', '#ef4444', '#10b981', '#f59e0b', '#3b82f6',
+            '#ec4899', '#14b8a6', '#f97316', '#a855f7', '#06b6d4'
+        ];
+        return colors[index % colors.length];
     };
     
+    if (loading) return <Loading />;
+    if (!chartData || chartData.length === 0) return <div className="empty-state"><p>No data available</p></div>;
+    
+    const filteredData = chartData.filter(d => selectedModels.includes(d.id));
+    const maxY = 1000;
+    
     return (
-        <div className="codex-section">
-            <button className="share-button" onClick={shareQuest} title="Share thy quest">
-                📜
-            </button>
-            <h2 className="section-title">Quest Chronicles</h2>
-            <div className="run-info-grid">
-                <div className="info-item">
-                    <span className="info-label">Quest Name</span>
-                    <span className="info-value">{manifest.run_name}</span>
+        <div className="trends-container">
+            <div className="card">
+                <h3>Performance Over 50 Attempts</h3>
+                <p className="chart-subtitle">Model scores across all poem generation attempts</p>
+                
+                <div className="chart-wrapper">
+                    <svg viewBox="0 0 800 400" className="line-chart">
+                        {/* Grid lines */}
+                        {[0, 200, 400, 600, 800, 1000].map(y => (
+                            <g key={y}>
+                                <line
+                                    x1="60"
+                                    y1={350 - (y / maxY * 300)}
+                                    x2="750"
+                                    y2={350 - (y / maxY * 300)}
+                                    stroke="rgba(148, 163, 184, 0.2)"
+                                    strokeDasharray="2,2"
+                                />
+                                <text
+                                    x="50"
+                                    y={355 - (y / maxY * 300)}
+                                    textAnchor="end"
+                                    className="chart-label"
+                                >
+                                    {y}
+                                </text>
+                            </g>
+                        ))}
+                        
+                        {/* Lines */}
+                        {filteredData.map(series => (
+                            <g key={series.id}>
+                                <polyline
+                                    points={series.points.map((p, i) => 
+                                        `${60 + (i / 49) * 690},${350 - (p.y / maxY * 300)}`
+                                    ).join(' ')}
+                                    fill="none"
+                                    stroke={series.color}
+                                    strokeWidth="3"
+                                    opacity="0.9"
+                                />
+                            </g>
+                        ))}
+                        
+                        {/* X axis */}
+                        <line x1="60" y1="350" x2="750" y2="350" stroke="rgba(148, 163, 184, 0.4)" />
+                        <text x="405" y="390" textAnchor="middle" className="chart-label">Attempt Number</text>
+                    </svg>
                 </div>
-                <div className="info-item">
-                    <span className="info-label">Commenced</span>
-                    <span className="info-value">{manifest.created_utc}</span>
-                </div>
-                <div className="info-item">
-                    <span className="info-label">Arbiter</span>
-                    <span className="info-value">{manifest.judge_model}</span>
-                </div>
-                <div className="info-item">
-                    <span className="info-label">Arcane Seed</span>
-                    <span className="info-value">{manifest.seed}</span>
-                </div>
-                <div className="info-item">
-                    <span className="info-label">Trials</span>
-                    <span className="info-value">{manifest.num_examples}</span>
-                </div>
-                <div className="info-item">
-                    <span className="info-label">Attempts</span>
-                    <span className="info-value">{manifest.rollouts_per_example}</span>
-                </div>
-                <div className="info-item">
-                    <span className="info-label">Champions</span>
-                    <span className="info-value">{manifest.models.length}</span>
-                </div>
-                <div className="info-item">
-                    <span className="info-label">Incantation</span>
-                    <span className="info-value">{manifest.system_prompt_mode}</span>
+                
+                <div className="model-legend">
+                    {chartData.map(series => (
+                        <label key={series.id} className="legend-item">
+                            <input
+                                type="checkbox"
+                                checked={selectedModels.includes(series.id)}
+                                onChange={(e) => {
+                                    if (e.target.checked) {
+                                        setSelectedModels([...selectedModels, series.id]);
+                                    } else {
+                                        setSelectedModels(selectedModels.filter(id => id !== series.id));
+                                    }
+                                }}
+                            />
+                            <span className="legend-color" style={{backgroundColor: series.color}} />
+                            <span className="legend-label">{series.id}</span>
+                            <span className="legend-avg">avg: {Math.round(series.average)}</span>
+                        </label>
+                    ))}
                 </div>
             </div>
         </div>
     );
 }
 
-// Champions leaderboard
-function Champions({ models }) {
-    const [hoveredModel, setHoveredModel] = useState(null);
-    
+// About component - explains why this benchmark matters
+function About() {
+    return (
+        <div className="methodology-content">
+            <div className="card">
+                <h3>Why this benchmark matters</h3>
+                <p className="intro">
+                    Writing a Jabberwocky‑style poem on command forces a model to do two hard things at once: obey precise formal
+                    instructions and invent convincingly. That combination is a sharp probe of instruction‑following under creative constraints.
+                </p>
+            </div>
+            <div className="card">
+                <h3>What it really tests</h3>
+                <div className="rubric-grid">
+                    <div className="rubric-item"><div className="rubric-score">Follow the brief</div><div className="rubric-desc">Hold meter, rhyme and stanza shape while keeping tone consistent.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">Inventive control</div><div className="rubric-desc">Coin phonologically plausible nonsense words and deploy them purposefully.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">Narrative arc</div><div className="rubric-desc">Build a clear arc: warning → preparation → encounter → resolution → return.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">Anti‑copying</div><div className="rubric-desc">Avoid verbatim reuse; stay within a small “canonical budget”.</div></div>
+                </div>
+            </div>
+            <div className="card">
+                <h3>Secondary purpose</h3>
+                <p>
+                    This site doubles as a template for <strong>non‑verifiable reward modeling</strong> in creative domains. Even when “ground truth”
+                    is fuzzy, structured judges can score style‑matching, coinage quality, and arc building with transparent, reproducible checks.
+                </p>
+            </div>
+        </div>
+    );
+}
+
+// Methodology component - explains the rubric and judging
+function Methodology() {
+    return (
+        <div className="methodology-content">
+            <div className="card">
+                <h3>How scoring works</h3>
+                <p className="intro">Reward is the mean of 18 binary checks applied by an LLM judge. The checks cover form, style, coinage, and story arc. No gold labels; just crisp, reproducible constraints.</p>
+            </div>
+            <div className="card">
+                <h3>The 18 checks (glance)</h3>
+                <div className="rubric-grid">
+                    <div className="rubric-item"><div className="rubric-score">C1 Title</div><div className="rubric-desc">Non‑empty title preceding the first stanza.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C2 Quatrains</div><div className="rubric-desc">Mostly 4‑line stanzas; sensible count overall.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C3 Meter echo</div><div className="rubric-desc">Alternating longer/shorter lines across stanzas.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C4 Rhyme</div><div className="rubric-desc">(2,4) rhyme; ABAB when appropriate.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C5 Ring close</div><div className="rubric-desc">Final stanza echoes the opening.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C6 Admonition</div><div className="rubric-desc">An early warning (e.g., “Beware…”).</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C7 Preparation</div><div className="rubric-desc">Tool/resolve/wait/plan before the encounter.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C8 Encounter</div><div className="rubric-desc">A clear meeting with the foe or obstacle.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C9 Decisive act</div><div className="rubric-desc">Climactic action that resolves tension.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C10 Return/joy</div><div className="rubric-desc">Homecoming and celebration.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C11 Coinage count</div><div className="rubric-desc">Enough distinct invented words.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C12 Coinage spread</div><div className="rubric-desc">Coinages appear across stanzas.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C13 Creature naming</div><div className="rubric-desc">A named adversary (Jabberwock‑like).</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C14 Onomatopoeia</div><div className="rubric-desc">Burbles, snickersnacks, and friends.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C15 Alliteration</div><div className="rubric-desc">Consonance/assonance used well.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C16 Tone</div><div className="rubric-desc">Whimsical, brisk, and adventurous.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C17 No verbatim</div><div className="rubric-desc">Avoids copying canonical lines.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C18 Canonical budget</div><div className="rubric-desc">Stays under allowed canonical reuse.</div></div>
+                </div>
+            </div>
+            <div className="card">
+                <h3>Judge and labels</h3>
+                <p>Default judge: GPT‑4.1‑mini. Labels reflect satisfied checks:</p>
+                <ul className="label-list">
+                    <li><strong>High</strong>: ≥ 12 checks</li>
+                    <li><strong>Medium</strong>: 9–11</li>
+                    <li><strong>Low</strong>: 6–8</li>
+                    <li><strong>Very Low</strong>: ≤ 5</li>
+                </ul>
+            </div>
+        </div>
+    );
+}
+
+// Model Leaderboard
+function Leaderboard({ models, onModelClick }) {
     const sortedModels = useMemo(() => 
         [...models].sort((a, b) => (b.summary?.overall_reward || 0) - (a.summary?.overall_reward || 0)),
         [models]
     );
     
-    const shareChampion = (model, rank) => {
-        const text = `${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '⚔️'} ${model.id} achieves a mighty score of ${(model.summary?.overall_reward || 0).toFixed(3)} in the Jabberwocky trials!`;
-        const url = window.location.href;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-    };
+    const maxScore = sortedModels[0]?.summary?.overall_reward || 1;
     
     const getRankClass = (rank) => {
         if (rank === 1) return 'rank-1';
@@ -202,75 +343,188 @@ function Champions({ models }) {
     };
     
     return (
-        <div className="codex-section">
-            <h2 className="section-title">Noble Champions</h2>
-            <div className="leaderboard-scroll">
+        <>
+            <div className="card benchmark-intro">
+                <h3>Jabberwocky Benchmark</h3>
+                <p>Structured creativity under pressure: match Carroll’s form, coin words that feel right, and carry a story arc — no copying. If a model can do that on demand, it’s probably good at following tricky instructions while inventing.</p>
+                <p className="intro-meta">18 binary checks • LLM judge • built with verifiers</p>
+            </div>
+            
+            <div className="leaderboard">
                 {sortedModels.map((model, index) => {
-                    const rank = index + 1;
-                    const score = model.summary?.overall_reward || 0;
-                    const maxScore = sortedModels[0]?.summary?.overall_reward || 1;
-                    const scorePercent = (score / maxScore) * 100;
-                    
-                    return (
-                        <div 
-                            key={model.slug}
-                            className="leaderboard-item"
-                            onMouseEnter={() => setHoveredModel(model.slug)}
-                            onMouseLeave={() => setHoveredModel(null)}
-                            onClick={() => shareChampion(model, rank)}
-                        >
-                            <div className={`rank-badge ${getRankClass(rank)}`}>
-                                {rank}
-                            </div>
-                            
-                            <div className="model-info">
-                                <div className="model-name">{model.id}</div>
-                                <div className="model-provider">{model.provider}</div>
-                            </div>
-                            
-                            <div className="score-bar">
-                                <div 
-                                    className="score-fill"
-                                    style={{ 
-                                        width: `${scorePercent}%`,
-                                        opacity: hoveredModel === model.slug ? 1 : 0.8
-                                    }}
-                                />
-                            </div>
-                            
-                            <div className="model-score">
-                                {score.toFixed(3)}
+                const rank = index + 1;
+                const score = model.summary?.overall_reward || 0;
+                const scorePercent = (score / maxScore) * 100;
+                
+                return (
+                    <div 
+                        key={model.slug}
+                        className="model-row"
+                        onClick={() => onModelClick(model)}
+                    >
+                        <div className={`rank-badge ${getRankClass(rank)}`}>
+                            {rank}
+                        </div>
+                        
+                        <div className="model-info">
+                            <h3 className="model-name">{model.id}</h3>
+                            <div className="model-meta">
+                                <span className="model-provider">{model.provider}</span>
+                                <span className="click-hint">View poems →</span>
                             </div>
                         </div>
-                    );
-                })}
+                        
+                        <div className="score-bar-container">
+                            <div 
+                                className="score-bar"
+                                style={{ 
+                                    width: `${scorePercent}%`,
+                                    background: `linear-gradient(90deg, 
+                                        rgba(124, 58, 237, ${0.3 + (scorePercent/100) * 0.7}) 0%, 
+                                        rgba(37, 99, 235, ${0.2 + (scorePercent/100) * 0.6}) 100%)`
+                                }}
+                            />
+                        </div>
+                        
+                        <div className="score-display">
+                            <div className="score-value">{normalizeScore(score)}</div>
+                            <div className="score-label">SCORE</div>
+                        </div>
+                    </div>
+                );
+            })}
             </div>
-        </div>
+        </>
     );
 }
 
-// Sample card component
-function VerseCard({ sample }) {
+// Modal for model verses
+function ModelModal({ model, samples, onClose }) {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [touchStart, setTouchStart] = useState(0);
+    const [touchEnd, setTouchEnd] = useState(0);
+    
+    const sortedSamples = useMemo(() => 
+        [...samples].sort((a, b) => (b.reward || 0) - (a.reward || 0)).slice(0, 50),
+        [samples]
+    );
+    
+    const handleTouchStart = (e) => {
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+    
+    const handleTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+    
+    const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > 50;
+        const isRightSwipe = distance < -50;
+        
+        if (isLeftSwipe && currentIndex < sortedSamples.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+        }
+        if (isRightSwipe && currentIndex > 0) {
+            setCurrentIndex(currentIndex - 1);
+        }
+    };
+    
+    const handleKeyDown = (e) => {
+        if (e.key === 'ArrowLeft' && currentIndex > 0) {
+            setCurrentIndex(currentIndex - 1);
+        }
+        if (e.key === 'ArrowRight' && currentIndex < sortedSamples.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+        }
+        if (e.key === 'Escape') {
+            onClose();
+        }
+    };
+    
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [currentIndex]);
+    
+    const currentSample = sortedSamples[currentIndex];
+    
     return (
-        <div className="sample-card">
-            <div className="sample-meta">
-                <span>Scroll #{sample.i}</span>
-                <span>Merit: {sample.reward.toFixed(3)}</span>
-                <span>Seal: {sample.label || '—'}</span>
-                <span>Marks: {sample.criteria_yes}/18</span>
-                {sample.__modelId && <span>Scribe: {sample.__modelId}</span>}
-            </div>
-            <div className="sample-prompt">
-                <strong>The Challenge:</strong> {sample.prompt}
-            </div>
-            <div className="sample-poem">
-                {sample.poem}
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2 className="modal-title">{model.id}</h2>
+                    <button className="modal-close" onClick={onClose}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div 
+                    className="modal-body swipeable"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    {currentSample && (
+                        <div className="verse-card">
+                            <div className="modal-poem-meta">
+                                <div className="poem-score">
+                                    <span className="score-big">{normalizeScore(currentSample.reward)}</span>
+                                    <span className="score-label">SCORE</span>
+                                </div>
+                                <div className="poem-details">
+                                    <div className="poem-topic">Topic: {currentSample.info?.topic || 'Unknown'}</div>
+                                    <div className="poem-label">Quality: <span className={`label-${currentSample.label || 'none'}`}>{currentSample.label || '—'}</span></div>
+                                    <div className="poem-criteria">Criteria: {currentSample.criteria_yes || 0}/18</div>
+                                </div>
+                            </div>
+                            
+                            <div className="modal-poem-content">
+                                <div className="verse-content" dangerouslySetInnerHTML={{
+                                    __html: currentSample.poem.split('\n').map(line => 
+                                        line.replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                    ).join('<br />')
+                                }} />
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div className="modal-navigation">
+                        <button 
+                            className="nav-arrow nav-prev" 
+                            onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+                            disabled={currentIndex === 0}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <div className="nav-center">
+                            <div className="nav-counter">{currentIndex + 1} of {sortedSamples.length}</div>
+                            <div className="nav-hint">Swipe or use arrow keys</div>
+                        </div>
+                        <button 
+                            className="nav-arrow nav-next" 
+                            onClick={() => setCurrentIndex(Math.min(sortedSamples.length - 1, currentIndex + 1))}
+                            disabled={currentIndex === sortedSamples.length - 1}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
 
-// Verses (samples) component
+// Verses browser
 function Verses({ models, samples, loadSamples }) {
     const [filters, setFilters] = useState({
         modelSlug: '',
@@ -279,26 +533,25 @@ function Verses({ models, samples, loadSamples }) {
     });
     const [displayedSamples, setDisplayedSamples] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(0);
     
-    const pageSize = 20;
-    
-    // Load and filter samples
     const loadFilteredSamples = useCallback(async () => {
         setLoading(true);
         try {
             let allSamples = [];
             
-            if (!filters.modelSlug || filters.modelSlug === '*') {
-                // Load from multiple models (limit to prevent crashes)
-                const modelsToLoad = models.slice(0, 5);
-                for (const model of modelsToLoad) {
+            if (!filters.modelSlug) {
+                // Just show top samples from top 3 models
+                const topModels = models.slice(0, 3);
+                for (const model of topModels) {
                     const modelSamples = await loadSamples(model);
                     allSamples = allSamples.concat(
-                        modelSamples.slice(0, 50).map(s => ({
-                            ...s,
-                            __modelId: model.id
-                        }))
+                        modelSamples
+                            .sort((a, b) => (b.reward || 0) - (a.reward || 0))
+                            .slice(0, 10)
+                            .map(s => ({
+                                ...s,
+                                __modelId: model.id
+                            }))
                     );
                 }
             } else {
@@ -314,40 +567,34 @@ function Verses({ models, samples, loadSamples }) {
             
             // Apply filters
             const filtered = allSamples
-                .filter(s => s.reward >= filters.minReward)
+                .filter(s => (s.reward || 0) >= filters.minReward)
                 .filter(s => !filters.label || s.label === filters.label)
-                .sort((a, b) => (b.reward || 0) - (a.reward || 0));
+                .sort((a, b) => (b.reward || 0) - (a.reward || 0))
+                .slice(0, 50);
             
-            // Paginate
-            const start = 0;
-            const end = (page + 1) * pageSize;
-            setDisplayedSamples(filtered.slice(start, end));
-            
+            setDisplayedSamples(filtered);
             setLoading(false);
         } catch (err) {
             console.error('Error loading verses:', err);
             setLoading(false);
         }
-    }, [filters, models, loadSamples, page]);
+    }, [filters, models, loadSamples]);
     
     useEffect(() => {
-        loadFilteredSamples();
-    }, [loadFilteredSamples]);
+        if (models.length > 0) {
+            loadFilteredSamples();
+        }
+    }, [loadFilteredSamples, models]);
     
     return (
-        <div className="codex-section">
-            <h2 className="section-title">The Verses of Wonder</h2>
-            
-            <div className="filter-controls">
+        <div>
+            <div className="filter-bar">
                 <select
                     className="filter-select"
                     value={filters.modelSlug}
-                    onChange={(e) => {
-                        setFilters(prev => ({ ...prev, modelSlug: e.target.value }));
-                        setPage(0);
-                    }}
+                    onChange={(e) => setFilters(prev => ({ ...prev, modelSlug: e.target.value }))}
                 >
-                    <option value="*">First Five Champions</option>
+                    <option value="">Top 3 Models</option>
                     {models.map(m => (
                         <option key={m.slug} value={m.slug}>{m.id}</option>
                     ))}
@@ -356,7 +603,7 @@ function Verses({ models, samples, loadSamples }) {
                 <input
                     type="number"
                     className="filter-input"
-                    placeholder="Min merit"
+                    placeholder="Min score"
                     step="0.1"
                     min="0"
                     max="1"
@@ -372,37 +619,36 @@ function Verses({ models, samples, loadSamples }) {
                     value={filters.label}
                     onChange={(e) => setFilters(prev => ({ ...prev, label: e.target.value }))}
                 >
-                    <option value="">Any Seal</option>
+                    <option value="">All Labels</option>
                     <option value="very_low">Very Low</option>
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                 </select>
-                
-                <button className="apply-button" onClick={() => setPage(0)}>
-                    Apply
-                </button>
             </div>
             
             {loading ? (
                 <Loading />
             ) : (
-                <>
-                    {displayedSamples.map((sample, i) => (
-                        <VerseCard key={`${sample.__modelId}-${sample.i}-${i}`} sample={sample} />
-                    ))}
-                    
-                    {displayedSamples.length >= (page + 1) * pageSize && (
-                        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                            <button 
-                                className="load-button"
-                                onClick={() => setPage(prev => prev + 1)}
-                            >
-                                Reveal More Verses
-                            </button>
+                displayedSamples.map((sample, i) => (
+                    <div key={`${sample.__modelId}-${sample.i}-${i}`} className="verse-card">
+                        <div className="verse-meta">
+                            <span>{sample.__modelId}</span>
+                            <span>Score: {normalizeScore(sample.reward)}</span>
+                            <span>Label: {sample.label || '—'}</span>
                         </div>
-                    )}
-                </>
+                        
+                        <div className="verse-prompt">
+                            {sample.prompt}
+                        </div>
+                        
+                        <div className="verse-content" dangerouslySetInnerHTML={{
+                            __html: sample.poem.split('\n').map(line => 
+                                line.replace(/\*(.*?)\*/g, '<em>$1</em>')
+                            ).join('<br />')
+                        }} />
+                    </div>
+                ))
             )}
         </div>
     );
@@ -415,7 +661,10 @@ function App() {
     const [samples, setSamples] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('quest');
+    const [activeTab, setActiveTab] = useState('leaderboard');
+    const [selectedModel, setSelectedModel] = useState(null);
+    const [modelSamples, setModelSamples] = useState([]);
+    const [manifestUrlState, setManifestUrlState] = useState(null);
     
     // Load manifest and models
     const loadManifest = useCallback(async (url) => {
@@ -423,6 +672,7 @@ function App() {
             setLoading(true);
             setError(null);
             
+            setManifestUrlState(url);
             const manifestData = await fetchJSON(addCacheBust(url));
             setManifest(manifestData);
             
@@ -440,6 +690,9 @@ function App() {
                 });
             }
             
+            // Sort by score
+            loadedModels.sort((a, b) => (b.summary?.overall_reward || 0) - (a.summary?.overall_reward || 0));
+            
             setModels(loadedModels);
             setLoading(false);
         } catch (err) {
@@ -453,7 +706,7 @@ function App() {
         if (samples[model.slug]) return samples[model.slug];
         
         try {
-            const manifestUrl = getQueryParam('manifest');
+            const manifestUrl = getQueryParam('manifest') || manifestUrlState;
             if (!manifestUrl) return [];
             
             const url = addCacheBust(
@@ -483,56 +736,98 @@ function App() {
             setSamples(prev => ({ ...prev, [model.slug]: [] }));
             return [];
         }
-    }, [samples]);
+    }, [samples, manifestUrlState]);
     
-    // Initialize from URL params
+    // Handle model click
+    const handleModelClick = async (model) => {
+        const modelSamples = await loadSamples(model);
+        setSelectedModel(model);
+        setModelSamples(modelSamples);
+    };
+    
+    // Initialize using ?manifest=... with a sensible default
     useEffect(() => {
-        const manifestParam = getQueryParam('manifest');
-        if (manifestParam) {
-            loadManifest(manifestParam);
-        }
+        const url = getQueryParam('manifest') || '../runs/run-mixed-50/manifest.json';
+        loadManifest(url);
     }, [loadManifest]);
     
     const renderContent = () => {
         if (loading) return <Loading />;
         if (!manifest) {
             return (
-                <div className="codex-section" style={{ textAlign: 'center' }}>
-                    <h2 className="section-title">Welcome, Traveler</h2>
-                    <p style={{ fontStyle: 'italic', marginBottom: '1rem' }}>
-                        Enter the path to thy manifest scroll to begin the journey...
-                    </p>
-                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.875rem', color: 'var(--stone-mid)' }}>
-                        Example: /runs/run-mixed/manifest.json
-                    </p>
+                <div className="empty-state">
+                    <h3>Loading Jabberwocky Data...</h3>
                 </div>
             );
         }
         
         switch (activeTab) {
-            case 'quest':
-                return <QuestLog manifest={manifest} />;
-            case 'champions':
-                return <Champions models={models} />;
+            case 'leaderboard':
+                return <Leaderboard models={models} onModelClick={handleModelClick} />;
+            case 'trends':
+                return <Trends models={models} loadSamples={loadSamples} />;
+            case 'methodology':
+                return <Methodology />;
             case 'verses':
                 return <Verses models={models} samples={samples} loadSamples={loadSamples} />;
+            case 'about':
+                return <About />;
             default:
                 return null;
         }
     };
     
+    const shareResults = () => {
+        const topModel = models[0];
+        if (!topModel) return;
+        
+        const text = `${topModel.id} leads the Jabberwocky benchmark with a score of ${normalizeScore(topModel.summary?.overall_reward)}!`;
+        const url = window.location.href;
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    };
+    
     return (
-        <div className="codex-frame">
-            <CornerOrnaments />
-            <div className="codex-scroll">
-                <CodexHeader 
-                    manifestUrl={getQueryParam('manifest')} 
-                    onManifestLoad={loadManifest}
-                    error={error}
-                />
-                {manifest && <TabNav activeTab={activeTab} onTabChange={setActiveTab} />}
+        <div className="app-container">
+            <Header activeTab={activeTab} onTabChange={setActiveTab} />
+            
+            {error && (
+                <div className="error-banner">
+                    {error}
+                </div>
+            )}
+            
+            <main className="main-content">
+                {activeTab === 'leaderboard' && (
+                    <Hero
+                        manifest={manifest}
+                        models={models}
+                        onPrimary={() => setActiveTab('verses')}
+                        onSecondary={() => window.scrollTo({ top: document.body.scrollHeight / 3, behavior: 'smooth' })}
+                    />
+                )}
                 {renderContent()}
-            </div>
+            </main>
+            
+            {manifest && (
+                <button className="share-fab" onClick={shareResults}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+                        <polyline points="16 6 12 2 8 6" />
+                        <line x1="12" y1="2" x2="12" y2="15" />
+                    </svg>
+                </button>
+            )}
+            
+            {selectedModel && modelSamples.length > 0 && (
+                <ModelModal
+                    model={selectedModel}
+                    samples={modelSamples}
+                    onClose={() => {
+                        setSelectedModel(null);
+                        setModelSamples([]);
+                    }}
+                />
+            )}
         </div>
     );
 }

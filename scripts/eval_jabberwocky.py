@@ -66,6 +66,8 @@ def build_argparser() -> argparse.ArgumentParser:
     # Timeout defaults: keep CLI simple; use env ACTOR_TIMEOUT_SECONDS if needed
     p.add_argument("--openrouter-http-referer", type=str, default=None, help="Optional OpenRouter HTTP-Referer header")
     p.add_argument("--openrouter-x-title", type=str, default=None, help="Optional OpenRouter X-Title header")
+    # Merge behavior
+    p.add_argument("--merge-into-existing", action="store_true", help="Merge results into an existing outdir without dropping prior models (updates/overwrites per-model files for models you run)")
     # Convenience: load all OpenRouter/OpenAI models from registry
     p.add_argument("--all-openrouter", action="store_true", help="Evaluate all registry models with provider=openrouter (overrides --models/--actor-model)")
     p.add_argument("--all-openai", action="store_true", help="Evaluate all registry models with provider=openai (overrides --models/--actor-model)")
@@ -618,48 +620,91 @@ def main():
                 }
                 f.write(_json.dumps(row, ensure_ascii=False) + "\n")
 
-    # If outdir specified, write a run-level manifest and models summary
+    # If outdir specified, write or merge a run-level manifest and models summary
     if args.outdir:
         os.makedirs(args.outdir, exist_ok=True)
-        run_name = args.run_name or datetime.utcnow().strftime("run-%Y%m%dT%H%M%SZ")
-        manifest = {
-            "run_name": run_name,
-            "created_utc": datetime.utcnow().isoformat() + "Z",
-            "seed": args.seed,
-            "num_examples": effective_n,
-            "rollouts_per_example": effective_rollouts,
-            "eval_hint_profile": args.eval_hint_profile,
-            "system_prompt_mode": args.system_prompt_mode,
-            "judge_model": args.judge_model,
-            "actor_models": [],
-            "models": [],
-        }
-        models_summary = []
-        # Only include successfully summarized models to avoid broken manifest entries
+        manifest_path = os.path.join(args.outdir, "manifest.json")
+        models_summary_path = os.path.join(args.outdir, "models_summary.json")
+
+        manifest: Dict[str, Any]
+        merged = False
+        if args.merge_into_existing and os.path.exists(manifest_path):
+            try:
+                with open(manifest_path, "r", encoding="utf-8") as f:
+                    manifest = _json.load(f)
+                merged = True
+            except Exception:
+                # Fall back to new manifest on parse error
+                merged = False
+                manifest = {}
+        else:
+            manifest = {}
+
+        if not merged or not manifest:
+            run_name = args.run_name or datetime.utcnow().strftime("run-%Y%m%dT%H%M%SZ")
+            manifest = {
+                "run_name": run_name,
+                "created_utc": datetime.utcnow().isoformat() + "Z",
+                "seed": args.seed,
+                "num_examples": effective_n,
+                "rollouts_per_example": effective_rollouts,
+                "eval_hint_profile": args.eval_hint_profile,
+                "system_prompt_mode": args.system_prompt_mode,
+                "judge_model": args.judge_model,
+                "actor_models": [],
+                "models": [],
+            }
+
+        # Build dicts for easy merge
+        existing_models = {m.get("id"): m for m in (manifest.get("models") or [])}
+        existing_actor_models = list(manifest.get("actor_models") or [])
+
+        # Merge new summaries into models_summary.json
+        existing_models_summary: Dict[str, Any] = {}
+        if args.merge_into_existing and os.path.exists(models_summary_path):
+            try:
+                with open(models_summary_path, "r", encoding="utf-8") as f:
+                    ms_list = _json.load(f) or []
+                for row in ms_list:
+                    if isinstance(row, dict) and row.get("spec"):
+                        existing_models_summary[row["spec"]] = row
+            except Exception:
+                existing_models_summary = {}
+
+        # Incorporate this run's models
         for spec, summ in summaries:
             cfg = cfg_by_spec.get(spec)
             if not cfg:
                 continue
             slug = _safe_slug(spec)
-            models_summary.append({
+            # Update models_summary entry
+            existing_models_summary[spec] = {
                 "spec": spec,
                 "provider": cfg.provider,
                 "model": cfg.model,
                 "summary": summ,
                 "path": f"{slug}/",
-            })
-            manifest["actor_models"].append(spec)
-            manifest["models"].append({
+            }
+            # Update manifest model entry
+            existing_models[spec] = {
                 "id": spec,
                 "slug": slug,
                 "provider": cfg.provider,
                 "model": cfg.model,
                 "summary_path": f"{slug}/summary.json",
                 "samples_path": f"{slug}/samples.jsonl",
-            })
-        with open(os.path.join(args.outdir, "models_summary.json"), "w", encoding="utf-8") as f:
-            f.write(_json.dumps(models_summary, ensure_ascii=False, indent=2))
-        with open(os.path.join(args.outdir, "manifest.json"), "w", encoding="utf-8") as f:
+            }
+            if spec not in existing_actor_models:
+                existing_actor_models.append(spec)
+
+        # Write merged models_summary and manifest
+        merged_models_summary_list = list(existing_models_summary.values())
+        with open(models_summary_path, "w", encoding="utf-8") as f:
+            f.write(_json.dumps(merged_models_summary_list, ensure_ascii=False, indent=2))
+
+        manifest["actor_models"] = existing_actor_models
+        manifest["models"] = list(existing_models.values())
+        with open(manifest_path, "w", encoding="utf-8") as f:
             f.write(_json.dumps(manifest, ensure_ascii=False, indent=2))
 
         # Aggregate all samples into a single run-level file for easy exploration
@@ -692,35 +737,35 @@ def main():
             # Non-fatal; per-model samples remain available
             pass
 
-        # Create a convenient index.html in the run folder that redirects to the explorer
-        # with the correct manifest query param.
+        # Create or refresh a convenient index.html unless merging into a nested non-docs dir
         try:
-            outdir_norm = os.path.normpath(args.outdir)
-            parts = outdir_norm.split(os.sep)
-            if "docs" in parts:
-                di = parts.index("docs")
-                tail_parts = []
-                explorer_rel_from_outdir = "explorer/index.html"  # default fallback
-                manifest_rel_from_explorer = "manifest.json"
-                if len(parts) > di + 1 and parts[di + 1] == "runs":
-                    # Compute ../../explorer/index.html from docs/runs/<tail...>
-                    tail_parts = parts[di + 2 :]
-                    ups = 1 + len(tail_parts)  # from runs/<tail...> back to docs/
-                    explorer_rel_from_outdir = ("../" * ups) + "explorer/index.html"
-                    # From explorer to the manifest location
-                    if tail_parts:
-                        manifest_rel_from_explorer = "../runs/" + "/".join(tail_parts) + "/manifest.json"
-                    else:
-                        manifest_rel_from_explorer = "../runs/manifest.json"
-                index_html = f"""<!doctype html>
+            if not args.merge_into_existing:
+                outdir_norm = os.path.normpath(args.outdir)
+                parts = outdir_norm.split(os.sep)
+                if "docs" in parts:
+                    di = parts.index("docs")
+                    tail_parts = []
+                    explorer_rel_from_outdir = "explorer/index.html"  # default fallback
+                    manifest_rel_from_explorer = "manifest.json"
+                    if len(parts) > di + 1 and parts[di + 1] == "runs":
+                        # Compute ../../explorer/index.html from docs/runs/<tail...>
+                        tail_parts = parts[di + 2 :]
+                        ups = 1 + len(tail_parts)  # from runs/<tail...> back to docs/
+                        explorer_rel_from_outdir = ("../" * ups) + "explorer/index.html"
+                        # From explorer to the manifest location
+                        if tail_parts:
+                            manifest_rel_from_explorer = "../runs/" + "/".join(tail_parts) + "/manifest.json"
+                        else:
+                            manifest_rel_from_explorer = "../runs/manifest.json"
+                    index_html = f"""<!doctype html>
 <html><head><meta charset=\"utf-8\"><title>Jabberwocky Run</title>
 <meta http-equiv=\"refresh\" content=\"0; url={explorer_rel_from_outdir}?manifest={manifest_rel_from_explorer}\">
 </head>
 <body>
   <p>Open explorer: <a href=\"{explorer_rel_from_outdir}?manifest={manifest_rel_from_explorer}\">View Run</a></p>
 </body></html>"""
-                with open(os.path.join(args.outdir, "index.html"), "w", encoding="utf-8") as f:
-                    f.write(index_html)
+                    with open(os.path.join(args.outdir, "index.html"), "w", encoding="utf-8") as f:
+                        f.write(index_html)
         except Exception as _e:
             # Non-fatal; the manifest and summaries are already written
             pass

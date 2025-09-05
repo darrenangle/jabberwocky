@@ -7,6 +7,7 @@
     "watch": "webpack --mode development --watch",
     "serve": "cd .. && npx http-server . -p 8000 -c-1",
     "dev": "npm run build && npm run serve",
+    "dev:hot": "webpack serve --mode development",
     "build:gh-pages": "BUILD_TARGET=gh-pages webpack --mode production",
     "build:custom-domain": "BUILD_TARGET=custom-domain webpack --mode production",
     "serve:gh-pages": "cd .. && npx http-server . -p 8000 -c-1",
@@ -23,6 +24,7 @@
     "babel-loader": "^9.1.3",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
-    "copy-webpack-plugin": "^11.0.0"
+    "copy-webpack-plugin": "^11.0.0",
+    "webpack-dev-server": "^4.15.0"
   }
 }

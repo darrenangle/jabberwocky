@@ -29,6 +29,21 @@ module.exports = (env, argv) => {
       filename: bundleFilename,
       path: outputPath,
     },
+    devServer: {
+      static: [
+        {
+          directory: path.join(__dirname, 'dist'),
+        },
+        {
+          directory: path.join(__dirname, '..'),
+          publicPath: '/',
+          watch: false
+        }
+      ],
+      port: 8000,
+      hot: true,
+      open: false
+    },
     module: {
       rules: [
         {

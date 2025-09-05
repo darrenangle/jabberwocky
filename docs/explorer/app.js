@@ -1,6 +1,12 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import Chart from 'chart.js/auto';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
+import ReactDOM from "react-dom";
+import Chart from "chart.js/auto";
 
 // Utility functions
 function addCacheBust(url, cacheBust) {
@@ -35,20 +41,26 @@ function normalizeScore(score) {
 // If mean is unavailable, derive from total_score and sample count; else fall back to total_score.
 function computePoints(summary, attemptsFallback) {
   if (!summary) return 0;
-  const mean = (typeof summary.overall_reward === "number" && isFinite(summary.overall_reward))
-    ? Number(summary.overall_reward)
-    : (() => {
-        if (typeof summary.total_score === "number" && isFinite(summary.total_score)) {
-          const n = Number(summary.num_samples || attemptsFallback || 0);
-          if (n > 0) {
-            // total_score ≈ sum(reward_i * 100); mean = sum/100 / n
-            return Number(summary.total_score) / (n * 100);
+  const mean =
+    typeof summary.overall_reward === "number" &&
+    isFinite(summary.overall_reward)
+      ? Number(summary.overall_reward)
+      : (() => {
+          if (
+            typeof summary.total_score === "number" &&
+            isFinite(summary.total_score)
+          ) {
+            const n = Number(summary.num_samples || attemptsFallback || 0);
+            if (n > 0) {
+              // total_score ≈ sum(reward_i * 100); mean = sum/100 / n
+              return Number(summary.total_score) / (n * 100);
+            }
           }
-        }
-        return null;
-      })();
+          return null;
+        })();
   if (mean != null) return Math.round(mean * 5000);
-  if (typeof summary.total_score === "number") return Math.round(summary.total_score);
+  if (typeof summary.total_score === "number")
+    return Math.round(summary.total_score);
   return 0;
 }
 
@@ -59,7 +71,7 @@ function Header({ activeTab, onTabChange }) {
   const subtitles = [
     "Instruction-following under creative constraints",
     "Can models invent and obey?",
-    "A benchmark for non‑verifiable rewards",
+    "A benchmark for non-verifiable rewards",
     "Style, structure, and surprise",
   ];
 
@@ -127,13 +139,15 @@ function Hero({ manifest, models, onPrimary, onSecondary, onOpenRadar }) {
         <div>
           <div className="hero-kicker">Jabberwocky Bench</div>
           <h2 className="hero-title">
-            How well do LLMs imitate difficult poetry?
+            Quantifying poetic skill through structured imitation
           </h2>
           <p className="hero-copy">
-            A focused test of instruction‑following and inventiveness under
-            hard‑to‑verify constraints. Models must match style, keep meter,
-            invent believable words, and build a narrative arc — without copying
-            the original.
+            Jabberwocky Bench transforms the subjective assessment of creative
+            writing into measurable binary outcomes. Using 24 criteria derived
+            from prosodic analysis and computational poetics, an LLM judge
+            evaluates whether models can simultaneously follow formal
+            constraints, invent linguistically plausible neologisms, and
+            maintain narrative coherence — all while avoiding memorization.
           </p>
           <div className="hero-cta">
             <button className="btn" onClick={onPrimary}>
@@ -218,16 +232,16 @@ const CRITERIA_LABELS = [
   "Subtext",
 ];
 const RADAR_COLORS = [
-  "#1f77b4", // blue
-  "#e76f51", // terracotta
-  "#2a9d8f", // teal
-  "#f4a261", // apricot
-  "#bc6ff1", // lavender
-  "#06d6a0", // mint
-  "#ef476f", // magenta
-  "#0ea5e9", // light blue
-  "#ffb703", // goldenrod
-  "#8ecae6", // sky
+  "#10b981", // bright green (top performer)
+  "#06b6d4", // bright cyan
+  "#3b82f6", // bright blue
+  "#8b5cf6", // bright purple
+  "#ec4899", // bright pink
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#6366f1", // indigo
+  "#78716c", // gray
+  "#1f2937", // dark gray (lowest performer)
 ];
 
 function RadarViz({
@@ -263,53 +277,59 @@ function RadarViz({
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const ctx = canvasRef.current.getContext('2d');
-    
+    const ctx = canvasRef.current.getContext("2d");
+
     // Initial datasets
     const datasets = models.map((m, idx) => {
-      const color = (colorMap && colorMap[m.slug]) || colors[idx % colors.length];
-      
+      const color =
+        (colorMap && colorMap[m.slug]) || colors[idx % colors.length];
+
       return {
         label: m.id,
         data: getVec(m),
         fill: true,
-        backgroundColor: color + '25',
+        backgroundColor: color + "20",
         borderColor: color,
-        borderWidth: 1.5,
+        borderWidth: 2,
         pointBackgroundColor: color,
-        pointBorderColor: '#fff',
+        pointBorderColor: "#fff",
         pointBorderWidth: 1,
-        pointRadius: variant === "hero" ? 0 : 2,
-        pointHoverRadius: 4,
-        hidden: false
+        pointRadius: variant === "hero" ? 0 : 3,
+        pointHoverRadius: 5,
+        hidden: false,
       };
     });
 
-    chartRef.current = new Chart.Chart(ctx, {
-      type: 'radar',
+    chartRef.current = new Chart(ctx, {
+      type: "radar",
       data: {
         labels: CRITERIA_LABELS,
-        datasets: datasets
+        datasets: datasets,
       },
       options: {
         responsive: true,
         maintainAspectRatio: true,
         interaction: {
-          mode: 'point',
-          intersect: false
+          mode: "point",
+          intersect: false,
         },
         plugins: {
           legend: {
-            display: false
+            display: false,
           },
           tooltip: {
             enabled: variant !== "hero",
             callbacks: {
-              label: function(context) {
-                return context.dataset.label + ': ' + Math.round(context.parsed.r) + '%';
-              }
-            }
-          }
+              label: function (context) {
+                return (
+                  context.dataset.label +
+                  ": " +
+                  Math.round(context.parsed.r) +
+                  "%"
+                );
+              },
+            },
+          },
         },
         scales: {
           r: {
@@ -319,37 +339,37 @@ function RadarViz({
             ticks: {
               stepSize: 25,
               display: variant !== "hero",
-              callback: function(value) {
-                return value + '%';
+              callback: function (value) {
+                return value + "%";
               },
               font: {
-                size: variant === "hero" ? 10 : 12
-              }
+                size: variant === "hero" ? 10 : 12,
+              },
             },
             pointLabels: {
               display: true,
               font: {
                 size: variant === "hero" ? 10 : 12,
-                family: 'var(--ui)'
+                family: "var(--ui)",
               },
-              color: '#6f6658',
-              padding: variant === "hero" ? 5 : 10
+              color: "#6f6658",
+              padding: variant === "hero" ? 5 : 10,
             },
             grid: {
-              color: '#e7e2d9',
-              lineWidth: 1
+              color: "#e7e2d9",
+              lineWidth: 1,
             },
             angleLines: {
-              color: '#e7e2d9',
-              lineWidth: 1
-            }
-          }
+              color: "#e7e2d9",
+              lineWidth: 1,
+            },
+          },
         },
         layout: {
-          padding: variant === "hero" ? 0 : 20
+          padding: variant === "hero" ? 0 : 20,
         },
         animation: {
-          duration: 300
+          duration: 300,
         },
         onHover: (event, activeElements) => {
           if (activeElements.length > 0) {
@@ -359,8 +379,8 @@ function RadarViz({
           } else {
             handleHover(null);
           }
-        }
-      }
+        },
+      },
     });
 
     return () => {
@@ -375,21 +395,24 @@ function RadarViz({
     if (!chartRef.current) return;
 
     const chart = chartRef.current;
-    
+
     // Update dataset styles based on hover
     models.forEach((m, idx) => {
-      const color = (colorMap && colorMap[m.slug]) || colors[idx % colors.length];
+      const color =
+        (colorMap && colorMap[m.slug]) || colors[idx % colors.length];
       const isHover = effectiveHover === m.slug;
       const dim = effectiveHover && !isHover;
-      
+
       // More dramatic fade for non-hovered items
-      chart.data.datasets[idx].backgroundColor = color + (isHover ? '55' : dim ? '08' : '25');
-      chart.data.datasets[idx].borderColor = color + (isHover ? 'FF' : dim ? '40' : 'FF');
-      chart.data.datasets[idx].borderWidth = isHover ? 3 : dim ? 0.5 : 1.5;
+      chart.data.datasets[idx].backgroundColor =
+        color + (isHover ? "80" : dim ? "08" : "20");
+      chart.data.datasets[idx].borderColor =
+        color + (isHover ? "FF" : dim ? "40" : "FF");
+      chart.data.datasets[idx].borderWidth = isHover ? 3 : dim ? 0.5 : 2;
     });
-    
+
     // Update without animation for smooth hover effect
-    chart.update('none');
+    chart.update("none");
   }, [effectiveHover, models, colorMap]);
 
   return (
@@ -399,10 +422,7 @@ function RadarViz({
       onClick={variant === "hero" ? onOpenModal : undefined}
       title={variant === "hero" ? "Click to expand" : undefined}
     >
-      <canvas 
-        ref={canvasRef}
-        style={{ maxWidth: '100%', maxHeight: '100%' }}
-      />
+      <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%" }} />
       {showLegend && (
         <div className="hero-legend">
           {models.map((m, idx) => (
@@ -498,13 +518,11 @@ function RadarModal({ models, onClose }) {
 }
 
 // Analysis page: large radar + rubric spread
-function Analysis({
-  models,
-  instructionLevel,
-  onInstructionLevelChange,
-}) {
+function Analysis({ models, instructionLevel, onInstructionLevelChange }) {
   const allModels = useMemo(() => models || [], [models]);
-  const [selected, setSelected] = useState(() => new Set(allModels.slice(0, 10).map((m) => m.slug)));
+  const [selected, setSelected] = useState(
+    () => new Set(allModels.slice(0, 10).map((m) => m.slug))
+  );
   const [hoverSlug, setHoverSlug] = useState(null);
 
   useEffect(() => {
@@ -561,10 +579,21 @@ function Analysis({
 
   return (
     <div className="analysis">
-      <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: ".75rem", flexWrap: "wrap" }}>
+      <div
+        className="card"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: ".75rem",
+          flexWrap: "wrap",
+        }}
+      >
         <div>
           <h3 style={{ marginBottom: ".35rem" }}>Analysis</h3>
-          <div className="intro">Explore criteria performance and model radar overlays.</div>
+          <div className="intro">
+            Explore criteria performance and model radar overlays.
+          </div>
         </div>
         <div className="segmented" aria-label="Instruction level">
           <button
@@ -586,12 +615,35 @@ function Analysis({
         <div className="radar-side">
           <h3 style={{ marginBottom: ".5rem" }}>All Models — Radar</h3>
           <div className="radar-controls">
-            <div style={{ display: "flex", gap: ".4rem", marginBottom: ".25rem", flexWrap: "wrap" }}>
-              <button className="btn secondary" onClick={allOn}>Enable all</button>
-              <button className="btn secondary" onClick={allOff}>Clear</button>
-              <button className="btn secondary" onClick={() => setSelected(new Set(allModels.slice(0, 10).map((m) => m.slug)))}>Top 10</button>
+            <div
+              style={{
+                display: "flex",
+                gap: ".4rem",
+                marginBottom: ".25rem",
+                flexWrap: "wrap",
+              }}
+            >
+              <button className="btn secondary" onClick={allOn}>
+                Enable all
+              </button>
+              <button className="btn secondary" onClick={allOff}>
+                Clear
+              </button>
+              <button
+                className="btn secondary"
+                onClick={() =>
+                  setSelected(
+                    new Set(allModels.slice(0, 10).map((m) => m.slug))
+                  )
+                }
+              >
+                Top 10
+              </button>
             </div>
-            <div className="radar-grid" style={{ maxHeight: "400px", overflowY: "auto" }}>
+            <div
+              className="radar-grid"
+              style={{ maxHeight: "400px", overflowY: "auto" }}
+            >
               {allModels.map((m, idx) => (
                 <label
                   key={m.slug}
@@ -608,11 +660,15 @@ function Analysis({
                     className="legend-swatch"
                     style={{ background: colorMap[m.slug] }}
                   />
-                  <span>{idx + 1}. {m.id}</span>
+                  <span>
+                    {idx + 1}. {m.id}
+                  </span>
                 </label>
               ))}
             </div>
-            <div className="radar-note">Hover to focus a model; toggle to include/exclude.</div>
+            <div className="radar-note">
+              Hover to focus a model; toggle to include/exclude.
+            </div>
           </div>
         </div>
         <div className="radar-main">
@@ -629,7 +685,8 @@ function Analysis({
       <div className="card">
         <h3>Rubric Spread — Pass Rates by Criterion</h3>
         <div className="intro" style={{ marginBottom: "1rem" }}>
-          Aggregated across all models in this level. Higher bars mean models pass that check more often.
+          Aggregated across all models in this level. Higher bars mean models
+          pass that check more often.
         </div>
         <div className="criteria-chart">
           {spread.map((row, idx) => {
@@ -641,26 +698,36 @@ function Analysis({
                 <div className="criteria-header">
                   <span className="criteria-number">C{idx + 1}</span>
                   <span className="criteria-label">{row.label}</span>
-                  <span className={`criteria-percent ${isHardest ? 'hardest' : isEasiest ? 'easiest' : ''}`}>
+                  <span
+                    className={`criteria-percent ${
+                      isHardest ? "hardest" : isEasiest ? "easiest" : ""
+                    }`}
+                  >
                     {percent}%
                   </span>
                 </div>
                 <div className="criteria-bar-wrapper">
                   <div className="criteria-bar">
                     <div
-                      className={`criteria-fill ${isHardest ? 'hardest' : isEasiest ? 'easiest' : ''}`}
-                      style={{ 
+                      className={`criteria-fill ${
+                        isHardest ? "hardest" : isEasiest ? "easiest" : ""
+                      }`}
+                      style={{
                         width: `${percent}%`,
-                        background: isHardest ? '#ef4444' : isEasiest ? '#10b981' : undefined
+                        background: isHardest
+                          ? "#ef4444"
+                          : isEasiest
+                          ? "#10b981"
+                          : undefined,
                       }}
                     >
                       <span className="criteria-fill-label">{percent}%</span>
                     </div>
                   </div>
                   <div className="criteria-markers">
-                    <span className="marker" style={{ left: '25%' }} />
-                    <span className="marker" style={{ left: '50%' }} />
-                    <span className="marker" style={{ left: '75%' }} />
+                    <span className="marker" style={{ left: "25%" }} />
+                    <span className="marker" style={{ left: "50%" }} />
+                    <span className="marker" style={{ left: "75%" }} />
                   </div>
                 </div>
               </div>
@@ -675,7 +742,9 @@ function Analysis({
                 <div key={r.key} className="summary-item">
                   <span className="summary-rank">#{idx + 1}</span>
                   <span className="summary-label">{r.label}</span>
-                  <span className="summary-value">{Math.round(r.mean * 100)}%</span>
+                  <span className="summary-value">
+                    {Math.round(r.mean * 100)}%
+                  </span>
                 </div>
               ))}
             </div>
@@ -687,7 +756,9 @@ function Analysis({
                 <div key={r.key} className="summary-item">
                   <span className="summary-rank">#{idx + 1}</span>
                   <span className="summary-label">{r.label}</span>
-                  <span className="summary-value">{Math.round(r.mean * 100)}%</span>
+                  <span className="summary-value">
+                    {Math.round(r.mean * 100)}%
+                  </span>
                 </div>
               ))}
             </div>
@@ -880,64 +951,94 @@ function About() {
   return (
     <div className="methodology-content">
       <div className="card">
-        <h3>Why this benchmark matters</h3>
+        <h3>The challenge of evaluating creative capabilities</h3>
         <p className="intro">
-          Writing a Jabberwocky‑style poem on command forces a model to do two
-          hard things at once: obey precise formal instructions and invent
-          convincingly. That combination is a sharp probe of
-          instruction‑following under creative constraints.
+          Jabberwocky Bench transforms the subjective assessment of poetic skill
+          into a reproducible benchmark by decomposing creative imitation into
+          24 binary criteria. Each check probes a specific dimension of
+          instruction-following under creative constraints, from prosodic
+          control to morphological invention.
         </p>
       </div>
       <div className="card">
-        <h3>What it really tests</h3>
+        <h3>Technical approach</h3>
+        <p>
+          Built on the{" "}
+          <a
+            href="https://github.com/prime-intellect/verifiers"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Verifiers library
+          </a>{" "}
+          and compatible with the{" "}
+          <a
+            href="https://hub.primeintellect.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Prime Intellect Environments Hub
+          </a>
+          , this benchmark employs GPT-4-mini as an automated judge to evaluate
+          structured creative outputs. The approach demonstrates how LLM judges
+          can provide consistent evaluation of non-verifiable tasks when given
+          precise, decomposed criteria.
+        </p>
+      </div>
+      <div className="card">
+        <h3>Core capabilities tested</h3>
         <div className="rubric-grid">
           <div className="rubric-item">
-            <div className="rubric-score">Follow the brief</div>
+            <div className="rubric-score">Prosodic control</div>
             <div className="rubric-desc">
-              Hold meter, rhyme and stanza shape while keeping the classic arc in order.
+              Maintain ballad meter (8-6-8-6 syllables), ABAB/ABCB rhyme
+              schemes, and seven quatrain structure while avoiding mechanical
+              rigidity.
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">Inventive control</div>
+            <div className="rubric-score">Morphological invention</div>
             <div className="rubric-desc">
-              Coin phonologically plausible nonsense words and deploy them
-              purposefully.
+              Generate 8+ phonologically plausible portmanteaus distributed
+              across stanzas, demonstrating productive word formation.
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">Narrative arc</div>
+            <div className="rubric-score">Narrative coherence</div>
             <div className="rubric-desc">
-              Build a clear arc: warning → preparation → encounter → resolution
-              → return.
+              Execute the canonical hero's journey: warning → preparation →
+              encounter → triumph → celebration, with ring composition.
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">Anti‑copying</div>
+            <div className="rubric-score">Originality constraints</div>
             <div className="rubric-desc">
-              Avoid verbatim reuse; stay within a small “canonical budget”.
+              Avoid verbatim copying while maintaining stylistic fidelity.
+              Maximum 15% canonical word reuse enforces genuine creation.
             </div>
           </div>
         </div>
       </div>
       <div className="card">
-        <h3>When High instructions saturate</h3>
+        <h3>Instruction sensitivity as a diagnostic</h3>
         <p>
-          Seeing High‑instruction scores cluster near the ceiling is expected.
-          It shows that with a clear rubric, modern LLMs can execute. The useful
-          signal is the guidance required to get there — the{" "}
-          <strong>instruction sensitivity</strong>. Minimal reflects
-          “cold‑start” prior and self‑prompting ability; Medium shows how
-          quickly the model aligns with partial hints.
+          The benchmark evaluates models at three instruction levels: Minimal
+          (title only), Medium (with style hints), and High (full rubric). The
+          performance delta (ΔH) between these levels reveals a model's
+          zero-shot creative capabilities versus its ability to follow detailed
+          specifications. Models with low ΔH demonstrate robust internalized
+          understanding of the task.
         </p>
       </div>
       <div className="card">
-        <h3>Secondary purpose</h3>
+        <h3>Verifying the unverifiable</h3>
         <p>
-          This site doubles as a template for{" "}
-          <strong>non‑verifiable reward modeling</strong> in creative domains.
-          Even when “ground truth” is fuzzy, structured judges can score
-          style‑matching, coinage quality, and arc building with transparent,
-          reproducible checks.
+          This benchmark exemplifies a broader methodology for evaluating
+          creative AI capabilities. By decomposing subjective quality into
+          objective binary checks, we can create reproducible benchmarks for
+          tasks traditionally considered impossible to verify. The approach
+          extends to any domain where human judgment can be formalized into
+          structured criteria.
         </p>
       </div>
     </div>
@@ -949,176 +1050,840 @@ function Methodology() {
   return (
     <div className="methodology-content">
       <div className="card">
-        <h3>How scoring works</h3>
+        <h3>Evaluation methodology</h3>
         <p className="intro">
-          Reward is the mean of 22 binary checks applied by an LLM judge. The
-          checks cover form, style, coinage, arc, syllable tightness, rhyme
-          variety, and repetition guards. No gold labels; just crisp,
-          reproducible constraints.
+          Jabberwocky Bench employs a structured judge prompt with 24 binary
+          criteria, implemented via{" "}
+          <a
+            href="https://github.com/prime-intellect/verifiers"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Verifiers
+          </a>{" "}
+          for reproducibility. Each criterion is evaluated independently by
+          GPT-4-mini, producing a binary pass/fail decision. The final reward is
+          the arithmetic mean of all checks, normalized to [0, 1].
         </p>
       </div>
       <div className="card">
-        <h3>The checks (glance)</h3>
+        <h3>Criterion design principles</h3>
+        <p>
+          Each criterion is designed to be:
+          <strong> objectively verifiable</strong> (can be checked
+          algorithmically),
+          <strong> linguistically grounded</strong> (based on established
+          prosodic/poetic concepts), and <strong> discriminative</strong>{" "}
+          (distinguishes between quality levels). The criteria span four
+          dimensions: prosodic form, morphological invention, narrative
+          structure, and originality constraints.
+        </p>
+      </div>
+      <div className="card">
+        <h3>Judge implementation and scoring thresholds</h3>
+        <p>
+          The LLM judge (GPT-4-mini) evaluates each poem using a structured XML
+          prompt that enforces step-by-step reasoning. The judge first analyzes
+          each criterion in isolation, then produces a binary decision. This
+          approach minimizes position bias and ensures consistent evaluation.
+        </p>
+        <p style={{ marginTop: "1rem" }}>
+          Performance labels are assigned based on total satisfied criteria:
+        </p>
+        <ul className="label-list">
+          <li>
+            <strong>High</strong>: ≥ 12/24 criteria (50%+)
+          </li>
+          <li>
+            <strong>Medium</strong>: 9-11/24 criteria (37.5-45.8%)
+          </li>
+          <li>
+            <strong>Low</strong>: 6-8/24 criteria (25-33.3%)
+          </li>
+          <li>
+            <strong>Very Low</strong>: ≤ 5/24 criteria (&lt;21%)
+          </li>
+        </ul>
+        <p style={{ marginTop: "1rem", color: "#666", fontSize: "0.9rem" }}>
+          These thresholds were calibrated on a development set to align with
+          human intuitions about poem quality while maintaining sufficient
+          granularity for model comparison.
+        </p>
+      </div>
+
+      <div className="card">
+        <h3>The 24 binary criteria (exact judge questions)</h3>
         <div className="rubric-grid">
           <div className="rubric-item">
-            <div className="rubric-score">C1 Title</div>
+            <div className="rubric-score">C1_title_present</div>
             <div className="rubric-desc">
-              Is there a non‑empty title before the first stanza?
+              Is there a non-empty title line before the first stanza (not part
+              of stanza text)?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C2 Quatrains</div>
+            <div className="rubric-score">C2_quatrain_shape</div>
             <div className="rubric-desc">
-              Do all stanzas have 4 lines (total 5–8)?
+              Do all stanzas have 4 lines, and is the total stanza count between
+              5 and 8 (inclusive)?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C3 Meter echo</div>
+            <div className="rubric-score">C3_ballad_meter_echo</div>
             <div className="rubric-desc">
-              Do lines alternate long/short in ≥60% stanzas?
+              In ≥60% of stanzas, do lines alternate longer/shorter with ≥2
+              content-word difference?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C4 Rhyme</div>
+            <div className="rubric-score">C4_ballad_rhyme</div>
             <div className="rubric-desc">
-              Do (2,4) rhyme in ≥60% stanzas (no AABB dominance)?
+              In ≥60% of stanzas, do lines (2,4) rhyme (allowing slant rhyme),
+              and avoid AABB dominance?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C5 Ring close</div>
+            <div className="rubric-score">C5_ring_composition</div>
             <div className="rubric-desc">
-              Does the final stanza echo the opening?
+              Does the final stanza echo the opening with ≥2 repeated content
+              words/phrases or a clear refrain?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C6 Admonition</div>
+            <div className="rubric-score">C6_warning_admonition</div>
             <div className="rubric-desc">
-              Is there an early warning/caution?
+              Is there an early admonition (e.g., 'Beware …') or equivalent
+              caution to the protagonist?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C7 Preparation</div>
+            <div className="rubric-score">C7_preparation_armament</div>
             <div className="rubric-desc">
-              Is there visible preparation before the encounter?
+              Before the encounter, does the protagonist prepare
+              (tool/resolve/wait/plan)?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C8 Encounter</div>
+            <div className="rubric-score">C8_encounter_confrontation</div>
             <div className="rubric-desc">
-              Is there a clear meeting with the foe/obstacle?
+              Is there a clear meeting between protagonist and
+              adversary/obstacle?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C9 Decisive act</div>
+            <div className="rubric-score">C9_slaying_decisive_action</div>
             <div className="rubric-desc">
-              Is there a decisive action resolving tension?
+              Is there a decisive act that resolves the central tension?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C10 Return/joy</div>
+            <div className="rubric-score">C10_return_celebration</div>
             <div className="rubric-desc">
-              Is there a homecoming and celebration?
+              Is there a return/homecoming and jubilant acknowledgement?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C11 Coinage count</div>
+            <div className="rubric-score">C11_coinage_count</div>
             <div className="rubric-desc">
-              Are there ≥8 distinct invented words?
+              Are there ≥8 distinct invented coinages (not canonical or standard
+              English)?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C12 Coinage spread</div>
+            <div className="rubric-score">C12_coinage_spread</div>
             <div className="rubric-desc">
-              Does each stanza include a coinage?
+              Does each stanza contain ≥1 coinage?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C13 Creature naming</div>
+            <div className="rubric-score">C13_creature_naming</div>
             <div className="rubric-desc">
-              Is a non‑canonical creature named and central?
+              Is a non‑canonical creature/entity named and central to action
+              (not 'Jabberwock')?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C14 Onomatopoeia</div>
-            <div className="rubric-desc">Are there ≥2 onomatopoeic bursts?</div>
-          </div>
-          <div className="rubric-item">
-            <div className="rubric-score">C15 Alliteration</div>
+            <div className="rubric-score">C14_onomatopoeia</div>
             <div className="rubric-desc">
-              Do ≥2 stanzas show clear alliteration/consonance?
+              Are there ≥2 onomatopoeic bursts (e.g., 'snicker‑snack!', 'Pop!',
+              'Hiss!')?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C16 Arc order</div>
+            <div className="rubric-score">C15_alliteration_consonance</div>
             <div className="rubric-desc">
-              Do the beats occur in sequence: warning → preparation → encounter → decisive act → return?
+              Do ≥2 stanzas show clear within‑line alliteration/consonance
+              beyond incidental repeats?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C17 No verbatim</div>
+            <div className="rubric-score">C16_arc_order</div>
             <div className="rubric-desc">
-              Is no line verbatim from the canonical poem?
+              Do the arc beats appear in canonical order (warning → preparation
+              → encounter → decisive act → return/celebration)?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C18 Canonical budget</div>
-            <div className="rubric-desc">Are canonical tokens ≤8?</div>
-          </div>
-          <div className="rubric-item">
-            <div className="rubric-score">C19 Syllables</div>
+            <div className="rubric-score">C17_no_verbatim_lines</div>
             <div className="rubric-desc">
-              In every stanza, are long lines ~8–9 and short lines ~5–7?
+              Does no line exactly match the canonical poem?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C20 Rhyme variety</div>
+            <div className="rubric-score">C18_canonical_budget</div>
             <div className="rubric-desc">
-              Are (2,4) end rhymes varied across stanzas?
+              Are distinct canonical tokens ≤8, favoring new coinages?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C21 Repetition guard</div>
+            <div className="rubric-score">C19_syllable_tightness</div>
             <div className="rubric-desc">
-              Is no single content word overused?
+              In every quatrain stanza, are longer lines ≈8–9 syllables and
+              shorter lines ≈5–7 (Jabberwocky's ~8/6 pattern)?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C22 Coinage variety</div>
+            <div className="rubric-score">C20_rhyme_variety</div>
             <div className="rubric-desc">
-              Do coinages vary in roots/suffixes?
+              Across stanzas, are (2,4) end‑rhymes varied (no exact end word
+              reused >2 times excluding the ring echo)?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C23 Topic adherence</div>
+            <div className="rubric-score">C21_lexical_repetition_guard</div>
             <div className="rubric-desc">
-              Does the poem clearly address the given topic without switching subjects?
+              Outside the ring echo, is no single content word overused (e.g.,
+              >5 times or >8% of content words)?
             </div>
           </div>
           <div className="rubric-item">
-            <div className="rubric-score">C24 Subtext</div>
+            <div className="rubric-score">C22_coinage_variety</div>
             <div className="rubric-desc">
-              Is there a coherent implied layer beyond surface action?
+              Do coinages show ≥4 distinct roots (no single coined suffix
+              accounts for >50% of coinages)?
+            </div>
+          </div>
+          <div className="rubric-item">
+            <div className="rubric-score">C23_topic_adherence</div>
+            <div className="rubric-desc">
+              Does the poem clearly address the given topic (named or evident)
+              without substituting a different subject?
+            </div>
+          </div>
+          <div className="rubric-item">
+            <div className="rubric-score">C24_subtext</div>
+            <div className="rubric-desc">
+              Beyond surface action, is there a coherent implied layer
+              (motif/undertone) detectable across the poem?
             </div>
           </div>
         </div>
       </div>
       <div className="card">
-        <h3>Judge and labels</h3>
-        <p>Default judge: GPT‑4.1‑mini. Labels reflect satisfied checks:</p>
-        <ul className="label-list">
-          <li>
-            <strong>High</strong>: ≥ 12 checks
-          </li>
-          <li>
-            <strong>Medium</strong>: 9–11
-          </li>
-          <li>
-            <strong>Low</strong>: 6–8
-          </li>
-          <li>
-            <strong>Very Low</strong>: ≤ 5
-          </li>
-        </ul>
+        <h3>In-context calibration examples</h3>
+        <p>
+          The judge prompt includes three calibration examples representing
+          different quality levels to establish consistent evaluation standards.
+          These examples demonstrate how the 24 criteria apply to poems about
+          "Diet Coke" in the Jabberwocky style:
+        </p>
+        <div style={{ marginTop: "1rem" }}>
+          <h4
+            style={{
+              fontSize: "1rem",
+              marginBottom: "0.5rem",
+              fontWeight: "700",
+            }}
+          >
+            High Quality (23/24 criteria met) - "Dietwocky"
+          </h4>
+          <details style={{ marginBottom: "1rem" }}>
+            <summary
+              style={{
+                cursor: "pointer",
+                padding: "0.5rem",
+                background: "#f8f7f5",
+                borderRadius: "8px",
+                fontSize: "0.85rem",
+                fontWeight: "600",
+              }}
+            >
+              Click to view full poem and judge evaluation
+            </summary>
+            <div
+              style={{
+                fontSize: "0.8rem",
+                lineHeight: "1.4",
+                background: "#f8f7f5",
+                padding: "0.75rem",
+                borderRadius: "8px",
+                marginTop: "0.5rem",
+                fontFamily: "var(--mono)",
+              }}
+            >
+              <div style={{ fontWeight: "700", marginBottom: "1rem" }}>
+                Dietwocky
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                'Twas fizzlig, and the silv'ry cans
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Did clink and tinkle in the cave:
+                <br />
+                All zero were the sugargrams,
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;And mome throats outcrave.
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                "Beware the Sucrowock, my son!
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;The syruped bite, the caramel catch!
+                <br />
+                Beware the Jubjub thirst, and shun
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;The caffrinous Bandersnatch!"
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                He took his vorpal Diet‑Coke in hand;
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Long time the manxome thirst he sought—
+                <br />
+                So rested he by the NumNum stand
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;And stood awhile in thought.
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                And, as in uffish thought he stood,
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;The Sucrowock, with eyes of foam,
+                <br />
+                Came whiffling from the vending‑wood,
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;And burbled as it came!
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                Pop! Hiss! Pop! Hiss! and through and through
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;The silver tab went snicker‑snack!
+                <br />
+                He left it drained; and with its ring
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;He went galumphing back.
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                "And hast thou quenched the Sucrowock?
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Come to my arms, my beamish boy!
+                <br />
+                O frabjous day! Callooh! Callay!"
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;He chortled in his joy.
+              </div>
+
+              <div>
+                'Twas fizzlig, and the silv'ry cans
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Did clink and tinkle in the cave:
+                <br />
+                All zero were the sugargrams,
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;And mome throats outcrave.
+              </div>
+            </div>
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "0.75rem",
+                background: "#fff",
+                border: "1px solid #e7e2d9",
+                borderRadius: "8px",
+                fontSize: "0.75rem",
+                fontFamily: "var(--mono)",
+              }}
+            >
+              <strong style={{ fontSize: "0.85rem" }}>
+                Judge evaluation (23/24 pass):
+              </strong>
+              <pre
+                style={{
+                  marginTop: "0.5rem",
+                  whiteSpace: "pre-wrap",
+                  lineHeight: "1.4",
+                  color: "#444",
+                }}
+              >
+                &lt;think&gt;
+                <br /> &lt;C1_think&gt;Title present&lt;/C1_think&gt;
+                <br /> &lt;C2_think&gt;stanzas=8; quatrains=8 (100.0%) -&gt;
+                yes&lt;/C2_think&gt;
+                <br /> &lt;C3_think&gt;quatrains=8; alt_hits=6 (75.0%) -&gt;
+                yes&lt;/C3_think&gt;
+                <br /> &lt;C4_think&gt;quatrains=8; rhyme(2,4) hits=7 (87.5%)
+                -&gt; yes&lt;/C4_think&gt;
+                <br /> &lt;C5_think&gt;Ring echo present -&gt;
+                yes&lt;/C5_think&gt;
+                <br /> &lt;C6_think&gt;Admonition present -&gt;
+                yes&lt;/C6_think&gt;
+                <br /> &lt;C7_think&gt;Preparation present -&gt;
+                yes&lt;/C7_think&gt;
+                <br /> &lt;C8_think&gt;Encounter present -&gt;
+                yes&lt;/C8_think&gt; <br /> &lt;C9_think&gt;Decisive action
+                present -&gt; yes&lt;/C9_think&gt; <br />
+                &lt;C10_think&gt;Return/celebration present -&gt;
+                yes&lt;/C10_think&gt; <br />{" "}
+                &lt;C11_think&gt;distinct_coinages=12 -&gt;
+                yes&lt;/C11_think&gt; <br />
+                &lt;C12_think&gt;stanzas_with_coinage=8/8 -&gt;
+                yes&lt;/C12_think&gt; <br /> &lt;C13_think&gt;Creature named
+                (Sucrowock) -&gt; yes&lt;/C13_think&gt;
+                <br /> &lt;C14_think&gt;Onomatopoeia (Pop!, Hiss!, etc.) -&gt;
+                yes&lt;/C14_think&gt; <br />
+                &lt;C15_think&gt;Alliteration in multiple stanzas -&gt;
+                yes&lt;/C15_think&gt;
+                <br /> &lt;C16_think&gt;Arc sequence present in order -&gt;
+                yes&lt;/C16_think&gt; <br /> &lt;C17_think&gt;No verbatim
+                canonical lines -&gt; yes&lt;/C17_think&gt; <br />
+                &lt;C18_think&gt;Canonical tokens &lt;=8 -&gt;
+                yes&lt;/C18_think&gt; <br /> &lt;C19_think&gt;quatrains=8;
+                syllable_hits=6 (75.0%); samples: 8/6/8/6 | 9/6/8/6 -&gt;
+                no&lt;/C19_think&gt; <br /> &lt;C20_think&gt;unique_endings=7;
+                max_repeat=1 -&gt; yes&lt;/C20_think&gt;
+                <br /> &lt;C21_think&gt;content_tokens=180; top_word='day' x3
+                (1.7%) -&gt; yes&lt;/C21_think&gt; <br />{" "}
+                &lt;C22_think&gt;coinages=12; distinct_suffixes&gt;=8;
+                top_suffix_share&lt;=33% -&gt; yes&lt;/C22_think&gt; <br />
+                &lt;C23_think&gt;Topic explicitly sustained throughout -&gt;
+                yes&lt;/C23_think&gt; <br /> &lt;C24_think&gt;Consistent
+                undertone/subtext present -&gt; yes&lt;/C24_think&gt; <br />
+                &lt;/think&gt; <br /> &lt;C1&gt;yes&lt;/C1&gt;
+                <br />
+                &lt;C2&gt;yes&lt;/C2&gt;
+                <br /> &lt;C3&gt;yes&lt;/C3&gt;
+                <br />
+                &lt;C4&gt;yes&lt;/C4&gt;
+                <br /> &lt;C5&gt;yes&lt;/C5&gt;
+                <br />
+                &lt;C6&gt;yes&lt;/C6&gt;
+                <br /> &lt;C7&gt;yes&lt;/C7&gt;
+                <br />
+                &lt;C8&gt;yes&lt;/C8&gt;
+                <br /> &lt;C9&gt;yes&lt;/C9&gt;
+                <br />
+                &lt;C10&gt;yes&lt;/C10&gt;
+                <br /> &lt;C11&gt;yes&lt;/C11&gt;
+                <br />
+                &lt;C12&gt;yes&lt;/C12&gt;
+                <br /> &lt;C13&gt;yes&lt;/C13&gt;
+                <br />
+                &lt;C14&gt;yes&lt;/C14&gt;
+                <br /> &lt;C15&gt;yes&lt;/C15&gt;
+                <br />
+                &lt;C16&gt;yes&lt;/C16&gt;
+                <br /> &lt;C17&gt;yes&lt;/C17&gt;
+                <br />
+                &lt;C18&gt;yes&lt;/C18&gt;
+                <br /> &lt;C19&gt;no&lt;/C19&gt;
+                <br />
+                &lt;C20&gt;yes&lt;/C20&gt;
+                <br /> &lt;C21&gt;yes&lt;/C21&gt;
+                <br />
+                &lt;C22&gt;yes&lt;/C22&gt;
+                <br /> &lt;C23&gt;yes&lt;/C23&gt;
+                <br />
+                &lt;C24&gt;yes&lt;/C24&gt;
+              </pre>
+            </div>
+          </details>
+          <p style={{ fontSize: "0.85rem", color: "#666" }}>
+            Demonstrates excellent prosodic control, rich coinage ("fizzlig",
+            "Sucrowock"), complete narrative arc, and ring composition.
+          </p>
+        </div>
+        <div style={{ marginTop: "1.5rem" }}>
+          <h4
+            style={{
+              fontSize: "1rem",
+              marginBottom: "0.5rem",
+              fontWeight: "700",
+            }}
+          >
+            Medium Quality (16/24 criteria met)
+          </h4>
+          <details style={{ marginBottom: "1rem" }}>
+            <summary
+              style={{
+                cursor: "pointer",
+                padding: "0.5rem",
+                background: "#f8f7f5",
+                borderRadius: "8px",
+                fontSize: "0.85rem",
+                fontWeight: "600",
+              }}
+            >
+              Click to view full poem and judge evaluation
+            </summary>
+            <div
+              style={{
+                fontSize: "0.8rem",
+                lineHeight: "1.4",
+                background: "#f8f7f5",
+                padding: "0.75rem",
+                borderRadius: "8px",
+                marginTop: "0.5rem",
+                fontFamily: "var(--mono)",
+              }}
+            >
+              <div style={{ fontWeight: "700", marginBottom: "1rem" }}>
+                Diet Coke, a Jabberwocky Parody
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                'Twas fizzful in the fridge's dim glow,
+                <br />
+                Where slithy toves of plastic roll;
+                <br />
+                A can of Diet Coke hummed slow,
+                <br />
+                With carbon frost upon its soul.
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                "Beware the Diet Coke," the whispers say,
+                <br />
+                "For fizz that bites and sugar none;
+                <br />
+                The cap that snaps with silvered sway,
+                <br />
+                And bubbles bright as midnight sun."
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                He gripped a vorpal straw with keen resolve,
+                <br />
+                And sought the foe with eyes aflame;
+                <br />
+                Through tulgey aisles of sizzle and resolve,
+                <br />
+                The liquid dare wore a silver name.
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                From the cooler's tulgey wood it burst,
+                <br />
+                A hiss of foam, a glittering gleam;
+                <br />
+                It burbled, hissed, and dared the worst,
+                <br />A clinking, clattering, fizzing dream.
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                One, two! One, two! And through and through
+                <br />
+                The vorpal straw went snicker-snack!
+                <br />
+                The can lay shattered, foamy head
+                <br />
+                Rolled on the floor and clicked back.
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                "O Diet Coke slain? O bottled delight!
+                <br />
+                Return, bright beamish boy of fizz!
+                <br />
+                O frabjous sip! Callooh! Callay!"
+                <br />
+                He chortled in his thirsty bliss.
+              </div>
+
+              <div>
+                'Twas fizzful in the fridge's dim glow,
+                <br />
+                Where slithy toves of plastic roll;
+                <br />
+                All mimsy were the borogoves,
+                <br />
+                And the mome raths outgrabe.
+              </div>
+            </div>
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "0.75rem",
+                background: "#fff",
+                border: "1px solid #e7e2d9",
+                borderRadius: "8px",
+                fontSize: "0.75rem",
+                fontFamily: "var(--mono)",
+              }}
+            >
+              <strong style={{ fontSize: "0.85rem" }}>
+                Judge evaluation (16/24 pass):
+              </strong>
+              <pre
+                style={{
+                  marginTop: "0.5rem",
+                  whiteSpace: "pre-wrap",
+                  lineHeight: "1.4",
+                  color: "#444",
+                }}
+              >
+                &lt;think&gt; &lt;C1_think&gt;Title present&lt;/C1_think&gt;
+                &lt;C2_think&gt;stanzas=8; quatrains=7 (87.5%) -&gt; no (require
+                all quatrains; total 5-8)&lt;/C2_think&gt;
+                &lt;C3_think&gt;quatrains=7; alt_hits=3 (42.9%) -&gt;
+                no&lt;/C3_think&gt; &lt;C4_think&gt;quatrains=7; rhyme(2,4)
+                hits=5 (71.4%) -&gt; yes&lt;/C4_think&gt; &lt;C5_think&gt;Ring
+                echo weak/uncertain -&gt; no (must be clear)&lt;/C5_think&gt;
+                &lt;C6_think&gt;Admonition present -&gt; yes&lt;/C6_think&gt;
+                &lt;C7_think&gt;Preparation present -&gt; yes&lt;/C7_think&gt;
+                &lt;C8_think&gt;Encounter present -&gt; yes&lt;/C8_think&gt;
+                &lt;C9_think&gt;Decisive action present -&gt;
+                yes&lt;/C9_think&gt; &lt;C10_think&gt;Return present -&gt;
+                yes&lt;/C10_think&gt; &lt;C11_think&gt;distinct_coinages=9 -&gt;
+                yes&lt;/C11_think&gt; &lt;C12_think&gt;stanzas_with_coinage=6/8
+                -&gt; no&lt;/C12_think&gt; &lt;C13_think&gt;Creature named -&gt;
+                yes&lt;/C13_think&gt; &lt;C14_think&gt;Onomatopoeia present
+                -&gt; yes&lt;/C14_think&gt; &lt;C15_think&gt;Alliteration
+                present -&gt; yes&lt;/C15_think&gt; &lt;C16_think&gt;Arc
+                sequence partially out of order -&gt; no&lt;/C16_think&gt;
+                &lt;C17_think&gt;No verbatim lines -&gt; yes&lt;/C17_think&gt;
+                &lt;C18_think&gt;Canonical budget ok -&gt; yes&lt;/C18_think&gt;
+                &lt;C19_think&gt;quatrains=7; syllable_hits=2 (28.6%); samples:
+                10/7/10/7 | 9/7/10/7 -&gt; no&lt;/C19_think&gt;
+                &lt;C20_think&gt;unique_endings=3; max_repeat=3 -&gt;
+                no&lt;/C20_think&gt; &lt;C21_think&gt;content_tokens=170;
+                top_word='diet' x4 (2.4%) -&gt; yes&lt;/C21_think&gt;
+                &lt;C22_think&gt;coinages=9; distinct_suffixes=5;
+                top_suffix_share=44% -&gt; yes&lt;/C22_think&gt;
+                &lt;C23_think&gt;Topic present but drifts minimally -&gt;
+                yes&lt;/C23_think&gt; &lt;C24_think&gt;Subtext unclear/weak
+                -&gt; no&lt;/C24_think&gt; &lt;/think&gt;
+                &lt;C1&gt;yes&lt;/C1&gt; &lt;C2&gt;no&lt;/C2&gt;
+                &lt;C3&gt;no&lt;/C3&gt; &lt;C4&gt;yes&lt;/C4&gt;
+                &lt;C5&gt;no&lt;/C5&gt; &lt;C6&gt;yes&lt;/C6&gt;
+                &lt;C7&gt;yes&lt;/C7&gt; &lt;C8&gt;yes&lt;/C8&gt;
+                &lt;C9&gt;yes&lt;/C9&gt; &lt;C10&gt;yes&lt;/C10&gt;
+                &lt;C11&gt;yes&lt;/C11&gt; &lt;C12&gt;no&lt;/C12&gt;
+                &lt;C13&gt;yes&lt;/C13&gt; &lt;C14&gt;yes&lt;/C14&gt;
+                &lt;C15&gt;yes&lt;/C15&gt; &lt;C16&gt;no&lt;/C16&gt;
+                &lt;C17&gt;yes&lt;/C17&gt; &lt;C18&gt;yes&lt;/C18&gt;
+                &lt;C19&gt;no&lt;/C19&gt; &lt;C20&gt;no&lt;/C20&gt;
+                &lt;C21&gt;yes&lt;/C21&gt; &lt;C22&gt;yes&lt;/C22&gt;
+                &lt;C23&gt;yes&lt;/C23&gt; &lt;C24&gt;no&lt;/C24&gt;
+              </pre>
+            </div>
+          </details>
+          <p style={{ fontSize: "0.85rem", color: "#666" }}>
+            Shows good creative elements but fails on technical constraints:
+            mixed stanza shapes (not all quatrains), inconsistent meter, limited
+            rhyme variety, and unclear ring composition.
+          </p>
+        </div>
+        <div style={{ marginTop: "1rem" }}>
+          <h4
+            style={{
+              fontSize: "1rem",
+              marginBottom: "0.5rem",
+              fontWeight: "700",
+            }}
+          >
+            Very Low Quality (0/24 criteria met)
+          </h4>
+          <details style={{ marginBottom: "1rem" }}>
+            <summary
+              style={{
+                cursor: "pointer",
+                padding: "0.5rem",
+                background: "#f8f7f5",
+                borderRadius: "8px",
+                fontSize: "0.85rem",
+                fontWeight: "600",
+              }}
+            >
+              Click to view full poem and judge evaluation
+            </summary>
+            <div
+              style={{
+                fontSize: "0.8rem",
+                lineHeight: "1.4",
+                background: "#f8f7f5",
+                padding: "0.75rem",
+                borderRadius: "8px",
+                marginTop: "0.5rem",
+                fontFamily: "var(--mono)",
+              }}
+            >
+              <div
+                style={{
+                  fontStyle: "italic",
+                  color: "#666",
+                  marginBottom: "1rem",
+                }}
+              >
+                [No title]
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                In days of olde, when times were tough,
+                <br />
+                A beverage rose to the occasion's rough,
+                <br />
+                A sparkling drink of wondrous taste,
+                <br />A sweet and effervescent haste,
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                Its colors bright, its flavors bold,
+                <br />
+                A thirst-quenching treat that soon 'twould unfold,
+                <br />
+                A brew that doth delight both young and old,
+                <br />A sweet escape from life's harsh cold,
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                With every sip, one's spirit doth soar,
+                <br />
+                A sense of joy that can't be ignored,
+                <br />
+                A taste of freedom, a perfect score,
+                <br />A friend when times seem tough and dull,
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                It's called Diet Coke, thy elixir true,
+                <br />
+                A classic treat that always sees you through,
+                <br />
+                A delightful blend of sugar and fizz,
+                <br />A drink that brings a smile so sweet, it is,
+              </div>
+
+              <div>
+                So raise your glass to Diet Coke's might,
+                <br />
+                A beverage that's simply out of sight,
+                <br />
+                A taste of yesteryear, now and evermore,
+                <br />A drink to cherish, always and forevermore.
+              </div>
+            </div>
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "0.75rem",
+                background: "#fff",
+                border: "1px solid #e7e2d9",
+                borderRadius: "8px",
+                fontSize: "0.75rem",
+                fontFamily: "var(--mono)",
+              }}
+            >
+              <strong style={{ fontSize: "0.85rem" }}>
+                Judge evaluation (0/24 pass):
+              </strong>
+              <pre
+                style={{
+                  marginTop: "0.5rem",
+                  whiteSpace: "pre-wrap",
+                  lineHeight: "1.4",
+                  color: "#444",
+                }}
+              >
+                &lt;think&gt; &lt;C1_think&gt;No title -&gt; no&lt;/C1_think&gt;
+                &lt;C2_think&gt;stanzas=5; no quatrains (couplets) -&gt;
+                no&lt;/C2_think&gt; &lt;C3_think&gt;No quatrains to evaluate
+                -&gt; no&lt;/C3_think&gt; &lt;C4_think&gt;No quatrains to
+                evaluate -&gt; no&lt;/C4_think&gt; &lt;C5_think&gt;No ring echo
+                -&gt; no&lt;/C5_think&gt; &lt;C6_think&gt;No admonition -&gt;
+                no&lt;/C6_think&gt; &lt;C7_think&gt;No preparation -&gt;
+                no&lt;/C7_think&gt; &lt;C8_think&gt;No clear encounter -&gt;
+                no&lt;/C8_think&gt; &lt;C9_think&gt;No decisive action -&gt;
+                no&lt;/C9_think&gt; &lt;C10_think&gt;No return/celebration -&gt;
+                no&lt;/C10_think&gt; &lt;C11_think&gt;coinages&lt;8 -&gt;
+                no&lt;/C11_think&gt;
+                &lt;C12_think&gt;stanzas_with_coinage&lt;50% -&gt;
+                no&lt;/C12_think&gt; &lt;C13_think&gt;No creature -&gt;
+                no&lt;/C13_think&gt; &lt;C14_think&gt;No onomatopoeia -&gt;
+                no&lt;/C14_think&gt; &lt;C15_think&gt;No alliteration -&gt;
+                no&lt;/C15_think&gt; &lt;C16_think&gt;Arc sequence broken/out of
+                order -&gt; no&lt;/C16_think&gt; &lt;C17_think&gt;Verbatim
+                issues -&gt; no&lt;/C17_think&gt; &lt;C18_think&gt;Canonical
+                budget exceeded -&gt; no&lt;/C18_think&gt; &lt;C19_think&gt;No
+                syllable control -&gt; no&lt;/C19_think&gt;
+                &lt;C20_think&gt;Poor rhyme variety -&gt; no&lt;/C20_think&gt;
+                &lt;C21_think&gt;Overused lexicon -&gt; no&lt;/C21_think&gt;
+                &lt;C22_think&gt;Coinage not varied -&gt; no&lt;/C22_think&gt;
+                &lt;C23_think&gt;Topic unclear/shifted -&gt;
+                no&lt;/C23_think&gt; &lt;C24_think&gt;No coherent subtext -&gt;
+                no&lt;/C24_think&gt; &lt;/think&gt; &lt;C1&gt;no&lt;/C1&gt;
+                &lt;C2&gt;no&lt;/C2&gt; &lt;C3&gt;no&lt;/C3&gt;
+                &lt;C4&gt;no&lt;/C4&gt; &lt;C5&gt;no&lt;/C5&gt;
+                &lt;C6&gt;no&lt;/C6&gt; &lt;C7&gt;no&lt;/C7&gt;
+                &lt;C8&gt;no&lt;/C8&gt; &lt;C9&gt;no&lt;/C9&gt;
+                &lt;C10&gt;no&lt;/C10&gt; &lt;C11&gt;no&lt;/C11&gt;
+                &lt;C12&gt;no&lt;/C12&gt; &lt;C13&gt;no&lt;/C13&gt;
+                &lt;C14&gt;no&lt;/C14&gt; &lt;C15&gt;no&lt;/C15&gt;
+                &lt;C16&gt;no&lt;/C16&gt; &lt;C17&gt;no&lt;/C17&gt;
+                &lt;C18&gt;no&lt;/C18&gt; &lt;C19&gt;no&lt;/C19&gt;
+                &lt;C20&gt;no&lt;/C20&gt; &lt;C21&gt;no&lt;/C21&gt;
+                &lt;C22&gt;no&lt;/C22&gt; &lt;C23&gt;no&lt;/C23&gt;
+                &lt;C24&gt;no&lt;/C24&gt;
+              </pre>
+              <p
+                style={{
+                  marginTop: "0.5rem",
+                  fontSize: "0.85rem",
+                  color: "#666",
+                }}
+              >
+                This is a conventional poem that completely misses the
+                Jabberwocky style—no nonsense words, no narrative journey,
+                standard poetic form.
+              </p>
+            </div>
+          </details>
+          <p style={{ fontSize: "0.85rem", color: "#666" }}>
+            Lacks essential Jabberwocky elements: no coinages, no narrative arc,
+            conventional language, and standard poetic structure rather than
+            Carroll's distinctive style.
+          </p>
+        </div>
+        <p style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
+          These examples calibrate the judge's binary decisions, ensuring that
+          "yes" is only assigned when criteria are clearly and definitively
+          satisfied. The judge employs strict evaluation—borderline or partially
+          met criteria receive "no."
+        </p>
+      </div>
+      <div className="card">
+        <h3>Topic sampling strategy</h3>
+        <p>
+          The benchmark samples from 48 carefully curated topics that combine
+          technical specificity with emotional resonance. These topics draw from
+          specialized crafts and subcultures—luthiery, letterpress printing,
+          horology, mountaineering, tea ceremony, perfumery—using terms that are
+          both precise and evocative.
+        </p>
+        <p style={{ marginTop: "0.75rem" }}>
+          Examples include: <em>"luthier's soundpost setter"</em>,
+          <em>"verglas on granite"</em>, <em>"selenium-toned fiber print"</em>,
+          <em>"night-blooming cereus vigil"</em>, and{" "}
+          <em>"farewell at a platform"</em>. This approach tests whether models
+          can maintain poetic form while engaging with unfamiliar technical
+          vocabulary that carries inherent aesthetic and emotional weight.
+        </p>
+        <p style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#666" }}>
+          The topics are sampled without replacement until exhausted, then
+          reshuffled, ensuring low repetition. A 20% holdout set separates
+          training from evaluation topics to test generalization.
+        </p>
       </div>
     </div>
   );
@@ -1151,26 +1916,47 @@ function Leaderboard({
       const minMap = toMap(minimalModels);
       const highMap = toMap(highModels);
       return arr.sort((a, b) => {
-        const aMinPts = computePoints(minMap[a.slug]?.summary || {}, attemptsMinimal);
-        const aHighPts = computePoints(highMap[a.slug]?.summary || {}, attemptsHigh);
-        const bMinPts = computePoints(minMap[b.slug]?.summary || {}, attemptsMinimal);
-        const bHighPts = computePoints(highMap[b.slug]?.summary || {}, attemptsHigh);
-        const missing = sortDir === "desc" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
-        const aD = (isFinite(aHighPts) && isFinite(aMinPts)) ? (aHighPts - aMinPts) : missing;
-        const bD = (isFinite(bHighPts) && isFinite(bMinPts)) ? (bHighPts - bMinPts) : missing;
+        const aMinPts = computePoints(
+          minMap[a.slug]?.summary || {},
+          attemptsMinimal
+        );
+        const aHighPts = computePoints(
+          highMap[a.slug]?.summary || {},
+          attemptsHigh
+        );
+        const bMinPts = computePoints(
+          minMap[b.slug]?.summary || {},
+          attemptsMinimal
+        );
+        const bHighPts = computePoints(
+          highMap[b.slug]?.summary || {},
+          attemptsHigh
+        );
+        const missing =
+          sortDir === "desc"
+            ? Number.NEGATIVE_INFINITY
+            : Number.POSITIVE_INFINITY;
+        const aD =
+          isFinite(aHighPts) && isFinite(aMinPts)
+            ? aHighPts - aMinPts
+            : missing;
+        const bD =
+          isFinite(bHighPts) && isFinite(bMinPts)
+            ? bHighPts - bMinPts
+            : missing;
         if (aD === bD) {
           // tie-break by points
           const as = computePoints(a.summary || {}, attemptsCurrent);
           const bs = computePoints(b.summary || {}, attemptsCurrent);
-          return (sortDir === "desc" ? (bs - as) : (as - bs));
+          return sortDir === "desc" ? bs - as : as - bs;
         }
-        return sortDir === "desc" ? (bD - aD) : (aD - bD);
+        return sortDir === "desc" ? bD - aD : aD - bD;
       });
     }
     return arr.sort((a, b) => {
       const as = computePoints(a.summary || {}, attemptsCurrent);
       const bs = computePoints(b.summary || {}, attemptsCurrent);
-      return sortDir === "desc" ? (bs - as) : (as - bs);
+      return sortDir === "desc" ? bs - as : as - bs;
     });
   }, [models, sortMode, sortDir, minimalModels, highModels]);
 
@@ -1202,7 +1988,10 @@ function Leaderboard({
     const getMetric = (m) => {
       if (sortMode === "deltaH") {
         const hp = computePoints(highMap[m.slug]?.summary || {}, attemptsHigh);
-        const mp = computePoints(minMap[m.slug]?.summary || {}, attemptsMinimal);
+        const mp = computePoints(
+          minMap[m.slug]?.summary || {},
+          attemptsMinimal
+        );
         if (isFinite(hp) && isFinite(mp)) return hp - mp;
         return Number.NEGATIVE_INFINITY;
       }
@@ -1213,23 +2002,18 @@ function Leaderboard({
     const map = {};
     arr.forEach((m, i) => (map[m.slug] = i + 1));
     return map;
-  }, [models, sortMode, minMap, highMap, attemptsHigh, attemptsMinimal, attemptsCurrent]);
+  }, [
+    models,
+    sortMode,
+    minMap,
+    highMap,
+    attemptsHigh,
+    attemptsMinimal,
+    attemptsCurrent,
+  ]);
 
   return (
     <>
-      <div className="card benchmark-intro">
-        <h3>Jabberwocky Bench</h3>
-        <p>
-          Structured creativity under pressure: match Carroll’s form, coin words
-          that feel right, and carry a story arc — no copying. If a model can do
-          that on demand, it’s probably good at following tricky instructions
-          while inventing.
-        </p>
-        <p className="intro-meta">
-          22 binary checks • LLM judge • built with verifiers
-        </p>
-      </div>
-
       <div
         className="card"
         style={{
@@ -1240,7 +2024,10 @@ function Leaderboard({
           flexWrap: "wrap",
         }}
       >
-        <div className="intro-meta" style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
+        <div
+          className="intro-meta"
+          style={{ display: "flex", alignItems: "center", gap: ".4rem" }}
+        >
           <span>Instruction level</span>
           <button
             className="info-button"
@@ -1266,7 +2053,7 @@ function Leaderboard({
             High
           </button>
         </div>
-        <div className="intro-meta" style={{ opacity: 0.7 }}>
+        <div className="intro-meta sparkline-comment" style={{ opacity: 0.7 }}>
           Sparkline: light=min • dark=high
         </div>
         <div className="segmented" aria-label="Sort">
@@ -1281,7 +2068,9 @@ function Leaderboard({
               }
             }}
           >
-            {`Sort: Score${sortMode === 'score' ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}`}
+            {`Sort: Score${
+              sortMode === "score" ? (sortDir === "desc" ? " ↓" : " ↑") : ""
+            }`}
           </button>
           <button
             className={sortMode === "deltaH" ? "active" : ""}
@@ -1298,7 +2087,9 @@ function Leaderboard({
               (highModels || []).length === 0
             }
           >
-            {`Sort: ΔH${sortMode === 'deltaH' ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}`}
+            {`Sort: ΔH${
+              sortMode === "deltaH" ? (sortDir === "desc" ? " ↓" : " ↑") : ""
+            }`}
           </button>
         </div>
       </div>
@@ -1307,23 +2098,26 @@ function Leaderboard({
           <h3>Why two levels?</h3>
           <p className="intro">
             We report two instruction levels: Minimal and High. High includes
-            explicit rubric‑aligned guidance and often saturates performance;
+            explicit rubric-aligned guidance and often saturates performance;
             Minimal uses only a brief style prompt.
           </p>
           <p className="intro">
             To quantify instruction sensitivity, we focus on Δ(min→high): the
             improvement when moving from Minimal to High. A small Δ suggests the
             model already internalizes the style; a large Δ indicates greater
-            dependence on detailed instruction. Medium exists in some runs but is
-            omitted here to keep the comparison simple.
+            dependence on detailed instruction. Medium exists in some runs but
+            is omitted here to keep the comparison simple.
           </p>
         </div>
       )}
 
       <div className="leaderboard">
         {sortedModels.map((model, index) => {
-              const rank = rankMap[model.slug] || index + 1;
-          const scorePoints = computePoints(model.summary || {}, attemptsCurrent);
+          const rank = rankMap[model.slug] || index + 1;
+          const scorePoints = computePoints(
+            model.summary || {},
+            attemptsCurrent
+          );
           const scorePercent = (scorePoints / maxScore) * 100;
 
           return (
@@ -1339,7 +2133,7 @@ function Leaderboard({
                 <div className="model-meta">
                   <span className="model-provider">{model.provider}</span>
                   <span className="click-hint">View poems →</span>
-                  
+
                   {/* per-model sparkline */}
                   {(() => {
                     const minS =
@@ -1394,11 +2188,19 @@ function Leaderboard({
               </div>
 
               <div className="score-display">
-              <div className="score-value" title="Normalized to 50 samples">{Math.round(scorePoints)}</div>
+                <div className="score-value" title="Normalized to 50 samples">
+                  {Math.round(scorePoints)}
+                </div>
                 <div className="score-label">SCORE</div>
                 {(() => {
-                  const minPoints = computePoints(minMap[model.slug]?.summary || {}, attemptsMinimal);
-                  const highPoints = computePoints(highMap[model.slug]?.summary || {}, attemptsHigh);
+                  const minPoints = computePoints(
+                    minMap[model.slug]?.summary || {},
+                    attemptsMinimal
+                  );
+                  const highPoints = computePoints(
+                    highMap[model.slug]?.summary || {},
+                    attemptsHigh
+                  );
                   const badges = [];
                   if (minPoints && highPoints) {
                     const d = Math.round(highPoints - minPoints);
@@ -1591,43 +2393,56 @@ function ModelModal({ model, samples, onClose }) {
                       ))}
                     </div>
                     {/* Prompt intentionally hidden per request */}
-                    {currentSample.judge_raw && (() => {
-                      const jr = String(currentSample.judge_raw || "");
-                      const parsed = parseJudgeRawXML(jr);
-                      const yesCount = parsed.sumYes;
-                      const total = parsed.total;
-                      return (
-                        <div className="judge-block">
-                          <div className="judge-title">Judge Decisions</div>
-                          <div className="judge-summary">
-                            {yesCount}/{total} checks • Label: {label} • Score: {score}
-                          </div>
-                          <div className="judge-grid">
-                            {CRITERIA_SHORT.map((short, i) => {
-                              const lbl = CRITERIA_LABELS[i] || short;
-                              const yn = parsed.decide[short];
-                              const think = parsed.think[short] || "";
-                              const good = yn === "yes";
-                              return (
-                                <div key={short} className="judge-row">
-                                  <div className={`judge-pill ${good ? "good" : "bad"}`} title={yn || "n/a"}>
-                                    {good ? "Yes" : yn === "no" ? "No" : "—"}
+                    {currentSample.judge_raw &&
+                      (() => {
+                        const jr = String(currentSample.judge_raw || "");
+                        const parsed = parseJudgeRawXML(jr);
+                        const yesCount = parsed.sumYes;
+                        const total = parsed.total;
+                        return (
+                          <div className="judge-block">
+                            <div className="judge-title">Judge Decisions</div>
+                            <div className="judge-summary">
+                              {yesCount}/{total} checks • Label: {label} •
+                              Score: {score}
+                            </div>
+                            <div className="judge-grid">
+                              {CRITERIA_SHORT.map((short, i) => {
+                                const lbl = CRITERIA_LABELS[i] || short;
+                                const yn = parsed.decide[short];
+                                const think = parsed.think[short] || "";
+                                const good = yn === "yes";
+                                return (
+                                  <div key={short} className="judge-row">
+                                    <div
+                                      className={`judge-pill ${
+                                        good ? "good" : "bad"
+                                      }`}
+                                      title={yn || "n/a"}
+                                    >
+                                      {good ? "Yes" : yn === "no" ? "No" : "—"}
+                                    </div>
+                                    <div className="judge-body">
+                                      <div className="judge-key">
+                                        {short} — {lbl}
+                                      </div>
+                                      {think && (
+                                        <div className="judge-think">
+                                          {think}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="judge-body">
-                                    <div className="judge-key">{short} — {lbl}</div>
-                                    {think && <div className="judge-think">{think}</div>}
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
+                            <details className="judge-raw-wrap">
+                              <summary>Show raw judge XML</summary>
+                              <pre className="judge-raw">{jr}</pre>
+                            </details>
                           </div>
-                          <details className="judge-raw-wrap">
-                            <summary>Show raw judge XML</summary>
-                            <pre className="judge-raw">{jr}</pre>
-                          </details>
-                        </div>
-                      );
-                    })()}
+                        );
+                      })()}
                   </div>
                 </div>
               );
@@ -1785,8 +2600,14 @@ function Verses({ models, samples, loadSamples }) {
 function App() {
   const [manifests, setManifests] = useState({ minimal: null, high: null });
   const [modelsByLevel, setModelsByLevel] = useState({ minimal: [], high: [] });
-  const [samplesByLevel, setSamplesByLevel] = useState({ minimal: {}, high: {} });
-  const [manifestUrls, setManifestUrls] = useState({ minimal: null, high: null });
+  const [samplesByLevel, setSamplesByLevel] = useState({
+    minimal: {},
+    high: {},
+  });
+  const [manifestUrls, setManifestUrls] = useState({
+    minimal: null,
+    high: null,
+  });
   const [instructionLevel, setInstructionLevel] = useState("minimal");
 
   const [loading, setLoading] = useState(false);
@@ -1877,12 +2698,14 @@ function App() {
   // Initialize instruction levels (minimal + medium + high)
   useEffect(() => {
     // Use absolute paths for custom domain, relative for GitHub Pages
-    const basePath = window.location.hostname === 'jabberwocky.darren.computer' 
-      ? '' // Root for custom domain
-      : '..'; // Relative for GitHub Pages or local dev
-      
+    const basePath =
+      window.location.hostname === "jabberwocky.darren.computer"
+        ? "" // Root for custom domain
+        : ".."; // Relative for GitHub Pages or local dev
+
     const urlMinimal =
-      getQueryParam("manifest") || `${basePath}/runs/run-mixed-50-minimal/manifest.json`;
+      getQueryParam("manifest") ||
+      `${basePath}/runs/run-mixed-50-minimal/manifest.json`;
     const urlHigh =
       getQueryParam("manifest_high") ||
       `${basePath}/runs/run-mixed-50-high/manifest.json`;
@@ -1928,9 +2751,18 @@ function App() {
             hasHigh={(modelsByLevel.high || []).length > 0}
             minimalModels={modelsByLevel.minimal || []}
             highModels={modelsByLevel.high || []}
-            attemptsCurrent={(manifests[instructionLevel]?.num_examples || 0) * (manifests[instructionLevel]?.rollouts_per_example || 1)}
-            attemptsMinimal={(manifests.minimal?.num_examples || 0) * (manifests.minimal?.rollouts_per_example || 1)}
-            attemptsHigh={(manifests.high?.num_examples || 0) * (manifests.high?.rollouts_per_example || 1)}
+            attemptsCurrent={
+              (manifests[instructionLevel]?.num_examples || 0) *
+              (manifests[instructionLevel]?.rollouts_per_example || 1)
+            }
+            attemptsMinimal={
+              (manifests.minimal?.num_examples || 0) *
+              (manifests.minimal?.rollouts_per_example || 1)
+            }
+            attemptsHigh={
+              (manifests.high?.num_examples || 0) *
+              (manifests.high?.rollouts_per_example || 1)
+            }
           />
         );
       case "analysis":
@@ -1963,7 +2795,9 @@ function App() {
     const topModel = models[0];
     if (!topModel) return;
 
-    const attempts = (manifests[instructionLevel]?.num_examples || 0) * (manifests[instructionLevel]?.rollouts_per_example || 1);
+    const attempts =
+      (manifests[instructionLevel]?.num_examples || 0) *
+      (manifests[instructionLevel]?.rollouts_per_example || 1);
     const points = computePoints(topModel.summary || {}, attempts);
     const text = `${topModel.id} leads the Jabberwocky Bench (${instructionLevel}) with a score of ${points}!`;
     const url = window.location.href;
@@ -2036,7 +2870,8 @@ function App() {
 ReactDOM.render(<App />, document.getElementById("root"));
 // Parse judge_raw into think and decision maps
 function parseJudgeRawXML(xml) {
-  if (!xml) return { think: {}, decide: {}, sumYes: 0, total: CRITERIA_KEYS.length };
+  if (!xml)
+    return { think: {}, decide: {}, sumYes: 0, total: CRITERIA_KEYS.length };
   const outThink = {};
   const outDecide = {};
   try {
@@ -2045,7 +2880,10 @@ function parseJudgeRawXML(xml) {
     const thinkBlock = thinkMatch ? thinkMatch[1] : "";
     CRITERIA_SHORT.forEach((short, idx) => {
       const key = CRITERIA_KEYS[idx];
-      const re = new RegExp(`<${short}_think>([\\s\\S]*?)<\/${short}_think>`, "i");
+      const re = new RegExp(
+        `<${short}_think>([\\s\\S]*?)<\/${short}_think>`,
+        "i"
+      );
       const m = thinkBlock.match(re);
       if (m) {
         // Clean up any nested tags and trim
@@ -2062,5 +2900,10 @@ function parseJudgeRawXML(xml) {
     // fall back silently
   }
   const yesCount = Object.values(outDecide).filter((v) => v === "yes").length;
-  return { think: outThink, decide: outDecide, sumYes: yesCount, total: CRITERIA_KEYS.length };
+  return {
+    think: outThink,
+    decide: outDecide,
+    sumYes: yesCount,
+    total: CRITERIA_KEYS.length,
+  };
 }

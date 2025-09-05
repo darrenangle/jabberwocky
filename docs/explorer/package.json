@@ -7,8 +7,10 @@
     "watch": "webpack --mode development --watch",
     "serve": "cd .. && npx http-server . -p 8000 -c-1",
     "dev": "npm run build && npm run serve",
-    "build:gh-pages": "webpack --mode production && cp index.html dist/ && cp styles.css dist/",
-    "deploy": "npm run build:gh-pages"
+    "build:gh-pages": "BUILD_TARGET=gh-pages webpack --mode production",
+    "build:custom-domain": "BUILD_TARGET=custom-domain webpack --mode production",
+    "serve:gh-pages": "cd .. && npx http-server . -p 8000 -c-1",
+    "clean": "rm -rf dist ../bundle.js ../index.html ../styles.css ../explorer/bundle.js ../explorer/index.html ../explorer/styles.css"
   },
   "dependencies": {
     "react": "^18.2.0",

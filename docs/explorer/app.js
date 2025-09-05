@@ -1876,11 +1876,16 @@ function App() {
 
   // Initialize instruction levels (minimal + medium + high)
   useEffect(() => {
+    // Use absolute paths for custom domain, relative for GitHub Pages
+    const basePath = window.location.hostname === 'jabberwocky.darren.computer' 
+      ? '' // Root for custom domain
+      : '..'; // Relative for GitHub Pages or local dev
+      
     const urlMinimal =
-      getQueryParam("manifest") || "../runs/run-mixed-50-minimal/manifest.json";
+      getQueryParam("manifest") || `${basePath}/runs/run-mixed-50-minimal/manifest.json`;
     const urlHigh =
       getQueryParam("manifest_high") ||
-      "../runs/run-mixed-50-high/manifest.json";
+      `${basePath}/runs/run-mixed-50-high/manifest.json`;
     (async () => {
       try {
         setLoading(true);

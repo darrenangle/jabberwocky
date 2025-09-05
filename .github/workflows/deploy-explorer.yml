@@ -3,6 +3,9 @@ name: Deploy Explorer to GitHub Pages
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/deploy-explorer.yml'
   workflow_dispatch:
 
 permissions:
@@ -31,7 +34,7 @@ jobs:
           cd docs/explorer
           npm install
           
-      - name: Build
+      - name: Build for GitHub Pages
         run: |
           cd docs/explorer
           npm run build:gh-pages
@@ -42,7 +45,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './docs/explorer/dist'
+          # Upload entire docs directory since we build there
+          path: './docs'
           
   deploy:
     environment:

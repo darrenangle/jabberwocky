@@ -55,8 +55,10 @@ body { font-family: var(--ui); color: var(--ink); background: linear-gradient(18
 .hero-ribbon { position: absolute; inset: auto 0 0 0; height: 32px; background: linear-gradient(90deg, rgba(27,27,27,.92), rgba(27,27,27,.6)); color: #fff; display: flex; align-items: center; font-family: var(--mono); font-size: .75rem; padding: 0 .75rem; letter-spacing: .04em; }
 .hero-viz { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: auto; cursor: pointer; }
 .hero-viz-svg { width: 86%; height: auto; }
-.hero-legend { position: absolute; top: 8px; left: 8px; background: rgba(255,255,255,.9); border: 1px solid var(--hair); border-radius: 8px; padding: .3rem .45rem; display: grid; gap: .2rem; pointer-events: none; }
+.hero-legend { position: absolute; top: 8px; left: 8px; background: rgba(255,255,255,.9); border: 1px solid var(--hair); border-radius: 8px; padding: .3rem .45rem; display: grid; gap: .2rem; pointer-events: auto; }
 .hero-legend .legend-line { display: flex; align-items: center; gap: .35rem; font-size: .7rem; color: #2e2e2e; }
+.hero-legend .legend-line { cursor: pointer; }
+.hero-legend .legend-line:hover { text-decoration: underline; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
 /* Radar modal */
@@ -64,9 +66,31 @@ body { font-family: var(--ui); color: var(--ink); background: linear-gradient(18
 .radar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .4rem .8rem; }
 .legend-check { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }
 .legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--hair); }
-.modal-content.wide { max-width: 960px; }
-.radar-wrap { position: relative; display: grid; place-items: center; padding: .5rem; }
+.modal-content.wide { max-width: 95vw; max-height: 95vh; }
+.radar-wrap { position: relative; display: grid; place-items: center; padding: .5rem; gap: .75rem; }
 .radar-note { font-size: .75rem; color: #555; text-align: center; margin-top: .25rem; }
+
+/* Embedded radar (modal) */
+.radar-embed { position: relative; display: grid; place-items: center; pointer-events: auto; }
+.radar-embed-svg { width: min(90vmin, 1200px); height: auto; max-width: 95vw; }
+.modal-body { display: grid; place-items: center; }
+.radar-controls { max-width: 1100px; width: 96%; }
+.radar-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+/* Two-column layout for radar modal */
+.modal-body.radar-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1rem;
+  align-items: start;
+  width: 100%;
+}
+.radar-side {
+  max-height: calc(95vh - 140px);
+  overflow: auto;
+  padding-right: .5rem;
+}
+.radar-main { display: grid; place-items: center; }
 
 /* Main */
 .main-content { flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; padding: 1.25rem 1rem 2rem; }
@@ -135,6 +159,9 @@ body { font-family: var(--ui); color: var(--ink); background: linear-gradient(18
 .poem-score { display: flex; flex-direction: column; align-items: center; min-width: 100px; }
 .score-big { font-family: var(--mono); font-size: 1.6rem; font-weight: 800; }
 .modal-poem-content { background: #fff; border: 1px solid var(--hair); border-radius: 10px; padding: 1rem; }
+.judge-block { margin-top: .75rem; }
+.judge-title { font-family: var(--serif); font-weight: 800; font-size: .95rem; margin-bottom: .25rem; }
+.judge-raw { background: #faf8f4; border: 1px solid var(--hair); border-radius: 8px; padding: .6rem .75rem; max-height: 40vh; overflow: auto; font-family: var(--mono); font-size: .75rem; white-space: pre-wrap; }
 
 /* Modal enhancements */
 .poem-title { font-family: var(--serif); font-weight: 800; font-size: 1.2rem; margin-bottom: .25rem; }

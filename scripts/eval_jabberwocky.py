@@ -317,6 +317,14 @@ def _dump_per_model(outdir: str, spec: str, cfg, results: vf.GenerateOutputs, su
             info = results.info[i]
             reward = results.reward[i]
             metric_i = {k: results.metrics[k][i] for k in results.metrics}
+            # Try to capture the full judge output for calibration
+            raw = None
+            try:
+                st = results.state[i] if isinstance(results.state, list) else {}
+                if isinstance(st, dict):
+                    raw = st.get("jw_judge_xml_raw") or st.get("judge_xml_raw") or st.get("judge_response")
+            except Exception:
+                raw = None
 
             if isinstance(prm, list) and prm:
                 user = next((m for m in prm[::-1] if m.get("role") == "user"), None)
@@ -360,6 +368,7 @@ def _dump_per_model(outdir: str, spec: str, cfg, results: vf.GenerateOutputs, su
                 "label": label,
                 "criteria_yes": criteria_yes,
                 "metrics": metric_i,
+                "judge_raw": raw,
             }
             f.write(_json.dumps(row, ensure_ascii=False) + "\n")
 

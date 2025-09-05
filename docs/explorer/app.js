@@ -83,6 +83,11 @@ function Hero({ manifest, models, onPrimary, onSecondary, onOpenRadar }) {
     const topScore = normalizeScore(topModel?.summary?.overall_reward || 0);
     const top10 = (models || []).slice(0, 10);
     const maxScore = top10.length ? (top10[0].summary?.overall_reward || 1) : 1;
+    const colorMap = useMemo(()=>{
+        const map = {};
+        top10.forEach((m, idx)=> { map[m.slug] = RADAR_COLORS[idx % RADAR_COLORS.length]; });
+        return map;
+    }, [top10]);
     return (
         <section className="hero">
             <div className="hero-inner">
@@ -100,7 +105,7 @@ function Hero({ manifest, models, onPrimary, onSecondary, onOpenRadar }) {
                 </div>
                 <div className="hero-art">
                     {top10.length > 0 && (
-                        <RadarViz models={top10} onOpenModal={onOpenRadar} />
+                        <RadarViz models={top10} onOpenModal={onOpenRadar} colorMap={colorMap} />
                     )}
                     <div className="hero-ribbon">{topModel ? `${topModel.id} • ${topScore} score • ${attempts} attempts` : 'Loading run...'}</div>
                 </div>
@@ -130,16 +135,34 @@ const CRITERIA_KEYS = [
     'C17_no_verbatim_lines',
     'C18_canonical_budget',
     'C19_syllable_tightness',
+    'C20_rhyme_variety',
+    'C21_lexical_repetition_guard',
+    'C22_coinage_variety',
 ];
 const CRITERIA_SHORT = CRITERIA_KEYS.map((k, i) => `C${i+1}`);
+const CRITERIA_LABELS = [
+  'Title', 'Quatrains', 'Meter', 'Rhyme', 'Ring', 'Warning', 'Prepare', 'Encounter', 'Act', 'Return',
+  'Coinages', 'Spread', 'Creature', 'Onomatopoeia', 'Alliteration', 'Tone', 'No verbatim', 'Canonical',
+  'Syllables', 'Rhyme variety', 'Repetition', 'Coinage variety'
+];
 const RADAR_COLORS = [
-    '#111111', '#1f78b4', '#e4572e', '#2a9d8f', '#8a6a2a',
-    '#7b2cbf', '#f4a261', '#0ea5e9', '#ef476f', '#06d6a0'
+    '#1f77b4', // blue
+    '#e76f51', // terracotta
+    '#2a9d8f', // teal
+    '#f4a261', // apricot
+    '#bc6ff1', // lavender
+    '#06d6a0', // mint
+    '#ef476f', // magenta
+    '#0ea5e9', // light blue
+    '#ffb703', // goldenrod
+    '#8ecae6', // sky
 ];
 
-function RadarViz({ models, onOpenModal, showLegend = true }) {
+function RadarViz({ models, onOpenModal, showLegend = true, variant = 'hero', hoverSlug, onHoverChange, colorMap }) {
     const colors = RADAR_COLORS;
-    const size = 100; const cx = 50; const cy = 50; const r = 40; const n = CRITERIA_KEYS.length;
+    const size = 100; const cx = 50; const cy = 50; const r = variant==='hero' ? 40 : 42; const n = CRITERIA_KEYS.length;
+    const [localHover, setLocalHover] = useState(null);
+    const effectiveHover = hoverSlug !== undefined ? hoverSlug : localHover;
 
     const getVec = (m) => {
         const mm = m.summary?.metrics_mean || {}; // 0..1
@@ -151,10 +174,17 @@ function RadarViz({ models, onOpenModal, showLegend = true }) {
 
     const angleFor = (i) => ((-90 + (360 * i / n)) * Math.PI / 180);
     const xy = (t, ang) => [cx + r * t * Math.cos(ang), cy + r * t * Math.sin(ang)];
+    const containerClass = variant === 'hero' ? 'hero-viz' : 'radar-embed';
+    const svgClass = variant === 'hero' ? 'hero-viz-svg' : 'radar-embed-svg';
+    const handleHover = (slug) => {
+        if (onHoverChange) onHoverChange(slug); else setLocalHover(slug);
+    };
+    const labelFactor = variant==='hero' ? 1.12 : 0.96;
+    const labelFont = variant==='hero' ? 2.6 : 2.4;
 
     return (
-        <div className="hero-viz" aria-label="Top criteria radar" onClick={onOpenModal} title="Click to expand">
-            <svg viewBox={`0 0 ${size} ${size}`} className="hero-viz-svg">
+        <div className={containerClass} aria-label="Top criteria radar" onClick={variant==='hero' ? onOpenModal : undefined} title={variant==='hero' ? "Click to expand" : undefined}>
+            <svg viewBox={`0 0 ${size} ${size}`} className={svgClass}>
                 <defs>
                     <linearGradient id="radarFade" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="rgba(255,255,255,0.92)"/>
@@ -168,11 +198,11 @@ function RadarViz({ models, onOpenModal, showLegend = true }) {
                 {CRITERIA_KEYS.map((_, i) => {
                     const a = angleFor(i);
                     const [x,y] = xy(1, a);
-                    const [lx,ly] = xy(1.12, a);
+                    const [lx,ly] = xy(labelFactor, a);
                     return (
                         <g key={`axis-${i}`}>
                             <line x1={cx} y1={cy} x2={x} y2={y} stroke="#d9d3c6" strokeWidth={0.5} />
-                            <text x={lx} y={ly} fontSize="2.6" textAnchor={Math.cos(a)>0? 'start':'end'} dominantBaseline="middle" fill="#6f6658">{CRITERIA_SHORT[i]}</text>
+                            <text x={lx} y={ly} fontSize={labelFont} textAnchor={Math.cos(a)>0? 'start':'end'} dominantBaseline="middle" fill="#6f6658">{CRITERIA_LABELS[i]}</text>
                         </g>
                     );
                 })}
@@ -182,10 +212,14 @@ function RadarViz({ models, onOpenModal, showLegend = true }) {
                         const a = angleFor(i);
                         const [x,y] = xy(t, a); return `${x},${y}`;
                     }).join(' ');
-                    const color = colors[idx % colors.length];
+                    const color = (colorMap && colorMap[m.slug]) || colors[idx % colors.length];
+                    const isHover = effectiveHover === m.slug;
+                    const dim = effectiveHover && !isHover;
+                    const fillOpacity = isHover ? 0.28 : dim ? 0.06 : 0.14;
+                    const strokeWidth = isHover ? 1.8 : dim ? 0.7 : 1.2;
                     return (
-                        <g key={m.slug}>
-                            <polyline points={pts} fill={color} opacity={0.12} stroke={color} strokeWidth={1.1} />
+                        <g key={m.slug} onMouseEnter={()=>handleHover(m.slug)} onMouseLeave={()=>handleHover(null)}>
+                            <polyline points={pts} fill={color} opacity={fillOpacity} stroke={color} strokeWidth={strokeWidth} />
                         </g>
                     );
                 })}
@@ -193,7 +227,9 @@ function RadarViz({ models, onOpenModal, showLegend = true }) {
             {showLegend && (
                 <div className="hero-legend">
                     {models.map((m, idx)=> (
-                        <div key={m.slug} className="legend-line"><span className="legend-dot" style={{background: colors[idx%colors.length]}} />{m.id}</div>
+                        <div key={m.slug} className="legend-line" onMouseEnter={()=>handleHover(m.slug)} onMouseLeave={()=>handleHover(null)}>
+                            <span className="legend-dot" style={{background: (colorMap && colorMap[m.slug]) || colors[idx%colors.length]}} />{m.id}
+                        </div>
                     ))}
                 </div>
             )}
@@ -201,31 +237,14 @@ function RadarViz({ models, onOpenModal, showLegend = true }) {
     );
 }
 
-function RadarPanel({ models }) {
-    const [selected, setSelected] = useState(() => new Set(models.map(m=>m.slug)));
-    const toggle = (slug) => setSelected(prev => { const n = new Set(prev); if (n.has(slug)) n.delete(slug); else n.add(slug); return n; });
-    const chosen = models.filter(m => selected.has(m.slug));
-    return (
-        <div className="radar-wrap">
-            <RadarViz models={chosen} showLegend={false} />
-            <div className="radar-controls">
-                <div className="radar-grid">
-                    {models.map((m, idx)=> (
-                        <label key={m.slug} className="legend-check">
-                            <input type="checkbox" checked={selected.has(m.slug)} onChange={()=>toggle(m.slug)} />
-                            <span className="legend-swatch" style={{background: RADAR_COLORS[idx%RADAR_COLORS.length]}} />
-                            <span>{m.id}</span>
-                        </label>
-                    ))}
-                </div>
-                <div className="radar-note">Toggle models to compare shapes. Axes map to C1–C19.</div>
-            </div>
-        </div>
-    );
-}
-
 function RadarModal({ models, onClose }) {
     const top10 = (models||[]).slice(0,10);
+    const [hoverSlug, setHoverSlug] = useState(null);
+    const colorMap = useMemo(()=>{
+        const map = {};
+        top10.forEach((m, idx)=> { map[m.slug] = RADAR_COLORS[idx % RADAR_COLORS.length]; });
+        return map;
+    }, [top10]);
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content wide" onClick={e=>e.stopPropagation()}>
@@ -238,8 +257,23 @@ function RadarModal({ models, onClose }) {
                         </svg>
                     </button>
                 </div>
-                <div className="modal-body">
-                    <RadarPanel models={top10} />
+                <div className="modal-body radar-layout">
+                    <div className="radar-side">
+                        <div className="radar-controls">
+                            <div className="radar-grid">
+                                {top10.map((m)=> (
+                                    <div key={m.slug} className="legend-check" onMouseEnter={()=>setHoverSlug(m.slug)} onMouseLeave={()=>setHoverSlug(null)}>
+                                        <span className="legend-swatch" style={{background: colorMap[m.slug]}} />
+                                        <span>{m.id}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="radar-note">Hover to focus a model. Axes are labeled by criterion.</div>
+                        </div>
+                    </div>
+                    <div className="radar-main">
+                        <RadarViz models={top10} showLegend={false} variant="modal" hoverSlug={hoverSlug} colorMap={colorMap} />
+                    </div>
                 </div>
             </div>
         </div>
@@ -436,30 +470,33 @@ function Methodology() {
         <div className="methodology-content">
             <div className="card">
                 <h3>How scoring works</h3>
-                <p className="intro">Reward is the mean of 19 binary checks applied by an LLM judge. The checks cover form, style, coinage, arc, and syllable tightness. No gold labels; just crisp, reproducible constraints.</p>
+                <p className="intro">Reward is the mean of 22 binary checks applied by an LLM judge. The checks cover form, style, coinage, arc, syllable tightness, rhyme variety, and repetition guards. No gold labels; just crisp, reproducible constraints.</p>
             </div>
             <div className="card">
-                <h3>The 19 checks (glance)</h3>
+                <h3>The 22 checks (glance)</h3>
                 <div className="rubric-grid">
-                    <div className="rubric-item"><div className="rubric-score">C1 Title</div><div className="rubric-desc">Non‑empty title preceding the first stanza.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C2 Quatrains</div><div className="rubric-desc">Mostly 4‑line stanzas; sensible count overall.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C3 Meter echo</div><div className="rubric-desc">Alternating longer/shorter lines across stanzas.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C4 Rhyme</div><div className="rubric-desc">(2,4) rhyme; ABAB when appropriate.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C5 Ring close</div><div className="rubric-desc">Final stanza echoes the opening.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C6 Admonition</div><div className="rubric-desc">An early warning (e.g., “Beware…”).</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C7 Preparation</div><div className="rubric-desc">Tool/resolve/wait/plan before the encounter.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C8 Encounter</div><div className="rubric-desc">A clear meeting with the foe or obstacle.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C9 Decisive act</div><div className="rubric-desc">Climactic action that resolves tension.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C10 Return/joy</div><div className="rubric-desc">Homecoming and celebration.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C11 Coinage count</div><div className="rubric-desc">Enough distinct invented words.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C12 Coinage spread</div><div className="rubric-desc">Coinages appear across stanzas.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C13 Creature naming</div><div className="rubric-desc">A named adversary (Jabberwock‑like).</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C14 Onomatopoeia</div><div className="rubric-desc">Burbles, snickersnacks, and friends.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C15 Alliteration</div><div className="rubric-desc">Consonance/assonance used well.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C16 Tone</div><div className="rubric-desc">Whimsical, brisk, and adventurous.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C17 No verbatim</div><div className="rubric-desc">Avoids copying canonical lines.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C18 Canonical budget</div><div className="rubric-desc">Stays under allowed canonical reuse.</div></div>
-                    <div className="rubric-item"><div className="rubric-score">C19 Syllable tightness</div><div className="rubric-desc">Most stanzas keep ~8–10 syllables for long lines and ~6–8 for short lines.</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C1 Title</div><div className="rubric-desc">Is there a non‑empty title before the first stanza?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C2 Quatrains</div><div className="rubric-desc">Do all stanzas have 4 lines (total ≈3–8)?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C3 Meter echo</div><div className="rubric-desc">Do lines alternate long/short in ≥60% stanzas?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C4 Rhyme</div><div className="rubric-desc">Do (2,4) rhyme in ≥60% stanzas (no AABB dominance)?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C5 Ring close</div><div className="rubric-desc">Does the final stanza echo the opening?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C6 Admonition</div><div className="rubric-desc">Is there an early warning/caution?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C7 Preparation</div><div className="rubric-desc">Is there visible preparation before the encounter?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C8 Encounter</div><div className="rubric-desc">Is there a clear meeting with the foe/obstacle?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C9 Decisive act</div><div className="rubric-desc">Is there a decisive action resolving tension?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C10 Return/joy</div><div className="rubric-desc">Is there a homecoming and celebration?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C11 Coinage count</div><div className="rubric-desc">Are there ≥8 distinct invented words?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C12 Coinage spread</div><div className="rubric-desc">Does each stanza include a coinage?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C13 Creature naming</div><div className="rubric-desc">Is a non‑canonical creature named and central?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C14 Onomatopoeia</div><div className="rubric-desc">Are there ≥2 onomatopoeic bursts?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C15 Alliteration</div><div className="rubric-desc">Do ≥2 stanzas show clear alliteration/consonance?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C16 Tone</div><div className="rubric-desc">Is the tone mythic/whimsical (not promo/flat)?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C17 No verbatim</div><div className="rubric-desc">Is no line verbatim from the canonical poem?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C18 Canonical budget</div><div className="rubric-desc">Are canonical tokens ≤8?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C19 Syllables</div><div className="rubric-desc">In every stanza, are long lines ~8–9 and short lines ~5–7?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C20 Rhyme variety</div><div className="rubric-desc">Are (2,4) end rhymes varied across stanzas?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C21 Repetition guard</div><div className="rubric-desc">Is no single content word overused?</div></div>
+                    <div className="rubric-item"><div className="rubric-score">C22 Coinage variety</div><div className="rubric-desc">Do coinages vary in roots/suffixes?</div></div>
                 </div>
             </div>
             <div className="card">
@@ -528,7 +565,7 @@ function Leaderboard({ models, onModelClick, instructionLevel, onInstructionLeve
             <div className="card benchmark-intro">
                 <h3>Jabberwocky Bench</h3>
                 <p>Structured creativity under pressure: match Carroll’s form, coin words that feel right, and carry a story arc — no copying. If a model can do that on demand, it’s probably good at following tricky instructions while inventing.</p>
-                <p className="intro-meta">19 binary checks • LLM judge • built with verifiers</p>
+                <p className="intro-meta">22 binary checks • LLM judge • built with verifiers</p>
             </div>
             
             <div className="card" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'1rem',flexWrap:'wrap'}}>
@@ -764,6 +801,12 @@ function ModelModal({ model, samples, onClose }) {
                                             }} />
                                         ))}
                                     </div>
+                                    {currentSample.judge_raw && (
+                                        <div className="judge-block">
+                                            <div className="judge-title">Judge Output (full)</div>
+                                            <pre className="judge-raw">{currentSample.judge_raw}</pre>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );

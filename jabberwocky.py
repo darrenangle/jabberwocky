@@ -577,48 +577,149 @@ def load_environment(
         "C17_no_verbatim_lines",
         "C18_canonical_budget",
         "C19_syllable_tightness",
+        "C20_rhyme_variety",
+        "C21_lexical_repetition_guard",
+        "C22_coinage_variety",
     ]
     # Short tags to make formatting easy for small judges
     RUBRIC_SHORT = [
-        "C1","C2","C3","C4","C5","C6","C7","C8","C9","C10","C11","C12","C13","C14","C15","C16","C17","C18","C19"
+        "C1","C2","C3","C4","C5","C6","C7","C8","C9","C10","C11","C12","C13","C14","C15","C16","C17","C18","C19","C20","C21","C22"
     ]
     # XML field definitions: canonical name + alternative short tag
     RUBRIC_FIELDS = [(RUBRIC_KEYS[i], RUBRIC_SHORT[i]) for i in range(len(RUBRIC_KEYS))]
 
-    # XML rubric prompt: model outputs yes/no for each tag
+
+    # XML rubric prompt: model outputs yes/no for each tag, with a structured think block
     judge_xml_prompt = (
         "You are grading whether a model-written poem matches the style of "
         "Lewis Carroll's 'Jabberwocky'.\n\n"
-        "First, think briefly in <scratchpad> for a few lines. Then output exactly and only "
-        "the XML tags listed below, using lowercase 'yes' or 'no' inside each, one tag per line, "
-        "in the same order. Do not include any other text after the XML tags.\n\n"
-        "Criteria (binary). For each item, mark 'yes' only if the concrete test passes; otherwise 'no'.\n"
-        "- C1_title_present: Has a non-empty title line before the first stanza (not part of stanza text).\n"
-        "- C2_quatrain_shape: Majority (≥70%) of stanzas are 4 lines; total stanza count ≈3–8 (allow one deviation).\n"
-        "- C3_ballad_meter_echo: In ≥60% stanzas, alternating longer/shorter lines (≥2 content-word difference between adjacent lines).\n"
-        "- C4_ballad_rhyme: In ≥60% stanzas, lines (2,4) rhyme (allow slant rhyme). If (1,3) also rhyme, prefer ABAB/ABCB; AABB does not count.\n"
-        "- C5_ring_composition: Final stanza echoes opening with ≥2 repeated content words/phrases OR a clear refrain.\n"
-        "- C6_warning_admonition: Has an early admonition (e.g., 'Beware …') or equivalent caution directed to the protagonist.\n"
-        "- C7_preparation_armament: Shows preparation (tool/resolve/wait/plan) before the encounter.\n"
-        "- C8_encounter_confrontation: Contains a clear meeting between protagonist and adversary/obstacle.\n"
-        "- C9_slaying_decisive_action: Has a decisive act that resolves tension (strike/capture/overcoming).\n"
-        "- C10_return_celebration: Returns to home or figures and shows jubilant acknowledgement.\n"
-        "- C11_coinage_count: Uses ≥8 distinct invented coinages (not in canonical lexicon or standard English).\n"
-        "- C12_coinage_spread: Each stanza includes ≥1 coinage (count a coined word once per stanza).\n"
-        "- C13_creature_naming: Introduces a named non-canonical creature/entity central to action (not 'Jabberwock').\n"
-        "- C14_onomatopoeia: Includes ≥2 onomatopoeic bursts (e.g., 'snicker‑snack!', 'Pop!', 'Hiss!').\n"
-        "- C15_alliteration_consonance: ≥2 stanzas show clear within-line alliteration/consonance beyond incidental repeats.\n"
-        "- C16_tone_alignment: Whimsical/playful mythic tone; not generic promotional or flat prose.\n"
-        "- C17_no_verbatim_lines: No line exactly matches the canonical poem.\n"
-        "- C18_canonical_budget: Distinct canonical tokens ≤8; prefer new coinages over canonical terms.\n"
-        "- C19_syllable_tightness: In ≥60% stanzas, longer lines ≈8–10 syllables and shorter lines ≈6–8; avoid long-winded lines. Minor variation allowed.\n\n"
+        "First, produce a structured <think> block. Then produce the final decision tags.\n"
+        "In the <think> block use <C1_think>…</C1_think> … <C22_think>…</C22_think> to record brief reasoning for each criterion.\n"
+        "Do NOT use <C1> inside <think>.\n\n"
+        "Questions (binary). Answer each with 'yes' or 'no' only in the final decision tags.\n"
+        "- C1_title_present: Is there a non-empty title line before the first stanza (not part of stanza text)?\n"
+        "- C2_quatrain_shape: Do all stanzas have 4 lines, and is the total stanza count ≈3–8?\n"
+        "- C3_ballad_meter_echo: In ≥60% of stanzas, do lines alternate longer/shorter with ≥2 content-word difference?\n"
+        "- C4_ballad_rhyme: In ≥60% of stanzas, do lines (2,4) rhyme (allowing slant rhyme), and avoid AABB dominance?\n"
+        "- C5_ring_composition: Does the final stanza echo the opening with ≥2 repeated content words/phrases or a clear refrain?\n"
+        "- C6_warning_admonition: Is there an early admonition (e.g., ‘Beware …’) or equivalent caution to the protagonist?\n"
+        "- C7_preparation_armament: Before the encounter, does the protagonist prepare (tool/resolve/wait/plan)?\n"
+        "- C8_encounter_confrontation: Is there a clear meeting between protagonist and adversary/obstacle?\n"
+        "- C9_slaying_decisive_action: Is there a decisive act that resolves the central tension?\n"
+        "- C10_return_celebration: Is there a return/homecoming and jubilant acknowledgement?\n"
+        "- C11_coinage_count: Are there ≥8 distinct invented coinages (not canonical or standard English)?\n"
+        "- C12_coinage_spread: Does each stanza contain ≥1 coinage?\n"
+        "- C13_creature_naming: Is a non‑canonical creature/entity named and central to action (not ‘Jabberwock’)?\n"
+        "- C14_onomatopoeia: Are there ≥2 onomatopoeic bursts (e.g., ‘snicker‑snack!’, ‘Pop!’, ‘Hiss!’)?\n"
+        "- C15_alliteration_consonance: Do ≥2 stanzas show clear within‑line alliteration/consonance beyond incidental repeats?\n"
+        "- C16_tone_alignment: Is the tone whimsical/playful mythic (not promotional copy or flat prose)?\n"
+        "- C17_no_verbatim_lines: Does no line exactly match the canonical poem?\n"
+        "- C18_canonical_budget: Are distinct canonical tokens ≤8, favoring new coinages?\n"
+        "- C19_syllable_tightness: In every quatrain stanza, are longer lines ≈8–9 syllables and shorter lines ≈5–7 (Jabberwocky’s ~8/6 pattern)?\n"
+        "- C20_rhyme_variety: Across stanzas, are (2,4) end‑rhymes varied (no exact end word reused >2 times excluding the ring echo)?\n"
+        "- C21_lexical_repetition_guard: Outside the ring echo, is no single content word overused (e.g., >5 times or >8% of content words)?\n"
+        "- C22_coinage_variety: Do coinages show ≥4 distinct roots (no single coined suffix accounts for >50% of coinages)?\n\n"
         "Canonical lexicon: "
         + ", ".join(CANONICAL_LEXICON)
         + "\n\n"
-        "<scratchpad>Explain your reasoning concisely. If uncertain, choose 'no'.</scratchpad>\n\n"
-        "Now output only the following XML tags (one per line) filled with yes/no, in order: \n"
+        "Format your output exactly as follows:\n"
+        "<think>\n"
+        + "\n".join([f"<{k}_think>…your brief reasoning…</{k}_think>" for k in RUBRIC_SHORT]) + "\n"
+        "</think>\n\n"
+        "Then, on new lines, the final decision tags only (one per line), exactly these tags filled with yes/no, in order:\n"
         + "\n".join([f"<{k}>yes|no</{k}>" for k in RUBRIC_SHORT])
-        + "\n"
+        + "\n\n"
+        "Calibration examples (do not copy answers; tags suffixed with _demo so they are not parsed):\n"
+        "<example>\n<poem>" + HIGH_EXAMPLE + "</poem>\n<think>\n"
+        "<C1_demo_think>Title present</C1_demo_think>\n"
+        "<C2_demo_think>stanzas=8; quatrains=8 (100.0%) -> yes</C2_demo_think>\n"
+        "<C3_demo_think>quatrains=8; alt_hits=6 (75.0%) -> yes</C3_demo_think>\n"
+        "<C4_demo_think>quatrains=8; rhyme(2,4) hits=7 (87.5%) -> yes</C4_demo_think>\n"
+        "<C5_demo_think>Ring echo present -> yes</C5_demo_think>\n"
+        "<C6_demo_think>Admonition present -> yes</C6_demo_think>\n"
+        "<C7_demo_think>Preparation present -> yes</C7_demo_think>\n"
+        "<C8_demo_think>Encounter present -> yes</C8_demo_think>\n"
+        "<C9_demo_think>Decisive action present -> yes</C9_demo_think>\n"
+        "<C10_demo_think>Return/celebration present -> yes</C10_demo_think>\n"
+        "<C11_demo_think>distinct_coinages=12 -> yes</C11_demo_think>\n"
+        "<C12_demo_think>stanzas_with_coinage=8/8 -> yes</C12_demo_think>\n"
+        "<C13_demo_think>Creature named (Sucrowock) -> yes</C13_demo_think>\n"
+        "<C14_demo_think>Onomatopoeia (Pop!, Hiss!, etc.) -> yes</C14_demo_think>\n"
+        "<C15_demo_think>Alliteration in multiple stanzas -> yes</C15_demo_think>\n"
+        "<C16_demo_think>Tone whimsical/mythic -> yes</C16_demo_think>\n"
+        "<C17_demo_think>No verbatim canonical lines -> yes</C17_demo_think>\n"
+        "<C18_demo_think>Canonical tokens <=8 -> yes</C18_demo_think>\n"
+        "<C19_demo_think>quatrains=8; syllable_hits=6 (75.0%); samples: 8/6/8/6 | 9/6/8/6 -> no</C19_demo_think>\n"
+        "<C20_demo_think>unique_endings=7; max_repeat=1 -> yes</C20_demo_think>\n"
+        "<C21_demo_think>content_tokens≈180; top_word='day' x3 (1.7%) -> yes</C21_demo_think>\n"
+        "<C22_demo_think>coinages=12; distinct_suffixes>=8; top_suffix_share<=33% -> yes</C22_demo_think>\n"
+        "</think>\n<answers_demo>\n"
+        + "\n".join([f"<{k}_demo>yes</{k}_demo>" for k in RUBRIC_SHORT]) + "\n</answers_demo>\n</example>\n\n"
+        "<example>\n<poem>" + MEDIUM_EXAMPLE + "</poem>\n<think>\n"
+        "<C1_demo_think>Title present</C1_demo_think>\n"
+        "<C2_demo_think>stanzas=8; quatrains=7 (87.5%) -> yes</C2_demo_think>\n"
+        "<C3_demo_think>quatrains=7; alt_hits=3 (42.9%) -> no</C3_demo_think>\n"
+        "<C4_demo_think>quatrains=7; rhyme(2,4) hits=5 (71.4%) -> yes</C4_demo_think>\n"
+        "<C5_demo_think>Ring echo weak but present -> yes</C5_demo_think>\n"
+        "<C6_demo_think>Admonition present -> yes</C6_demo_think>\n"
+        "<C7_demo_think>Preparation present -> yes</C7_demo_think>\n"
+        "<C8_demo_think>Encounter present -> yes</C8_demo_think>\n"
+        "<C9_demo_think>Decisive action present -> yes</C9_demo_think>\n"
+        "<C10_demo_think>Return present -> yes</C10_demo_think>\n"
+        "<C11_demo_think>distinct_coinages=9 -> yes</C11_demo_think>\n"
+        "<C12_demo_think>stanzas_with_coinage=6/8 -> no</C12_demo_think>\n"
+        "<C13_demo_think>Creature named -> yes</C13_demo_think>\n"
+        "<C14_demo_think>Onomatopoeia present -> yes</C14_demo_think>\n"
+        "<C15_demo_think>Alliteration present -> yes</C15_demo_think>\n"
+        "<C16_demo_think>Tone acceptable -> yes</C16_demo_think>\n"
+        "<C17_demo_think>No verbatim lines -> yes</C17_demo_think>\n"
+        "<C18_demo_think>Canonical budget ok -> yes</C18_demo_think>\n"
+        "<C19_demo_think>quatrains=7; syllable_hits=2 (28.6%); samples: 10/7/10/7 | 9/7/10/7 -> no</C19_demo_think>\n"
+        "<C20_demo_think>unique_endings=3; max_repeat=3 -> no</C20_demo_think>\n"
+        "<C21_demo_think>content_tokens≈170; top_word='diet' x4 (2.4%) -> yes</C21_demo_think>\n"
+        "<C22_demo_think>coinages=9; distinct_suffixes=5; top_suffix_share≈44% -> yes</C22_demo_think>\n"
+        "</think>\n<answers_demo>\n"
+        + "\n".join([
+            "<C1_demo>yes</C1_demo>", "<C2_demo>yes</C2_demo>", "<C3_demo>no</C3_demo>", "<C4_demo>yes</C4_demo>",
+            "<C5_demo>yes</C5_demo>", "<C6_demo>yes</C6_demo>", "<C7_demo>yes</C7_demo>", "<C8_demo>yes</C8_demo>",
+            "<C9_demo>yes</C9_demo>", "<C10_demo>yes</C10_demo>", "<C11_demo>yes</C11_demo>", "<C12_demo>no</C12_demo>",
+            "<C13_demo>yes</C13_demo>", "<C14_demo>yes</C14_demo>", "<C15_demo>yes</C15_demo>", "<C16_demo>yes</C16_demo>",
+            "<C17_demo>yes</C17_demo>", "<C18_demo>yes</C18_demo>", "<C19_demo>no</C19_demo>", "<C20_demo>no</C20_demo>",
+            "<C21_demo>yes</C21_demo>", "<C22_demo>yes</C22_demo>"
+        ]) + "\n</answers_demo>\n</example>\n\n"
+        "<example>\n<poem>" + VERY_LOW_EXAMPLE + "</poem>\n<think>\n"
+        + "\n".join([
+            "<C1_demo_think>Title present</C1_demo_think>",
+            "<C2_demo_think>stanzas=8; quatrains=3 (37.5%) -> no</C2_demo_think>",
+            "<C3_demo_think>quatrains=3; alt_hits=0 (0.0%) -> no</C3_demo_think>",
+            "<C4_demo_think>quatrains=3; rhyme(2,4) hits=1 (33.3%) -> no</C4_demo_think>",
+            "<C5_demo_think>No ring echo -> no</C5_demo_think>",
+            "<C6_demo_think>No admonition -> no</C6_demo_think>",
+            "<C7_demo_think>No preparation -> no</C7_demo_think>",
+            "<C8_demo_think>No clear encounter -> no</C8_demo_think>",
+            "<C9_demo_think>No decisive action -> no</C9_demo_think>",
+            "<C10_demo_think>No return/celebration -> no</C10_demo_think>",
+            "<C11_demo_think>distinct_coinages=2 -> no</C11_demo_think>",
+            "<C12_demo_think>stanzas_with_coinage=2/8 -> no</C12_demo_think>",
+            "<C13_demo_think>No named creature -> no</C13_demo_think>",
+            "<C14_demo_think>Onomatopoeia missing -> no</C14_demo_think>",
+            "<C15_demo_think>Alliteration weak -> no</C15_demo_think>",
+            "<C16_demo_think>Tone generic/flat -> no</C16_demo_think>",
+            "<C17_demo_think>No verbatim -> yes</C17_demo_think>",
+            "<C18_demo_think>Canonical budget ok -> yes</C18_demo_think>",
+            "<C19_demo_think>quatrains=3; syllable_hits=0 (0.0%); samples: 11/8/10/8 -> no</C19_demo_think>",
+            "<C20_demo_think>unique_endings=1; max_repeat=5 -> no</C20_demo_think>",
+            "<C21_demo_think>top_word='sweet' x10 (12.0%) -> no</C21_demo_think>",
+            "<C22_demo_think>coinages=2; distinct_suffixes=1; top_suffix_share=100% -> no",
+        ]) + "\n</think>\n<answers_demo>\n"
+        + "\n".join([
+            "<C1_demo>yes</C1_demo>", "<C2_demo>no</C2_demo>", "<C3_demo>no</C3_demo>", "<C4_demo>no</C4_demo>",
+            "<C5_demo>no</C5_demo>", "<C6_demo>no</C6_demo>", "<C7_demo>no</C7_demo>", "<C8_demo>no</C8_demo>",
+            "<C9_demo>no</C9_demo>", "<C10_demo>no</C10_demo>", "<C11_demo>no</C11_demo>", "<C12_demo>no</C12_demo>",
+            "<C13_demo>no</C13_demo>", "<C14_demo>no</C14_demo>", "<C15_demo>no</C15_demo>", "<C16_demo>no</C16_demo>",
+            "<C17_demo>yes</C17_demo>", "<C18_demo>yes</C18_demo>", "<C19_demo>no</C19_demo>", "<C20_demo>no</C20_demo>",
+            "<C21_demo>no</C21_demo>", "<C22_demo>no</C22_demo>"
+        ]) + "\n</answers_demo>\n</example>\n\n"
     )
 
     rubric_xml_parser = vf.XMLParser(fields=RUBRIC_FIELDS, answer_field=RUBRIC_KEYS[0])
@@ -632,9 +733,18 @@ def load_environment(
         else:
             question = str(prompt)
         response_text = parser.parse_answer(completion) or ""
+        # Extract a topic string from the user prompt; do not expose full instructions to the judge
+        def _extract_topic(q: str) -> str:
+            import re as _re
+            for pat in [r"about\s+(.+?)\s+in the style", r"on\s+(.+?)\s+in the style", r"about\s+(.+?)\s*\."]:
+                m = _re.search(pat, q, flags=_re.IGNORECASE)
+                if m:
+                    return m.group(1).strip()
+            return ""
+        topic_only = _extract_topic(question)
         jp = (
             judge_xml_prompt
-            + "\n<question>\n" + question + "\n</question>\n\n"
+            + "\n<topic>\n" + topic_only + "\n</topic>\n\n"
             + "<reference_poem>\n" + answer + "\n</reference_poem>\n\n"
             + "<model_poem>\n" + response_text + "\n</model_poem>\n"
         )

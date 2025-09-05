@@ -1,17 +1,17 @@
 {
-  "overall_reward": 0.9926315789473684,
+  "overall_reward": 1.0,
   "label_counts": {
     "very_low": 0,
     "low": 0,
-    "medium": 1,
-    "high": 49
+    "medium": 0,
+    "high": 5
   },
   "metrics_mean": {
-    "composite_score": 0.9926315789473684,
+    "composite_score": 1.0,
     "C1_title_present": 1.0,
-    "C2_quatrain_shape": 0.96,
-    "C3_ballad_meter_echo": 0.98,
-    "C4_ballad_rhyme": 0.96,
+    "C2_quatrain_shape": 1.0,
+    "C3_ballad_meter_echo": 1.0,
+    "C4_ballad_rhyme": 1.0,
     "C5_ring_composition": 1.0,
     "C6_warning_admonition": 1.0,
     "C7_preparation_armament": 1.0,
@@ -19,21 +19,24 @@
     "C9_slaying_decisive_action": 1.0,
     "C10_return_celebration": 1.0,
     "C11_coinage_count": 1.0,
-    "C12_coinage_spread": 0.98,
+    "C12_coinage_spread": 1.0,
     "C13_creature_naming": 1.0,
     "C14_onomatopoeia": 1.0,
     "C15_alliteration_consonance": 1.0,
     "C16_tone_alignment": 1.0,
     "C17_no_verbatim_lines": 1.0,
     "C18_canonical_budget": 1.0,
-    "C19_syllable_tightness": 0.98,
-    "label_high": 0.98,
-    "label_medium": 0.02,
+    "C19_syllable_tightness": 1.0,
+    "C20_rhyme_variety": 1.0,
+    "C21_lexical_repetition_guard": 1.0,
+    "C22_coinage_variety": 1.0,
+    "label_high": 1.0,
+    "label_medium": 0.0,
     "label_low": 0.0,
     "label_very_low": 0.0
   },
   "spec": "llama-3.1-nemotron-ultra-253b-v1",
   "provider": "openrouter",
   "model": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
-  "num_samples": 50
+  "num_samples": 5
 }

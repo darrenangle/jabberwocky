@@ -112,6 +112,15 @@ def test_rubric_includes_syllable_tightness():
     assert any(name.startswith("C19_syllable_tightness") for name in names), "C19 syllable criterion missing"
 
 
+def test_rubric_includes_new_variety_checks():
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=5, num_eval_examples=5, seed=42)
+    names = {getattr(f, "__name__", "") for f, _w in env.rubric.reward_funcs}
+    assert any(name.startswith("C20_rhyme_variety") for name in names), "C20 rhyme variety missing"
+    assert any(name.startswith("C21_lexical_repetition_guard") for name in names), "C21 repetition guard missing"
+    assert any(name.startswith("C22_coinage_variety") for name in names), "C22 coinage variety missing"
+
+
 def test_same_seed_same_questions_within_level():
     os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
     base = dict(num_train_examples=5, num_eval_examples=12, seed=424242)

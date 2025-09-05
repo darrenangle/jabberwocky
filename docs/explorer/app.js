@@ -238,11 +238,8 @@ function RadarViz({
   colorMap,
 }) {
   const colors = RADAR_COLORS;
-  const size = 100;
-  const cx = 50;
-  const cy = 50;
-  const r = variant === "hero" ? 40 : 42;
-  const n = CRITERIA_KEYS.length;
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
   const [localHover, setLocalHover] = useState(null);
   const effectiveHover = hoverSlug !== undefined ? hoverSlug : localHover;
 
@@ -250,23 +247,148 @@ function RadarViz({
     const mm = m.summary?.metrics_mean || {}; // 0..1
     return CRITERIA_KEYS.map((k) => {
       const v = mm[k];
-      return typeof v === "number" ? Math.max(0, Math.min(1, v)) : 0;
+      return typeof v === "number" ? Math.max(0, Math.min(1, v)) * 100 : 0;
     });
   };
 
-  const angleFor = (i) => ((-90 + (360 * i) / n) * Math.PI) / 180;
-  const xy = (t, ang) => [
-    cx + r * t * Math.cos(ang),
-    cy + r * t * Math.sin(ang),
-  ];
   const containerClass = variant === "hero" ? "hero-viz" : "radar-embed";
-  const svgClass = variant === "hero" ? "hero-viz-svg" : "radar-embed-svg";
   const handleHover = (slug) => {
     if (onHoverChange) onHoverChange(slug);
     else setLocalHover(slug);
   };
-  const labelFactor = variant === "hero" ? 1.12 : 0.96;
-  const labelFont = variant === "hero" ? 2.6 : 2.4;
+
+  // Create chart only once
+  useEffect(() => {
+    if (!canvasRef.current || !window.Chart) return;
+
+    const ctx = canvasRef.current.getContext('2d');
+    
+    // Initial datasets
+    const datasets = models.map((m, idx) => {
+      const color = (colorMap && colorMap[m.slug]) || colors[idx % colors.length];
+      
+      return {
+        label: m.id,
+        data: getVec(m),
+        fill: true,
+        backgroundColor: color + '25',
+        borderColor: color,
+        borderWidth: 1.5,
+        pointBackgroundColor: color,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1,
+        pointRadius: variant === "hero" ? 0 : 2,
+        pointHoverRadius: 4,
+        hidden: false
+      };
+    });
+
+    chartRef.current = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: CRITERIA_LABELS,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+          mode: 'point',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: variant !== "hero",
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + Math.round(context.parsed.r) + '%';
+              }
+            }
+          }
+        },
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 100,
+            min: 0,
+            ticks: {
+              stepSize: 25,
+              display: variant !== "hero",
+              callback: function(value) {
+                return value + '%';
+              },
+              font: {
+                size: variant === "hero" ? 10 : 12
+              }
+            },
+            pointLabels: {
+              display: true,
+              font: {
+                size: variant === "hero" ? 10 : 12,
+                family: 'var(--ui)'
+              },
+              color: '#6f6658',
+              padding: variant === "hero" ? 5 : 10
+            },
+            grid: {
+              color: '#e7e2d9',
+              lineWidth: 1
+            },
+            angleLines: {
+              color: '#e7e2d9',
+              lineWidth: 1
+            }
+          }
+        },
+        layout: {
+          padding: variant === "hero" ? 0 : 20
+        },
+        animation: {
+          duration: 300
+        },
+        onHover: (event, activeElements) => {
+          if (activeElements.length > 0) {
+            const datasetIndex = activeElements[0].datasetIndex;
+            const model = models[datasetIndex];
+            handleHover(model.slug);
+          } else {
+            handleHover(null);
+          }
+        }
+      }
+    });
+
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+    };
+  }, [models, variant, colorMap]); // Remove effectiveHover from dependencies
+
+  // Update only the visual properties when hover changes
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    const chart = chartRef.current;
+    
+    // Update dataset styles based on hover
+    models.forEach((m, idx) => {
+      const color = (colorMap && colorMap[m.slug]) || colors[idx % colors.length];
+      const isHover = effectiveHover === m.slug;
+      const dim = effectiveHover && !isHover;
+      
+      // More dramatic fade for non-hovered items
+      chart.data.datasets[idx].backgroundColor = color + (isHover ? '55' : dim ? '08' : '25');
+      chart.data.datasets[idx].borderColor = color + (isHover ? 'FF' : dim ? '40' : 'FF');
+      chart.data.datasets[idx].borderWidth = isHover ? 3 : dim ? 0.5 : 1.5;
+    });
+    
+    // Update without animation for smooth hover effect
+    chart.update('none');
+  }, [effectiveHover, models, colorMap]);
 
   return (
     <div
@@ -275,90 +397,10 @@ function RadarViz({
       onClick={variant === "hero" ? onOpenModal : undefined}
       title={variant === "hero" ? "Click to expand" : undefined}
     >
-      <svg viewBox={`0 0 ${size} ${size}`} className={svgClass}>
-        <defs>
-          <linearGradient id="radarFade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.92)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.82)" />
-          </linearGradient>
-        </defs>
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r + 6}
-          fill="url(#radarFade)"
-          stroke="var(--hair)"
-        />
-        {[0.25, 0.5, 0.75, 1].map((t, i) => (
-          <circle
-            key={i}
-            cx={cx}
-            cy={cy}
-            r={r * t}
-            fill="none"
-            stroke="#c9c3b6"
-            strokeDasharray="1,3"
-          />
-        ))}
-        {CRITERIA_KEYS.map((_, i) => {
-          const a = angleFor(i);
-          const [x, y] = xy(1, a);
-          const [lx, ly] = xy(labelFactor, a);
-          return (
-            <g key={`axis-${i}`}>
-              <line
-                x1={cx}
-                y1={cy}
-                x2={x}
-                y2={y}
-                stroke="#d9d3c6"
-                strokeWidth={0.5}
-              />
-              <text
-                x={lx}
-                y={ly}
-                fontSize={labelFont}
-                textAnchor={Math.cos(a) > 0 ? "start" : "end"}
-                dominantBaseline="middle"
-                fill="#6f6658"
-              >
-                {CRITERIA_LABELS[i]}
-              </text>
-            </g>
-          );
-        })}
-        {models.map((m, idx) => {
-          const vec = getVec(m);
-          const pts = vec
-            .map((t, i) => {
-              const a = angleFor(i);
-              const [x, y] = xy(t, a);
-              return `${x},${y}`;
-            })
-            .join(" ");
-          const color =
-            (colorMap && colorMap[m.slug]) || colors[idx % colors.length];
-          const isHover = effectiveHover === m.slug;
-          const dim = effectiveHover && !isHover;
-          const fillOpacity = isHover ? 0.28 : dim ? 0.06 : 0.14;
-          const strokeWidth = isHover ? 1.8 : dim ? 0.7 : 1.2;
-          return (
-            <g
-              key={m.slug}
-              onMouseEnter={() => handleHover(m.slug)}
-              onMouseLeave={() => handleHover(null)}
-            >
-              <polyline
-                points={pts}
-                fill={color}
-                opacity={fillOpacity}
-                stroke={color}
-                strokeWidth={strokeWidth}
-              />
-            </g>
-          );
-        })}
-      </svg>
+      <canvas 
+        ref={canvasRef}
+        style={{ maxWidth: '100%', maxHeight: '100%' }}
+      />
       {showLegend && (
         <div className="hero-legend">
           {models.map((m, idx) => (
@@ -459,26 +501,26 @@ function Analysis({
   instructionLevel,
   onInstructionLevelChange,
 }) {
-  const top10 = useMemo(() => (models || []).slice(0, 10), [models]);
-  const [selected, setSelected] = useState(() => new Set(top10.map((m) => m.slug)));
+  const allModels = useMemo(() => models || [], [models]);
+  const [selected, setSelected] = useState(() => new Set(allModels.slice(0, 10).map((m) => m.slug)));
   const [hoverSlug, setHoverSlug] = useState(null);
 
   useEffect(() => {
-    // Reset selection when models change
-    setSelected(new Set(top10.map((m) => m.slug)));
-  }, [top10]);
+    // Reset selection to top 10 when models change
+    setSelected(new Set(allModels.slice(0, 10).map((m) => m.slug)));
+  }, [allModels]);
 
   const colorMap = useMemo(() => {
     const map = {};
-    top10.forEach((m, idx) => {
+    allModels.forEach((m, idx) => {
       map[m.slug] = RADAR_COLORS[idx % RADAR_COLORS.length];
     });
     return map;
-  }, [top10]);
+  }, [allModels]);
 
   const enabledModels = useMemo(
-    () => top10.filter((m) => selected.has(m.slug)),
-    [top10, selected]
+    () => allModels.filter((m) => selected.has(m.slug)),
+    [allModels, selected]
   );
 
   // Rubric spread across all models in level
@@ -504,7 +546,7 @@ function Analysis({
   const hardest = useMemo(() => spread.slice(0, 5), [spread]);
   const easiest = useMemo(() => spread.slice(-5).reverse(), [spread]);
 
-  const allOn = () => setSelected(new Set(top10.map((m) => m.slug)));
+  const allOn = () => setSelected(new Set(allModels.map((m) => m.slug)));
   const allOff = () => setSelected(new Set());
   const toggleOne = (slug) => {
     setSelected((prev) => {
@@ -540,14 +582,15 @@ function Analysis({
 
       <div className="card analysis-layout">
         <div className="radar-side">
-          <h3 style={{ marginBottom: ".5rem" }}>Top 10 Models — Radar</h3>
+          <h3 style={{ marginBottom: ".5rem" }}>All Models — Radar</h3>
           <div className="radar-controls">
             <div style={{ display: "flex", gap: ".4rem", marginBottom: ".25rem", flexWrap: "wrap" }}>
               <button className="btn secondary" onClick={allOn}>Enable all</button>
               <button className="btn secondary" onClick={allOff}>Clear</button>
+              <button className="btn secondary" onClick={() => setSelected(new Set(allModels.slice(0, 10).map((m) => m.slug)))}>Top 10</button>
             </div>
-            <div className="radar-grid">
-              {top10.map((m) => (
+            <div className="radar-grid" style={{ maxHeight: "400px", overflowY: "auto" }}>
+              {allModels.map((m, idx) => (
                 <label
                   key={m.slug}
                   className="legend-check"
@@ -563,7 +606,7 @@ function Analysis({
                     className="legend-swatch"
                     style={{ background: colorMap[m.slug] }}
                   />
-                  <span>{m.id}</span>
+                  <span>{idx + 1}. {m.id}</span>
                 </label>
               ))}
             </div>

@@ -84,47 +84,60 @@ class ActorRegistry:
             ),
         }
 
-        # Built-in model aliases (minimal examples; extend via file)
+        # Built-in model aliases (curated coverage across major labs; prefer paid, recent, larger models)
         self.models: Dict[str, Dict[str, Any]] = {
-            # OpenAI
-            "gpt-4.1-nano": {"provider": "openai", "model": "gpt-4.1-nano"},
-            "gpt-4.1-mini": {"provider": "openai", "model": "gpt-4.1-mini"},
-            "gpt-4.1": {"provider": "openai", "model": "gpt-4.1"},
-            "gpt-5-nano": {"provider": "openai", "model": "gpt-5-nano"},
-            "gpt-5-mini": {"provider": "openai", "model": "gpt-5-mini"},
+            # OpenAI (direct) — keep only flagship to avoid OpenAI-heavy actor lists
             "gpt-5": {"provider": "openai", "model": "gpt-5"},
             # Groq examples
             "groq:llama-3.1-70b": {"provider": "groq", "model": "llama-3.1-70b"},
             # OpenRouter examples (provider/model style)
             "gpt-4o": {"provider": "openrouter", "model": "openai/gpt-4o"},
             "sonnet-3.5": {"provider": "openrouter", "model": "anthropic/claude-3.5-sonnet"},
-            # Curated OpenRouter top models
-            "grok-code-fast-1": {"provider": "openrouter", "model": "x-ai/grok-code-fast-1"},
+            # Curated OpenRouter coverage (major labs + strong OSS); prefer paid endpoints and recent, larger models
+            # Anthropic
             "claude-sonnet-4": {"provider": "openrouter", "model": "anthropic/claude-sonnet-4"},
-            "deepseek-chat-v3.1": {"provider": "openrouter", "model": "deepseek/deepseek-chat-v3.1"},
-            "llama-4-scout": {"provider": "openrouter", "model": "meta-llama/llama-4-scout"},
-            "llama-4-maverick": {"provider": "openrouter", "model": "meta-llama/llama-4-maverick"},
+            "claude-opus-4.1": {"provider": "openrouter", "model": "anthropic/claude-opus-4.1"},
+            "claude-3.7-sonnet": {"provider": "openrouter", "model": "anthropic/claude-3.7-sonnet"},
+            "claude-3.5-haiku": {"provider": "openrouter", "model": "anthropic/claude-3.5-haiku"},
+            # OpenAI (direct)
+            "gpt-4.1": {"provider": "openai", "model": "gpt-4.1"},
+            "o3": {"provider": "openai", "model": "o3"},
+            "o4-mini": {"provider": "openai", "model": "o4-mini"},
+            # Google Gemini
+            "gemini-2.5-pro": {"provider": "openrouter", "model": "google/gemini-2.5-pro"},
+            "gemini-2.5-flash": {"provider": "openrouter", "model": "google/gemini-2.5-flash"},
+            "gemini-2.5-flash-lite": {"provider": "openrouter", "model": "google/gemini-2.5-flash-lite"},
+            # xAI
+            "grok-4": {"provider": "openrouter", "model": "x-ai/grok-4"},
+            "grok-3": {"provider": "openrouter", "model": "x-ai/grok-3"},
+            "grok-code-fast-1": {"provider": "openrouter", "model": "x-ai/grok-code-fast-1"},
+            # Meta Llama
             "llama-3.1-405b-instruct": {"provider": "openrouter", "model": "meta-llama/llama-3.1-405b-instruct"},
             "llama-3.3-70b-instruct": {"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct"},
+            # Alibaba Qwen
+            "qwen3-max": {"provider": "openrouter", "model": "qwen/qwen3-max"},
+            "qwen3-235b-a22b-2507": {"provider": "openrouter", "model": "qwen/qwen3-235b-a22b-2507"},
+            "qwen3-30b-a3b-instruct-2507": {"provider": "openrouter", "model": "qwen/qwen3-30b-a3b-instruct-2507"},
+            # DeepSeek
+            "deepseek-chat-v3.1": {"provider": "openrouter", "model": "deepseek/deepseek-chat-v3.1"},
+            "deepseek-r1-0528": {"provider": "openrouter", "model": "deepseek/deepseek-r1-0528"},
+            # Mistral
+            "mistral-medium-3.1": {"provider": "openrouter", "model": "mistralai/mistral-medium-3.1"},
+            # Moonshot
+            "kimi-k2-0905": {"provider": "openrouter", "model": "moonshotai/kimi-k2-0905"},
             "kimi-k2": {"provider": "openrouter", "model": "moonshotai/kimi-k2"},
             "kimi-dev-72b": {"provider": "openrouter", "model": "moonshotai/kimi-dev-72b"},
-            "moonlight-16b-a3b-instruct": {"provider": "openrouter", "model": "moonshotai/moonlight-16b-a3b-instruct"},
-            "gemini-2.5-flash": {"provider": "openrouter", "model": "google/gemini-2.5-flash"},
-            "gemini-2.5-pro": {"provider": "openrouter", "model": "google/gemini-2.5-pro"},
-            "gemini-2.5-flash-lite": {"provider": "openrouter", "model": "google/gemini-2.5-flash-lite"},
-            "qwen3-30b-a3b": {"provider": "openrouter", "model": "qwen/qwen3-30b-a3b"},
-            "claude-3.7-sonnet": {"provider": "openrouter", "model": "anthropic/claude-3.7-sonnet"},
-            # Additional OpenRouter catalog entries requested
-            "deepseek-chat-v3-0324": {"provider": "openrouter", "model": "deepseek/deepseek-chat-v3-0324"},
-            "deepseek-r1-0528": {"provider": "openrouter", "model": "deepseek/deepseek-r1-0528"},
-            "gpt-oss-120b": {"provider": "openrouter", "model": "openai/gpt-oss-120b"},
+            # AI21
+            "jamba-large-1.7": {"provider": "openrouter", "model": "ai21/jamba-large-1.7"},
+            # Zhipu/GLM (Z.AI)
             "glm-4.5": {"provider": "openrouter", "model": "z-ai/glm-4.5"},
-            "glm-4.5-air": {"provider": "openrouter", "model": "z-ai/glm-4.5-air"},
+            # Baidu ERNIE
+            "ernie-4.5-300b-a47b": {"provider": "openrouter", "model": "baidu/ernie-4.5-300b-a47b"},
+            # Nous OSS large
             "hermes-4-405b": {"provider": "openrouter", "model": "nousresearch/hermes-4-405b"},
-            "llama-3.1-nemotron-ultra-253b-v1": {"provider": "openrouter", "model": "nvidia/llama-3.1-nemotron-ultra-253b-v1"},
-            "claude-opus-4.1": {"provider": "openrouter", "model": "anthropic/claude-opus-4.1"},
-            "claude-opus-4": {"provider": "openrouter", "model": "anthropic/claude-opus-4"},
-            "claude-3-opus": {"provider": "openrouter", "model": "anthropic/claude-3-opus"},
+            "hermes-4-70b": {"provider": "openrouter", "model": "nousresearch/hermes-4-70b"},
+            # Open source demo (OpenAI OSS)
+            "gpt-oss-120b": {"provider": "openrouter", "model": "openai/gpt-oss-120b"},
         }
 
     def load_file(self, path: str) -> None:

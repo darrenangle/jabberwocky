@@ -72,10 +72,14 @@ def build_argparser() -> argparse.ArgumentParser:
     # Optional judge endpoint overrides
     p.add_argument("--judge-base-url", type=str, default=None, help="Judge OpenAI-compatible base URL (default: OpenAI)")
     p.add_argument("--judge-api-key", type=str, default=None, help="Judge API key (or set via env OPENAI_API_KEY)")
+    p.add_argument("--judge-timeout-seconds", type=float, default=60.0, help="Judge request timeout seconds")
     p.add_argument("--seed", type=int, default=777, help="Seed for topic sampling (ensures same dataset across models)")
     p.add_argument("--parallel-models", type=int, default=1, help="Evaluate up to N models in parallel (use with care)")
     # Actor sampling overrides
     p.add_argument("--actor-max-tokens", type=int, default=None, help="Override actor max_tokens (temperature is never set)")
+    # Robustness + resume controls
+    p.add_argument("--skip-existing", action="store_true", help="Skip models that already have samples.jsonl with >= n rows in outdir")
+    p.add_argument("--actor-timeout-seconds", type=float, default=None, help="Per-request actor timeout seconds (overrides ACTOR_TIMEOUT_SECONDS env)")
     return p
 
 
@@ -385,6 +389,8 @@ def main():
         import os as _os
         _os.environ.setdefault("JUDGE_API_KEY_CLI", args.judge_api_key)
         judge_kwargs["judge_api_key_var"] = "JUDGE_API_KEY_CLI"
+    # Judge timeout
+    judge_kwargs["judge_timeout"] = float(args.judge_timeout_seconds)
 
     # We intentionally create an identical environment per model (inside _run_one)
     # to avoid any shared-state or concurrency effects. The parameters here are
@@ -426,7 +432,7 @@ def main():
 
     # Resolve all ActorConfigs up-front
     # Reasonable default timeout for slow providers (e.g., Gemini Pro via OpenRouter)
-    ACTOR_TIMEOUT = float(os.getenv("ACTOR_TIMEOUT_SECONDS", "120"))
+    ACTOR_TIMEOUT = float(args.actor_timeout_seconds if args.actor_timeout_seconds is not None else os.getenv("ACTOR_TIMEOUT_SECONDS", "120"))
     # Effective example/rollout counts (spread rollouts across topics when n=1)
     effective_n = args.n
     effective_rollouts = args.rollouts
@@ -453,10 +459,38 @@ def main():
             continue
         actor_cfgs.append((spec, cfg))
 
+    # Optionally skip models that already have completed outputs
+    if args.skip_existing and args.outdir:
+        filtered: List[Tuple[str, Any]] = []
+        for spec, cfg in actor_cfgs:
+            slug = _safe_slug(spec)
+            spath = os.path.join(args.outdir, slug, "samples.jsonl")
+            if os.path.exists(spath):
+                try:
+                    # Count rows quickly without loading entire file
+                    with open(spath, "r", encoding="utf-8") as f:
+                        count = 0
+                        for _ in f:
+                            count += 1
+                    # Compute expected rows (examples x rollouts)
+                    eff_n = args.n if not (args.n == 1 and args.rollouts > 1 and not args.topics) else args.rollouts
+                    expected = eff_n
+                    if count >= expected:
+                        print(f"[skip-existing] {spec}: found {count} rows (>= {expected})")
+                        continue
+                except Exception:
+                    pass
+            filtered.append((spec, cfg))
+        actor_cfgs = filtered
+        if not actor_cfgs:
+            print("[info] nothing to do: all selected models already have samples; exiting.")
+            return
+
     # Optionally evaluate multiple models in parallel (coarse-grained). Default sequential.
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     def _run_one(spec: str, cfg) -> Tuple[str, vf.GenerateOutputs, Dict[str, Any]]:
+        print(f"[model-start] {spec}")
         # Create a local environment clone to ensure the exact same prompts
         # (topics, order, templates) are used independently per model.
         local_env = vf.load_environment(
@@ -500,6 +534,7 @@ def main():
         # Optional dumping per-model
         if args.outdir:
             _dump_per_model(args.outdir, spec, cfg, results, summary)
+        print(f"[model-done] {spec} (n={len(results.prompt)})")
         return spec, results, summary
 
     summaries: List[Tuple[str, Dict[str, Any]]] = []

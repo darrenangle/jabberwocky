@@ -198,9 +198,23 @@ Notes:
 - The eval script and environment never set `temperature` for actors or judge; providers use their defaults. You can override `max_tokens` if needed.
 - Ensure `OPENROUTER_API_KEY` is set for OpenRouter models; otherwise they will be skipped.
 
-Curated aliases available in the registry by default:
-- OpenRouter: `grok-code-fast-1`, `claude-sonnet-4`, `deepseek-chat-v3.1-free`, `llama-4-scout-free`, `llama-4-maverick-free`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`, `qwen3-30b-a3b`, `claude-3.7-sonnet`, `sonnet-3.5`, `gpt-4o`.
-- OpenAI: `gpt-4.1-nano`, `gpt-4.1-mini`, `gpt-4.1`, `gpt-5-nano`, `gpt-5-mini`, `gpt-5`.
+Curated aliases available in the built-in registry (OpenRouter selections prefer paid, recent, larger models):
+ - OpenRouter (major labs + strong OSS):
+  - Anthropic: `claude-sonnet-4`, `claude-opus-4.1`
+  - Anthropic (additional): `claude-3.7-sonnet`, `claude-3.5-haiku`
+  - Google: `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`
+  - xAI: `grok-4`, `grok-3`, `grok-3-mini`, `grok-code-fast-1`
+  - Meta: `llama-3.1-405b-instruct`, `llama-3.3-70b-instruct`
+  - Qwen: `qwen3-max`, `qwen3-235b-a22b-2507`, `qwen3-30b-a3b-instruct-2507`
+  - DeepSeek: `deepseek-chat-v3.1`, `deepseek-r1-0528`
+  - Mistral: `mistral-medium-3.1`
+  - Moonshot: `kimi-k2`, `kimi-k2-0905`, `kimi-dev-72b`
+  - AI21: `jamba-large-1.7`
+  - Z.AI: `glm-4.5`
+  - Baidu: `ernie-4.5-300b-a47b`
+  - OSS (OpenAI): `gpt-oss-120b`
+- OpenAI (direct): `gpt-4.1`, `gpt-5`, `o3`, `o4-mini` (judge defaults separate).  
+  OpenAI OSS via OpenRouter: `gpt-oss-120b`.
 
 ## Per-Model Dumps + Web Explorer
 

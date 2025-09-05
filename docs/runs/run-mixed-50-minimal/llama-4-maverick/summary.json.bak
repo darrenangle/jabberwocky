@@ -1,0 +1,42 @@
+{
+  "overall_reward": 0.0,
+  "label_counts": {
+    "very_low": 50,
+    "low": 0,
+    "medium": 0,
+    "high": 0
+  },
+  "metrics_mean": {
+    "composite_score": 0.0,
+    "C1_title_present": 0.0,
+    "C2_quatrain_shape": 0.0,
+    "C3_ballad_meter_echo": 0.0,
+    "C4_ballad_rhyme": 0.0,
+    "C5_ring_composition": 0.0,
+    "C6_warning_admonition": 0.0,
+    "C7_preparation_armament": 0.0,
+    "C8_encounter_confrontation": 0.0,
+    "C9_slaying_decisive_action": 0.0,
+    "C10_return_celebration": 0.0,
+    "C11_coinage_count": 0.0,
+    "C12_coinage_spread": 0.0,
+    "C13_creature_naming": 0.0,
+    "C14_onomatopoeia": 0.0,
+    "C15_alliteration_consonance": 0.0,
+    "C16_tone_alignment": 0.0,
+    "C17_no_verbatim_lines": 0.0,
+    "C18_canonical_budget": 0.0,
+    "C19_syllable_tightness": 0.0,
+    "C20_rhyme_variety": 0.0,
+    "C21_lexical_repetition_guard": 0.0,
+    "C22_coinage_variety": 0.0,
+    "label_high": 0.0,
+    "label_medium": 0.0,
+    "label_low": 0.0,
+    "label_very_low": 1.0
+  },
+  "spec": "llama-4-maverick",
+  "provider": "openrouter",
+  "model": "meta-llama/llama-4-maverick",
+  "num_samples": 50
+}

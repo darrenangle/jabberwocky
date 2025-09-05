@@ -1,0 +1,43 @@
+{
+  "overall_reward": 0.4072727272727273,
+  "label_counts": {
+    "very_low": 12,
+    "low": 36,
+    "medium": 2,
+    "high": 0
+  },
+  "metrics_mean": {
+    "composite_score": 0.4072727272727272,
+    "C1_title_present": 0.96,
+    "C2_quatrain_shape": 0.08,
+    "C3_ballad_meter_echo": 0.0,
+    "C4_ballad_rhyme": 0.14,
+    "C5_ring_composition": 0.0,
+    "C6_warning_admonition": 0.34,
+    "C7_preparation_armament": 0.1,
+    "C8_encounter_confrontation": 0.02,
+    "C9_slaying_decisive_action": 0.0,
+    "C10_return_celebration": 0.0,
+    "C11_coinage_count": 0.82,
+    "C12_coinage_spread": 0.86,
+    "C13_creature_naming": 0.46,
+    "C14_onomatopoeia": 0.26,
+    "C15_alliteration_consonance": 0.68,
+    "C16_arc_order": 0.0,
+    "C17_no_verbatim_lines": 1.0,
+    "C18_canonical_budget": 1.0,
+    "C19_syllable_tightness": 0.1,
+    "C20_rhyme_variety": 0.28,
+    "C21_lexical_repetition_guard": 1.0,
+    "C22_coinage_variety": 0.86,
+    "label_high": 0.0,
+    "label_medium": 0.04,
+    "label_low": 0.72,
+    "label_very_low": 0.24
+  },
+  "total_score": 2036,
+  "spec": "gpt-4.1-nano",
+  "provider": "openai",
+  "model": "gpt-4.1-nano",
+  "num_samples": 50
+}

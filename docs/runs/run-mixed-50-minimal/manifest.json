@@ -1,0 +1,293 @@
+{
+  "run_name": "run-20250905T172022Z",
+  "created_utc": "2025-09-05T17:20:22.186845Z",
+  "seed": 19659174126,
+  "num_examples": 3,
+  "rollouts_per_example": 1,
+  "eval_hint_profile": "minimal",
+  "system_prompt_mode": "neutral",
+  "judge_model": "gpt-4.1-mini",
+  "actor_models": [
+    "hermes-4-70b",
+    "claude-3.5-haiku",
+    "gemini-2.5-flash",
+    "gpt-oss-120b",
+    "ernie-4.5-300b-a47b",
+    "llama-3.1-405b-instruct",
+    "gpt-4o",
+    "jamba-large-1.7",
+    "gemini-2.5-flash-lite",
+    "gpt-4.1",
+    "llama-3.3-70b-instruct",
+    "grok-code-fast-1",
+    "claude-3.7-sonnet",
+    "hermes-4-405b",
+    "grok-4",
+    "claude-sonnet-4",
+    "deepseek-chat-v3.1",
+    "claude-opus-4.1",
+    "gemini-2.5-pro",
+    "kimi-k2-0905",
+    "glm-4.5",
+    "grok-3",
+    "deepseek-r1-0528",
+    "sonnet-3.5",
+    "o3",
+    "qwen3-max",
+    "qwen3-30b-a3b-instruct-2507",
+    "mistral-medium-3.1",
+    "gpt-5",
+    "qwen3-235b-a22b-2507",
+    "kimi-dev-72b"
+  ],
+  "models": [
+    {
+      "id": "hermes-4-70b",
+      "slug": "hermes-4-70b",
+      "provider": "openrouter",
+      "model": "nousresearch/hermes-4-70b",
+      "summary_path": "hermes-4-70b/summary.json",
+      "samples_path": "hermes-4-70b/samples.jsonl"
+    },
+    {
+      "id": "claude-3.5-haiku",
+      "slug": "claude-3.5-haiku",
+      "provider": "openrouter",
+      "model": "anthropic/claude-3.5-haiku",
+      "summary_path": "claude-3.5-haiku/summary.json",
+      "samples_path": "claude-3.5-haiku/samples.jsonl"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "slug": "gemini-2.5-flash",
+      "provider": "openrouter",
+      "model": "google/gemini-2.5-flash",
+      "summary_path": "gemini-2.5-flash/summary.json",
+      "samples_path": "gemini-2.5-flash/samples.jsonl"
+    },
+    {
+      "id": "gpt-oss-120b",
+      "slug": "gpt-oss-120b",
+      "provider": "openrouter",
+      "model": "openai/gpt-oss-120b",
+      "summary_path": "gpt-oss-120b/summary.json",
+      "samples_path": "gpt-oss-120b/samples.jsonl"
+    },
+    {
+      "id": "ernie-4.5-300b-a47b",
+      "slug": "ernie-4.5-300b-a47b",
+      "provider": "openrouter",
+      "model": "baidu/ernie-4.5-300b-a47b",
+      "summary_path": "ernie-4.5-300b-a47b/summary.json",
+      "samples_path": "ernie-4.5-300b-a47b/samples.jsonl"
+    },
+    {
+      "id": "llama-3.1-405b-instruct",
+      "slug": "llama-3.1-405b-instruct",
+      "provider": "openrouter",
+      "model": "meta-llama/llama-3.1-405b-instruct",
+      "summary_path": "llama-3.1-405b-instruct/summary.json",
+      "samples_path": "llama-3.1-405b-instruct/samples.jsonl"
+    },
+    {
+      "id": "gpt-4o",
+      "slug": "gpt-4o",
+      "provider": "openrouter",
+      "model": "openai/gpt-4o",
+      "summary_path": "gpt-4o/summary.json",
+      "samples_path": "gpt-4o/samples.jsonl"
+    },
+    {
+      "id": "jamba-large-1.7",
+      "slug": "jamba-large-1.7",
+      "provider": "openrouter",
+      "model": "ai21/jamba-large-1.7",
+      "summary_path": "jamba-large-1.7/summary.json",
+      "samples_path": "jamba-large-1.7/samples.jsonl"
+    },
+    {
+      "id": "gemini-2.5-flash-lite",
+      "slug": "gemini-2.5-flash-lite",
+      "provider": "openrouter",
+      "model": "google/gemini-2.5-flash-lite",
+      "summary_path": "gemini-2.5-flash-lite/summary.json",
+      "samples_path": "gemini-2.5-flash-lite/samples.jsonl"
+    },
+    {
+      "id": "gpt-4.1",
+      "slug": "gpt-4.1",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "summary_path": "gpt-4.1/summary.json",
+      "samples_path": "gpt-4.1/samples.jsonl"
+    },
+    {
+      "id": "llama-3.3-70b-instruct",
+      "slug": "llama-3.3-70b-instruct",
+      "provider": "openrouter",
+      "model": "meta-llama/llama-3.3-70b-instruct",
+      "summary_path": "llama-3.3-70b-instruct/summary.json",
+      "samples_path": "llama-3.3-70b-instruct/samples.jsonl"
+    },
+    {
+      "id": "grok-code-fast-1",
+      "slug": "grok-code-fast-1",
+      "provider": "openrouter",
+      "model": "x-ai/grok-code-fast-1",
+      "summary_path": "grok-code-fast-1/summary.json",
+      "samples_path": "grok-code-fast-1/samples.jsonl"
+    },
+    {
+      "id": "claude-3.7-sonnet",
+      "slug": "claude-3.7-sonnet",
+      "provider": "openrouter",
+      "model": "anthropic/claude-3.7-sonnet",
+      "summary_path": "claude-3.7-sonnet/summary.json",
+      "samples_path": "claude-3.7-sonnet/samples.jsonl"
+    },
+    {
+      "id": "hermes-4-405b",
+      "slug": "hermes-4-405b",
+      "provider": "openrouter",
+      "model": "nousresearch/hermes-4-405b",
+      "summary_path": "hermes-4-405b/summary.json",
+      "samples_path": "hermes-4-405b/samples.jsonl"
+    },
+    {
+      "id": "grok-4",
+      "slug": "grok-4",
+      "provider": "openrouter",
+      "model": "x-ai/grok-4",
+      "summary_path": "grok-4/summary.json",
+      "samples_path": "grok-4/samples.jsonl"
+    },
+    {
+      "id": "claude-sonnet-4",
+      "slug": "claude-sonnet-4",
+      "provider": "openrouter",
+      "model": "anthropic/claude-sonnet-4",
+      "summary_path": "claude-sonnet-4/summary.json",
+      "samples_path": "claude-sonnet-4/samples.jsonl"
+    },
+    {
+      "id": "deepseek-chat-v3.1",
+      "slug": "deepseek-chat-v3.1",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-chat-v3.1",
+      "summary_path": "deepseek-chat-v3.1/summary.json",
+      "samples_path": "deepseek-chat-v3.1/samples.jsonl"
+    },
+    {
+      "id": "claude-opus-4.1",
+      "slug": "claude-opus-4.1",
+      "provider": "openrouter",
+      "model": "anthropic/claude-opus-4.1",
+      "summary_path": "claude-opus-4.1/summary.json",
+      "samples_path": "claude-opus-4.1/samples.jsonl"
+    },
+    {
+      "id": "gemini-2.5-pro",
+      "slug": "gemini-2.5-pro",
+      "provider": "openrouter",
+      "model": "google/gemini-2.5-pro",
+      "summary_path": "gemini-2.5-pro/summary.json",
+      "samples_path": "gemini-2.5-pro/samples.jsonl"
+    },
+    {
+      "id": "kimi-k2-0905",
+      "slug": "kimi-k2-0905",
+      "provider": "openrouter",
+      "model": "moonshotai/kimi-k2-0905",
+      "summary_path": "kimi-k2-0905/summary.json",
+      "samples_path": "kimi-k2-0905/samples.jsonl"
+    },
+    {
+      "id": "glm-4.5",
+      "slug": "glm-4.5",
+      "provider": "openrouter",
+      "model": "z-ai/glm-4.5",
+      "summary_path": "glm-4.5/summary.json",
+      "samples_path": "glm-4.5/samples.jsonl"
+    },
+    {
+      "id": "grok-3",
+      "slug": "grok-3",
+      "provider": "openrouter",
+      "model": "x-ai/grok-3",
+      "summary_path": "grok-3/summary.json",
+      "samples_path": "grok-3/samples.jsonl"
+    },
+    {
+      "id": "deepseek-r1-0528",
+      "slug": "deepseek-r1-0528",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-r1-0528",
+      "summary_path": "deepseek-r1-0528/summary.json",
+      "samples_path": "deepseek-r1-0528/samples.jsonl"
+    },
+    {
+      "id": "sonnet-3.5",
+      "slug": "sonnet-3.5",
+      "provider": "openrouter",
+      "model": "anthropic/claude-3.5-sonnet",
+      "summary_path": "sonnet-3.5/summary.json",
+      "samples_path": "sonnet-3.5/samples.jsonl"
+    },
+    {
+      "id": "o3",
+      "slug": "o3",
+      "provider": "openai",
+      "model": "o3",
+      "summary_path": "o3/summary.json",
+      "samples_path": "o3/samples.jsonl"
+    },
+    {
+      "id": "qwen3-max",
+      "slug": "qwen3-max",
+      "provider": "openrouter",
+      "model": "qwen/qwen3-max",
+      "summary_path": "qwen3-max/summary.json",
+      "samples_path": "qwen3-max/samples.jsonl"
+    },
+    {
+      "id": "qwen3-30b-a3b-instruct-2507",
+      "slug": "qwen3-30b-a3b-instruct-2507",
+      "provider": "openrouter",
+      "model": "qwen/qwen3-30b-a3b-instruct-2507",
+      "summary_path": "qwen3-30b-a3b-instruct-2507/summary.json",
+      "samples_path": "qwen3-30b-a3b-instruct-2507/samples.jsonl"
+    },
+    {
+      "id": "mistral-medium-3.1",
+      "slug": "mistral-medium-3.1",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-medium-3.1",
+      "summary_path": "mistral-medium-3.1/summary.json",
+      "samples_path": "mistral-medium-3.1/samples.jsonl"
+    },
+    {
+      "id": "gpt-5",
+      "slug": "gpt-5",
+      "provider": "openai",
+      "model": "gpt-5",
+      "summary_path": "gpt-5/summary.json",
+      "samples_path": "gpt-5/samples.jsonl"
+    },
+    {
+      "id": "qwen3-235b-a22b-2507",
+      "slug": "qwen3-235b-a22b-2507",
+      "provider": "openrouter",
+      "model": "qwen/qwen3-235b-a22b-2507",
+      "summary_path": "qwen3-235b-a22b-2507/summary.json",
+      "samples_path": "qwen3-235b-a22b-2507/samples.jsonl"
+    },
+    {
+      "id": "kimi-dev-72b",
+      "slug": "kimi-dev-72b",
+      "provider": "openrouter",
+      "model": "moonshotai/kimi-dev-72b",
+      "summary_path": "kimi-dev-72b/summary.json",
+      "samples_path": "kimi-dev-72b/samples.jsonl"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "overall_reward": 0.5981818181818181,
+  "label_counts": {
+    "very_low": 18,
+    "low": 0,
+    "medium": 6,
+    "high": 26
+  },
+  "metrics_mean": {
+    "composite_score": 0.5981818181818181,
+    "C1_title_present": 0.64,
+    "C2_quatrain_shape": 0.54,
+    "C3_ballad_meter_echo": 0.58,
+    "C4_ballad_rhyme": 0.62,
+    "C5_ring_composition": 0.62,
+    "C6_warning_admonition": 0.64,
+    "C7_preparation_armament": 0.62,
+    "C8_encounter_confrontation": 0.62,
+    "C9_slaying_decisive_action": 0.62,
+    "C10_return_celebration": 0.64,
+    "C11_coinage_count": 0.52,
+    "C12_coinage_spread": 0.54,
+    "C13_creature_naming": 0.6,
+    "C14_onomatopoeia": 0.5,
+    "C15_alliteration_consonance": 0.64,
+    "C16_tone_alignment": 0.64,
+    "C17_no_verbatim_lines": 0.58,
+    "C18_canonical_budget": 0.54,
+    "C19_syllable_tightness": 0.6,
+    "C20_rhyme_variety": 0.62,
+    "C21_lexical_repetition_guard": 0.64,
+    "C22_coinage_variety": 0.6,
+    "label_high": 0.52,
+    "label_medium": 0.12,
+    "label_low": 0.0,
+    "label_very_low": 0.36
+  },
+  "spec": "grok-code-fast-1",
+  "provider": "openrouter",
+  "model": "x-ai/grok-code-fast-1",
+  "num_samples": 50
+}

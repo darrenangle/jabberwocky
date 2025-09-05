@@ -98,12 +98,22 @@ body { font-family: var(--ui); color: var(--ink); background: linear-gradient(18
 .card h3 { font-family: var(--serif); font-size: 1.25rem; margin-bottom: .5rem; }
 .intro { color: #3e3e3e; }
 
+/* Analysis */
+.analysis-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; align-items: start; }
+.criteria-bars { display: grid; gap: .35rem; }
+.criteria-row { display: grid; grid-template-columns: 150px 1fr 56px; align-items: center; gap: .5rem; }
+.criteria-label { font-size: .85rem; color: #333; }
+.criteria-bar { height: 10px; background: #f2efe7; border-radius: 999px; overflow: hidden; border: 1px solid var(--hair); }
+.criteria-fill { height: 100%; background: #111; }
+.criteria-stat { font-family: var(--mono); font-weight: 800; text-align: right; }
+
 /* Segmented control */
 .segmented { display: inline-flex; border: 1px solid var(--hair); background: #fff; border-radius: 10px; overflow: hidden; }
 .segmented button { border: none; background: transparent; padding: .4rem .7rem; font-weight: 700; cursor: pointer; font-size: .85rem; }
 .segmented button:not(.active) { color: var(--muted); }
 .segmented button.active { background: #111; color: #fff; }
 .segmented button:disabled { color: #b9b3a8; cursor: not-allowed; }
+.info-button { border: 1px solid var(--hair); background: #fff; color: #333; width: 22px; height: 22px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; cursor: pointer; }
 
 /* Leaderboard */
 .leaderboard { display: flex; flex-direction: column; gap: .5rem; }
@@ -161,6 +171,16 @@ body { font-family: var(--ui); color: var(--ink); background: linear-gradient(18
 .modal-poem-content { background: #fff; border: 1px solid var(--hair); border-radius: 10px; padding: 1rem; }
 .judge-block { margin-top: .75rem; }
 .judge-title { font-family: var(--serif); font-weight: 800; font-size: .95rem; margin-bottom: .25rem; }
+.judge-summary { color: var(--muted); font-size: .85rem; margin-bottom: .5rem; }
+.judge-grid { display: grid; grid-template-columns: 88px 1fr; gap: .45rem .75rem; }
+.judge-row { display: contents; }
+.judge-pill { font-family: var(--mono); font-weight: 800; font-size: .75rem; border: 1px solid var(--hair); border-radius: 999px; padding: .15rem .55rem; text-align: center; align-self: start; }
+.judge-pill.good { background: #eaf6ee; color: var(--good); border-color: #cfe7d7; }
+.judge-pill.bad { background: #fdecec; color: var(--bad); border-color: #f4cdcd; }
+.judge-body { display: grid; gap: .1rem; }
+.judge-key { font-weight: 700; font-size: .9rem; }
+.judge-think { color: #3b3b3b; font-size: .9rem; }
+.judge-raw-wrap { margin-top: .6rem; }
 .judge-raw { background: #faf8f4; border: 1px solid var(--hair); border-radius: 8px; padding: .6rem .75rem; max-height: 40vh; overflow: auto; font-family: var(--mono); font-size: .75rem; white-space: pre-wrap; }
 
 /* Modal enhancements */

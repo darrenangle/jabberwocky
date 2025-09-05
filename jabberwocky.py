@@ -61,6 +61,68 @@ JABBERWOCKY_TEXT = (
 # Install a prettier sample printer for vf-eval output
 _PRETTY_INSTALLED = False
 
+# =========================
+# Exported judge rubric bits
+# =========================
+# Composite binary rubric keys (descriptive) — kept in sync with XML prompt
+RUBRIC_KEYS = [
+    "C1_title_present",
+    "C2_quatrain_shape",
+    "C3_ballad_meter_echo",
+    "C4_ballad_rhyme",
+    "C5_ring_composition",
+    "C6_warning_admonition",
+    "C7_preparation_armament",
+    "C8_encounter_confrontation",
+    "C9_slaying_decisive_action",
+    "C10_return_celebration",
+    "C11_coinage_count",
+    "C12_coinage_spread",
+    "C13_creature_naming",
+    "C14_onomatopoeia",
+    "C15_alliteration_consonance",
+    "C16_arc_order",
+    "C17_no_verbatim_lines",
+    "C18_canonical_budget",
+    "C19_syllable_tightness",
+    "C20_rhyme_variety",
+    "C21_lexical_repetition_guard",
+    "C22_coinage_variety",
+    "C23_topic_adherence",
+    "C24_subtext",
+]
+
+# Short tags to make formatting easy for small judges
+RUBRIC_SHORT = [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "C7",
+    "C8",
+    "C9",
+    "C10",
+    "C11",
+    "C12",
+    "C13",
+    "C14",
+    "C15",
+    "C16",
+    "C17",
+    "C18",
+    "C19",
+    "C20",
+    "C21",
+    "C22",
+    "C23",
+    "C24",
+]
+
+# XML field definitions: canonical name + alternative short tag
+RUBRIC_FIELDS = [(RUBRIC_KEYS[i], RUBRIC_SHORT[i]) for i in range(len(RUBRIC_KEYS))]
+
 
 def _pretty_print_prompt_completions_sample(
     prompts, completions, rewards, step, num_samples: int = 2
@@ -87,11 +149,15 @@ def _pretty_print_prompt_completions_sample(
     for i in range(nshow):
         cpl = completions[i]
         if isinstance(cpl, list) and cpl:
-            last_assist = next((m for m in cpl[::-1] if m.get("role") == "assistant"), None)
+            last_assist = next(
+                (m for m in cpl[::-1] if m.get("role") == "assistant"), None
+            )
             poem = last_assist.get("content") if last_assist else str(cpl)
         else:
             poem = str(cpl)
-        console.print(_Panel.fit(_Text(poem), title=f"Sample {i+1} Poem", border_style="green"))
+        console.print(
+            _Panel.fit(_Text(poem), title=f"Sample {i+1} Poem", border_style="green")
+        )
 
 
 def _install_pretty_printer_once():
@@ -107,15 +173,12 @@ def _install_pretty_printer_once():
     _PRETTY_INSTALLED = True
 
 
-
 STYLE_SYSTEM_PROMPT = (
     "You are a playful nonsense poet. When asked, write a poem in the style of "
     "Lewis Carroll's 'Jabberwocky'. Avoid copying lines or phrases from the original."
 )
 
-NEUTRAL_SYSTEM_PROMPT = (
-    "You are a helpful poet. When asked, respond with a poem that addresses the user's request."
-)
+NEUTRAL_SYSTEM_PROMPT = "You are a helpful poet. When asked, respond with a poem that addresses the user's request."
 
 CANONICAL_LEXICON = [
     "brillig",
@@ -143,6 +206,7 @@ CANONICAL_LEXICON = [
     "beamish",
 ]
 
+
 def _normalize_line(s: str) -> str:
     s = s.strip().lower()
     # normalize curly quotes and dashes/hyphens
@@ -159,10 +223,9 @@ def _normalize_line(s: str) -> str:
     s = " ".join(s.split())
     return s
 
+
 CANONICAL_LINES_NORM = {
-    _normalize_line(ln)
-    for ln in JABBERWOCKY_TEXT.splitlines()
-    if ln.strip()
+    _normalize_line(ln) for ln in JABBERWOCKY_TEXT.splitlines() if ln.strip()
 }
 
 HIGH_EXAMPLE = (
@@ -272,6 +335,196 @@ VERY_LOW_EXAMPLE = (
 )
 
 
+def build_judge_xml_prompt() -> str:
+    return (
+        "You are grading whether a model-written poem matches the style of "
+        "Lewis Carroll's 'Jabberwocky'.\n\n"
+        "First, produce a structured <think> block. Then produce the final decision tags.\n"
+        "In the <think> block use <C1_think>…</C1_think> … <C22_think>…</C22_think> to record brief reasoning for each criterion.\n"
+        "Do NOT use <C1> inside <think>.\n\n"
+        "Questions (binary). Answer each with 'yes' or 'no' only in the final decision tags.\n"
+        "Strictness: If a check is borderline, partially met, or uncertain, answer 'no'. Only answer 'yes' when the criterion is clearly and definitively satisfied.\n"
+        "- C1_title_present: Is there a non-empty title line before the first stanza (not part of stanza text)?\n"
+        "- C2_quatrain_shape: Do all stanzas have 4 lines, and is the total stanza count between 5 and 8 (inclusive)?\n"
+        "- C3_ballad_meter_echo: In ≥60% of stanzas, do lines alternate longer/shorter with ≥2 content-word difference?\n"
+        "- C4_ballad_rhyme: In ≥60% of stanzas, do lines (2,4) rhyme (allowing slant rhyme), and avoid AABB dominance?\n"
+        "- C5_ring_composition: Does the final stanza echo the opening with ≥2 repeated content words/phrases or a clear refrain?\n"
+        "- C6_warning_admonition: Is there an early admonition (e.g., ‘Beware …’) or equivalent caution to the protagonist?\n"
+        "- C7_preparation_armament: Before the encounter, does the protagonist prepare (tool/resolve/wait/plan)?\n"
+        "- C8_encounter_confrontation: Is there a clear meeting between protagonist and adversary/obstacle?\n"
+        "- C9_slaying_decisive_action: Is there a decisive act that resolves the central tension?\n"
+        "- C10_return_celebration: Is there a return/homecoming and jubilant acknowledgement?\n"
+        "- C11_coinage_count: Are there ≥8 distinct invented coinages (not canonical or standard English)?\n"
+        "- C12_coinage_spread: Does each stanza contain ≥1 coinage?\n"
+        "- C13_creature_naming: Is a non‑canonical creature/entity named and central to action (not ‘Jabberwock’)?\n"
+        "- C14_onomatopoeia: Are there ≥2 onomatopoeic bursts (e.g., ‘snicker‑snack!’, ‘Pop!’, ‘Hiss!’)?\n"
+        "- C15_alliteration_consonance: Do ≥2 stanzas show clear within‑line alliteration/consonance beyond incidental repeats?\n"
+        "- C16_arc_order: Do the arc beats appear in canonical order (warning → preparation → encounter → decisive act → return/celebration)?\n"
+        "- C17_no_verbatim_lines: Does no line exactly match the canonical poem?\n"
+        "- C18_canonical_budget: Are distinct canonical tokens ≤8, favoring new coinages?\n"
+        "- C19_syllable_tightness: In every quatrain stanza, are longer lines ≈8–9 syllables and shorter lines ≈5–7 (Jabberwocky’s ~8/6 pattern)?\n"
+    "- C20_rhyme_variety: Across stanzas, are (2,4) end‑rhymes varied (no exact end word reused >2 times excluding the ring echo)?\n"
+    "- C21_lexical_repetition_guard: Outside the ring echo, is no single content word overused (e.g., >5 times or >8% of content words)?\n"
+    "- C22_coinage_variety: Do coinages show ≥4 distinct roots (no single coined suffix accounts for >50% of coinages)?\n"
+    "- C23_topic_adherence: Does the poem clearly address the given topic (named or evident) without substituting a different subject?\n"
+    "- C24_subtext: Beyond surface action, is there a coherent implied layer (motif/undertone) detectable across the poem?\n\n"
+        "Canonical lexicon: " + ", ".join(CANONICAL_LEXICON) + "\n\n"
+        "Format your output exactly as follows:\n"
+        "<think>\n"
+        + "\n".join(
+            [f"<{k}_think>…your brief reasoning…</{k}_think>" for k in RUBRIC_SHORT]
+        )
+        + "\n"
+        "</think>\n\n"
+        "Then, on new lines, the final decision tags only (one per line), exactly these tags filled with yes/no, in order:\n"
+        + "\n".join([f"<{k}>yes|no</{k}>" for k in RUBRIC_SHORT])
+        + "\n\n"
+        "Calibration examples (do not copy answers; tags suffixed with _demo so they are not parsed):\n"
+        "<example>\n<poem>" + HIGH_EXAMPLE + "</poem>\n<think>\n"
+        "<C1_demo_think>Title present</C1_demo_think>\n"
+        "<C2_demo_think>stanzas=8; quatrains=8 (100.0%) -> yes</C2_demo_think>\n"
+        "<C3_demo_think>quatrains=8; alt_hits=6 (75.0%) -> yes</C3_demo_think>\n"
+        "<C4_demo_think>quatrains=8; rhyme(2,4) hits=7 (87.5%) -> yes</C4_demo_think>\n"
+        "<C5_demo_think>Ring echo present -> yes</C5_demo_think>\n"
+        "<C6_demo_think>Admonition present -> yes</C6_demo_think>\n"
+        "<C7_demo_think>Preparation present -> yes</C7_demo_think>\n"
+        "<C8_demo_think>Encounter present -> yes</C8_demo_think>\n"
+        "<C9_demo_think>Decisive action present -> yes</C9_demo_think>\n"
+        "<C10_demo_think>Return/celebration present -> yes</C10_demo_think>\n"
+        "<C11_demo_think>distinct_coinages=12 -> yes</C11_demo_think>\n"
+        "<C12_demo_think>stanzas_with_coinage=8/8 -> yes</C12_demo_think>\n"
+        "<C13_demo_think>Creature named (Sucrowock) -> yes</C13_demo_think>\n"
+        "<C14_demo_think>Onomatopoeia (Pop!, Hiss!, etc.) -> yes</C14_demo_think>\n"
+        "<C15_demo_think>Alliteration in multiple stanzas -> yes</C15_demo_think>\n"
+        "<C16_demo_think>Arc sequence present in order -> yes</C16_demo_think>\n"
+        "<C17_demo_think>No verbatim canonical lines -> yes</C17_demo_think>\n"
+        "<C18_demo_think>Canonical tokens <=8 -> yes</C18_demo_think>\n"
+        "<C19_demo_think>quatrains=8; syllable_hits=6 (75.0%); samples: 8/6/8/6 | 9/6/8/6 -> no</C19_demo_think>\n"
+        "<C20_demo_think>unique_endings=7; max_repeat=1 -> yes</C20_demo_think>\n"
+        "<C21_demo_think>content_tokens≈180; top_word='day' x3 (1.7%) -> yes</C21_demo_think>\n"
+        "<C22_demo_think>coinages=12; distinct_suffixes>=8; top_suffix_share<=33% -> yes</C22_demo_think>\n"
+        "<C23_demo_think>Topic explicitly sustained throughout -> yes</C23_demo_think>\n"
+        "<C24_demo_think>Consistent undertone/subtext present -> yes</C24_demo_think>\n"
+        "</think>\n<answers_demo>\n"
+        + "\n".join([f"<{k}_demo>yes</{k}_demo>" for k in RUBRIC_SHORT])
+        + "\n</answers_demo>\n</example>\n\n"
+        "<example>\n<poem>" + MEDIUM_EXAMPLE + "</poem>\n<think>\n"
+        "<C1_demo_think>Title present</C1_demo_think>\n"
+        "<C2_demo_think>stanzas=8; quatrains=7 (87.5%) -> no (require all quatrains; total 5–8)</C2_demo_think>\n"
+        "<C3_demo_think>quatrains=7; alt_hits=3 (42.9%) -> no</C3_demo_think>\n"
+        "<C4_demo_think>quatrains=7; rhyme(2,4) hits=5 (71.4%) -> yes</C4_demo_think>\n"
+        "<C5_demo_think>Ring echo weak/uncertain -> no (must be clear)</C5_demo_think>\n"
+        "<C6_demo_think>Admonition present -> yes</C6_demo_think>\n"
+        "<C7_demo_think>Preparation present -> yes</C7_demo_think>\n"
+        "<C8_demo_think>Encounter present -> yes</C8_demo_think>\n"
+        "<C9_demo_think>Decisive action present -> yes</C9_demo_think>\n"
+        "<C10_demo_think>Return present -> yes</C10_demo_think>\n"
+        "<C11_demo_think>distinct_coinages=9 -> yes</C11_demo_think>\n"
+        "<C12_demo_think>stanzas_with_coinage=6/8 -> no</C12_demo_think>\n"
+        "<C13_demo_think>Creature named -> yes</C13_demo_think>\n"
+        "<C14_demo_think>Onomatopoeia present -> yes</C14_demo_think>\n"
+        "<C15_demo_think>Alliteration present -> yes</C15_demo_think>\n"
+        "<C16_demo_think>Arc sequence partially out of order -> no</C16_demo_think>\n"
+        "<C17_demo_think>No verbatim lines -> yes</C17_demo_think>\n"
+        "<C18_demo_think>Canonical budget ok -> yes</C18_demo_think>\n"
+        "<C19_demo_think>quatrains=7; syllable_hits=2 (28.6%); samples: 10/7/10/7 | 9/7/10/7 -> no</C19_demo_think>\n"
+        "<C20_demo_think>unique_endings=3; max_repeat=3 -> no</C20_demo_think>\n"
+        "<C21_demo_think>content_tokens≈170; top_word='diet' x4 (2.4%) -> yes</C21_demo_think>\n"
+        "<C22_demo_think>coinages=9; distinct_suffixes=5; top_suffix_share≈44% -> yes</C22_demo_think>\n"
+        "<C23_demo_think>Topic present but drifts minimally -> yes</C23_demo_think>\n"
+        "<C24_demo_think>Subtext unclear/weak -> no</C24_demo_think>\n"
+        "</think>\n<answers_demo>\n"
+        + "\n".join([
+            "<C1_demo>yes</C1_demo>",
+            "<C2_demo>no</C2_demo>",
+            "<C3_demo>no</C3_demo>",
+            "<C4_demo>yes</C4_demo>",
+            "<C5_demo>no</C5_demo>",
+            "<C6_demo>yes</C6_demo>",
+            "<C7_demo>yes</C7_demo>",
+            "<C8_demo>yes</C8_demo>",
+            "<C9_demo>yes</C9_demo>",
+            "<C10_demo>yes</C10_demo>",
+            "<C11_demo>yes</C11_demo>",
+            "<C12_demo>no</C12_demo>",
+            "<C13_demo>yes</C13_demo>",
+            "<C14_demo>yes</C14_demo>",
+            "<C15_demo>yes</C15_demo>",
+            "<C16_demo>no</C16_demo>",
+            "<C17_demo>yes</C17_demo>",
+            "<C18_demo>yes</C18_demo>",
+            "<C19_demo>no</C19_demo>",
+            "<C20_demo>no</C20_demo>",
+            "<C21_demo>yes</C21_demo>",
+            "<C22_demo>yes</C22_demo>",
+            "<C23_demo>yes</C23_demo>",
+            "<C24_demo>no</C24_demo>",
+        ])
+        + "\n</answers_demo>\n</example>\n\n"
+        "<example>\n<poem>"
+        + VERY_LOW_EXAMPLE
+        + "</poem>\n<think>\n"
+        + "\n".join(
+            [
+                "<C1_demo_think>Title present</C1_demo_think>",
+                "<C2_demo_think>stanzas=8; quatrains=3 (37.5%) -> no</C2_demo_think>",
+                "<C3_demo_think>quatrains=3; alt_hits=0 (0.0%) -> no</C3_demo_think>",
+                "<C4_demo_think>quatrains=3; rhyme(2,4) hits=1 (33.3%) -> no</C4_demo_think>",
+                "<C5_demo_think>No ring echo -> no</C5_demo_think>",
+                "<C6_demo_think>No admonition -> no</C6_demo_think>",
+                "<C7_demo_think>No preparation -> no</C7_demo_think>",
+                "<C8_demo_think>No clear encounter -> no</C8_demo_think>",
+                "<C9_demo_think>No decisive action -> no</C9_demo_think>",
+                "<C10_demo_think>No return/celebration -> no</C10_demo_think>",
+                "<C11_demo_think>coinages<8 -> no</C11_demo_think>",
+                "<C12_demo_think>stanzas_with_coinage<50% -> no</C12_demo_think>",
+                "<C13_demo_think>No creature -> no</C13_demo_think>",
+                "<C14_demo_think>No onomatopoeia -> no</C14_demo_think>",
+                "<C15_demo_think>No alliteration -> no</C15_demo_think>",
+            "<C16_demo_think>Arc sequence broken/out of order -> no</C16_demo_think>",
+                "<C17_demo_think>Verbatim issues -> no</C17_demo_think>",
+                "<C18_demo_think>Canonical budget exceeded -> no</C18_demo_think>",
+                "<C19_demo_think>No syllable control -> no</C19_demo_think>",
+                "<C20_demo_think>Poor rhyme variety -> no</C20_demo_think>",
+                "<C21_demo_think>Overused lexicon -> no</C21_demo_think>",
+                "<C22_demo_think>Coinage not varied -> no</C22_demo_think>",
+                "<C23_demo_think>Topic unclear/shifted -> no</C23_demo_think>",
+                "<C24_demo_think>No coherent subtext -> no</C24_demo_think>",
+        ]
+        )
+        + "\n</think>\n<answers_demo>\n"
+        + "\n".join(
+            [
+                "<C1_demo>no</C1_demo>",
+                "<C2_demo>no</C2_demo>",
+                "<C3_demo>no</C3_demo>",
+                "<C4_demo>no</C4_demo>",
+                "<C5_demo>no</C5_demo>",
+                "<C6_demo>no</C6_demo>",
+                "<C7_demo>no</C7_demo>",
+                "<C8_demo>no</C8_demo>",
+                "<C9_demo>no</C9_demo>",
+                "<C10_demo>no</C10_demo>",
+                "<C11_demo>no</C11_demo>",
+                "<C12_demo>no</C12_demo>",
+                "<C13_demo>no</C13_demo>",
+                "<C14_demo>no</C14_demo>",
+                "<C15_demo>no</C15_demo>",
+                "<C16_demo>no</C16_demo>",
+                "<C17_demo>no</C17_demo>",
+                "<C18_demo>no</C18_demo>",
+                "<C19_demo>no</C19_demo>",
+                "<C20_demo>no</C20_demo>",
+                "<C21_demo>no</C21_demo>",
+                "<C22_demo>no</C22_demo>",
+                "<C23_demo>no</C23_demo>",
+                "<C24_demo>no</C24_demo>",
+            ]
+        )
+        + "\n</answers_demo>\n</example>\n\n"
+    )
+
+
 def _canon_profile(name: str) -> str:
     name = (name or "").strip().lower()
     # backward-compat synonyms
@@ -316,11 +569,9 @@ def _make_instructions(
     lo, hi = stanza_range
     profile = _canon_profile(hint_profile)
 
-    # Minimal (style only, include a title)
+    # Minimal (standard phrasing; grammatically consistent)
     minimal_templates = [
-        "Write a poem about {topic} in the style of Lewis Carroll's 'Jabberwocky'. Include a title. Output only the titled poem.",
-        "Compose a poem on {topic} in the style of 'Jabberwocky'. Include a title. Output only the titled poem.",
-        "Create a poem about {topic} in the style of 'Jabberwocky'. Include a title. Output only the titled poem.",
+        "Write a poem in the style of Lewis Carroll's 'Jabberwocky'. Your prompt is \"{topic}\". Output only the titled poem.",
     ]
     # Medium (a few hints; avoid stanza counts)
     medium_templates = [
@@ -334,13 +585,15 @@ def _make_instructions(
             "Use some invented words."
         ),
     ]
-    # High (many hints; concise list, not prescriptive step-by-step; avoid stanza counts)
+    # High (single, non-prescriptive hint that lists what will be graded)
     high_templates = [
         (
-            "Write a poem about {topic} in the style of 'Jabberwocky'. Include a title. Output only the titled poem. "
-            "Keep ballad rhyme (ABAB/ABCB) and a lively alternating cadence. "
-            "Invent new coinages in each stanza and introduce a named creature. Add onomatopoeia and some alliteration. "
-            "Arc: warning → preparation → encounter/slay → return/celebration. Echo the opening at the end. Avoid verbatim lines; limit canonical words."
+            "Write a poem in the style of Lewis Carroll's 'Jabberwocky'. Your prompt is \"{topic}\". "
+            "Your poem will be graded for adherence to these criteria: "
+            "title; quatrains; meter; rhyme; ring (ending echoes the beginning); warning; preparation; encounter; decisive act; return; "
+            "coinages; coinage spread; creature naming; onomatopoeia; alliteration; arc order; no verbatim copying; canonical budget "
+            "(limit use of distinctive words from the original poem); syllable tightness; rhyme variety; repetition guard; coinage variety; "
+            "topic adherence; subtext. Output only the titled poem."
         )
     ]
 
@@ -349,7 +602,7 @@ def _make_instructions(
             return profile
         mix_in = hint_mix or {"high": 0.2, "medium": 0.6, "minimal": 0.2}
         # Backward-compat: allow heavy/light keys
-        mix = { _canon_profile(k): float(v) for k, v in mix_in.items() }
+        mix = {_canon_profile(k): float(v) for k, v in mix_in.items()}
         keys = list(mix.keys())
         weights = [mix[k] for k in keys]
         s = sum(weights)
@@ -426,79 +679,20 @@ def load_environment(
     user_supplied_topics = topics is not None
     if topics is None:
         topics = [
-            # Nature & seasons
-            "falling leaves", "first snow", "spring rain", "summer heat", "morning fog",
-            "river bend", "desert wind", "mountain pass", "meadow at noon", "ocean tide",
-            "storm at sea", "winter sun", "dawn chorus", "harvest moon", "evening breeze",
-            "puddles after rain", "footprints in snow", "heatwave", "thunderstorm", "low tide",
-            "spindrift", "alpenglow", "rain shadow", "katabatic wind", "scree slope",
-            "murmuration", "firn field", "hoarfrost", "frost heave", "verglas",
-            "tide rip", "eelgrass bed", "kelp wrack", "blown sand", "rain squall",
-            # Urban & transit
-            "subway platform", "bus stop in rain", "airport gate", "city rooftop", "corner bookstore",
-            "laundromat", "parking garage", "neon sign flicker", "traffic at dusk", "underground station",
-            "empty theater", "museum bench", "office elevator", "crosswalk", "vending machine",
-            "platform wind", "third rail hum", "pantograph sparks", "ballast crunch", "signal box",
-            "switchyard at dawn", "headway drift", "sodium‑vapor glow", "turnstile click", "farebox chime",
-            "diesel haze", "overhead catenary", "bridge expansion joints", "streetcar bell", "underpass echo",
-            "wheel squeal", "crossover clatter", "interlocking tower", "dwell time", "rail corrugation",
-            "flag stop", "short turn", "bus bunching", "deadhead run", "layover bay",
-            "platform gap", "guard whistle", "door chime", "goat path", "desire line",
-            # Domestic & everyday
-            "kitchen table", "empty room", "attic dust", "old photograph", "singing kettle",
-            "moving boxes", "fresh bread", "folded laundry", "family recipe", "postcards",
-            "sun‑faded curtains", "radiator hiss", "pilot light", "junk drawer", "porch steps",
-            "window sash cord", "cedar chest", "mothball scent", "laundry line", "doorknob patina",
-            # Objects & tools
-            "umbrella", "mirror", "clock", "suitcase", "map", "notebook", "fountain pen",
-            "paper plane", "coin in pocket", "key ring", "candle", "teacup", "glass of water",
-            "rubber band", "paperclip chain", "stapler", "lantern", "wristwatch",
-            "bench plane", "dovetail joint", "kerf", "swarf", "burr",
-            "honing stone", "hollow grind", "mortise and tenon", "spokeshave", "awl",
-            # Technology & media
-            "low battery", "lost wireless signal", "loading bar", "keyboard clicks", "server room hum",
-            "voicemail", "pocket calculator", "vinyl crackle", "cassette tape", "film camera",
-            "alarm clock", "radio static", "screen burn‑in", "coil whine", "printer jam",
-            "contact sheet", "light leak", "reciprocity failure", "ground hum", "wow and flutter",
-            # School & play
-            "playground swings", "basketball court at night", "running track", "science fair",
-            "first day of school", "library table", "locker hallway", "music room", "chalk screech",
-            "field day", "stage wings", "trophy case", "bus loop", "study hall",
-            # Work & routine
-            "morning commute", "lunch break", "last train home", "night shift", "coffee break",
-            "open office", "conference room", "break room fridge", "coat rack", "name badge",
-            "loading dock", "pallet jack", "dock plate", "time clock punch", "shift horn",
-            # Time & milestones
-            "new year's morning", "birthday candle", "graduation stage", "wedding shoes", "funeral flowers",
-            "last day of summer", "anniversary dinner", "first apartment", "retirement party", "moving day",
-            "golden hour", "blue hour", "witching hour", "closing time", "opening bell",
-            # Food & kitchen
-            "soup simmering", "peeler and potatoes", "citrus zest", "burnt toast", "tea steam",
-            "spice rack", "espresso crema", "gooseneck kettle", "pour over bloom", "cast‑iron pan",
-            "mise en place", "mirepoix", "deglaze", "brown butter", "proofing basket",
-            # Streets & details
-            "broken streetlight", "crossed wires", "mail slot", "brick alley", "pigeons on a ledge",
-            "pothole puddle", "traffic cone", "chalk marks", "sidewalk cafe", "manhole steam",
-            "tactile paving", "bus lane marking", "fog line", "rumble strip", "desire path",
-            "zebra crossing", "cat's eyes", "Belgian block", "setts", "cast‑iron grate",
-            # Atypical / random phenomena
-            "escalator", "parking meter", "turnstile", "elevator music", "receipt tape",
-            "broken umbrella", "traffic detour", "stray shopping cart", "lost glove", "echo in a tunnel",
-            "stiction", "creep", "outgassing", "heat shimmer", "ground fog",
-            "mirage", "sun dog", "thin‑film colors", "moire pattern", "Newton's rings",
-            # Abstract & emotions
-            "a promise kept", "something forgotten", "sudden luck", "decision at midnight", "words unsent",
-            "quiet relief", "a near miss", "déjà vu", "a secret shared", "homesickness",
-            "forgiveness", "nostalgia", "time and memory", "second chances", "bittersweet victory",
-            "saudade", "sprezzatura", "mono no aware", "hiraeth", "beginner's mind",
-            # STEM / cross-disciplinary (clean, short)
-            "Fourier transform", "Bayesian inference", "entropy", "phase transitions", "signal processing",
-            "graph isomorphism", "shortest path", "Kalman filter", "Markov chains", "gradient descent",
-            "Noether's theorem", "Gödel's incompleteness theorem", "polynomial time versus nondeterministic polynomial time", "Monte Carlo", "Poisson process",
-            "Nyquist sampling", "fast Fourier transform", "superposition", "interference", "refraction",
-            "laminar flow", "control theory", "game theory", "queueing theory", "error correction",
-            "consensus", "hash collisions", "principal component analysis", "spectral clustering", "dimensional analysis",
-            "four-color theorem",
+            "luthier's soundpost setter", "violin purfling knife", "mandolin tonebar", "fiddle rosin dust",
+            "lead type in a composing stick", "ink brayer and chase", "makeready under tympan", "reglet and furniture",
+            "balance spring collet", "blued screw in a movement", "jewel bearing oil", "escapement pallet stone",
+            "fid for splicing four‑strand", "tarred marline hitch", "parrel bead on a gaff", "monkey's fist knot",
+            "verglas on granite", "old piton scar", "dulfersitz burn", "summit prayer flag",
+            "sencha kyusu drip", "wabi‑sabi tea crackle", "kiln‑kissed shino glaze", "kintsugi seam of gold",
+            "orris butter in a vial", "oakmoss tincture", "ambergris fleck", "civet note and drydown",
+            "flex nib on laid paper", "sizing in the rag pulp", "deckled edge in twilight", "sumi ink grind",
+            "selenium‑toned fiber print", "split‑grade enlarger burn", "silver gelatin wash", "contact sheet with grease pencil",
+            "night‑blooming cereus vigil", "lilac cuttings in twine", "peony ants at dawn", "fern fiddlehead uncurling",
+            "pantograph arcing blue", "third‑rail hum at dusk", "interlocking tower key", "crosstie creosote scent",
+            "hollow grind on an O1 blade", "spokeshave whisper", "honing burr and slurry", "quarter‑sawn shimmer",
+            "letter kept in a cedar box", "childhood marble in a jar", "farewell at a platform", "rain on a tin roof",
+            "alpenglow on scree", "murmuration over stubble", "noctilucent clouds", "blue hour on snow",
         ]
     # Held-out topics for eval when using defaults
     rnd_topics = random.Random(seed)
@@ -506,8 +700,14 @@ def load_environment(
     rnd_topics.shuffle(topics_shuffled)
     if not user_supplied_topics:
         # only apply holdout automatically for the default topic list
-        holdout_n = max(0, min(topic_holdout_n, len(topics_shuffled)//5))  # cap to 20% if list is short
-        eval_topics = topics_shuffled[:holdout_n] if holdout_n > 0 else topics_shuffled[:max(1, len(topics_shuffled)//10)]
+        holdout_n = max(
+            0, min(topic_holdout_n, len(topics_shuffled) // 5)
+        )  # cap to 20% if list is short
+        eval_topics = (
+            topics_shuffled[:holdout_n]
+            if holdout_n > 0
+            else topics_shuffled[: max(1, len(topics_shuffled) // 10)]
+        )
         train_topics = topics_shuffled[holdout_n:] if holdout_n > 0 else topics_shuffled
     else:
         train_topics = topics_shuffled
@@ -551,7 +751,7 @@ def load_environment(
         raise ValueError(
             f"Missing judge API key. Set {judge_api_key_var} or override judge_api_key_var."
         )
-    judge_client = OpenAI(api_key=api_key, base_url=judge_base_url)
+    judge_client = OpenAI(api_key=api_key, base_url=judge_base_url, timeout=judge_timeout)
     # Do not set temperature or other sampling knobs for the judge by default
     judge_sampling_args = judge_sampling_args or {}
     logger = logging.getLogger("jabberwocky")
@@ -573,154 +773,48 @@ def load_environment(
         "C13_creature_naming",
         "C14_onomatopoeia",
         "C15_alliteration_consonance",
-        "C16_tone_alignment",
+        "C16_arc_order",
         "C17_no_verbatim_lines",
         "C18_canonical_budget",
         "C19_syllable_tightness",
         "C20_rhyme_variety",
         "C21_lexical_repetition_guard",
         "C22_coinage_variety",
+        "C23_topic_adherence",
+        "C24_subtext",
     ]
     # Short tags to make formatting easy for small judges
     RUBRIC_SHORT = [
-        "C1","C2","C3","C4","C5","C6","C7","C8","C9","C10","C11","C12","C13","C14","C15","C16","C17","C18","C19","C20","C21","C22"
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6",
+        "C7",
+        "C8",
+        "C9",
+        "C10",
+        "C11",
+        "C12",
+        "C13",
+        "C14",
+        "C15",
+        "C16",
+        "C17",
+        "C18",
+        "C19",
+        "C20",
+        "C21",
+        "C22",
+        "C23",
+        "C24",
     ]
     # XML field definitions: canonical name + alternative short tag
     RUBRIC_FIELDS = [(RUBRIC_KEYS[i], RUBRIC_SHORT[i]) for i in range(len(RUBRIC_KEYS))]
 
-
-    # XML rubric prompt: model outputs yes/no for each tag, with a structured think block
-    judge_xml_prompt = (
-        "You are grading whether a model-written poem matches the style of "
-        "Lewis Carroll's 'Jabberwocky'.\n\n"
-        "First, produce a structured <think> block. Then produce the final decision tags.\n"
-        "In the <think> block use <C1_think>…</C1_think> … <C22_think>…</C22_think> to record brief reasoning for each criterion.\n"
-        "Do NOT use <C1> inside <think>.\n\n"
-        "Questions (binary). Answer each with 'yes' or 'no' only in the final decision tags.\n"
-        "- C1_title_present: Is there a non-empty title line before the first stanza (not part of stanza text)?\n"
-        "- C2_quatrain_shape: Do all stanzas have 4 lines, and is the total stanza count ≈3–8?\n"
-        "- C3_ballad_meter_echo: In ≥60% of stanzas, do lines alternate longer/shorter with ≥2 content-word difference?\n"
-        "- C4_ballad_rhyme: In ≥60% of stanzas, do lines (2,4) rhyme (allowing slant rhyme), and avoid AABB dominance?\n"
-        "- C5_ring_composition: Does the final stanza echo the opening with ≥2 repeated content words/phrases or a clear refrain?\n"
-        "- C6_warning_admonition: Is there an early admonition (e.g., ‘Beware …’) or equivalent caution to the protagonist?\n"
-        "- C7_preparation_armament: Before the encounter, does the protagonist prepare (tool/resolve/wait/plan)?\n"
-        "- C8_encounter_confrontation: Is there a clear meeting between protagonist and adversary/obstacle?\n"
-        "- C9_slaying_decisive_action: Is there a decisive act that resolves the central tension?\n"
-        "- C10_return_celebration: Is there a return/homecoming and jubilant acknowledgement?\n"
-        "- C11_coinage_count: Are there ≥8 distinct invented coinages (not canonical or standard English)?\n"
-        "- C12_coinage_spread: Does each stanza contain ≥1 coinage?\n"
-        "- C13_creature_naming: Is a non‑canonical creature/entity named and central to action (not ‘Jabberwock’)?\n"
-        "- C14_onomatopoeia: Are there ≥2 onomatopoeic bursts (e.g., ‘snicker‑snack!’, ‘Pop!’, ‘Hiss!’)?\n"
-        "- C15_alliteration_consonance: Do ≥2 stanzas show clear within‑line alliteration/consonance beyond incidental repeats?\n"
-        "- C16_tone_alignment: Is the tone whimsical/playful mythic (not promotional copy or flat prose)?\n"
-        "- C17_no_verbatim_lines: Does no line exactly match the canonical poem?\n"
-        "- C18_canonical_budget: Are distinct canonical tokens ≤8, favoring new coinages?\n"
-        "- C19_syllable_tightness: In every quatrain stanza, are longer lines ≈8–9 syllables and shorter lines ≈5–7 (Jabberwocky’s ~8/6 pattern)?\n"
-        "- C20_rhyme_variety: Across stanzas, are (2,4) end‑rhymes varied (no exact end word reused >2 times excluding the ring echo)?\n"
-        "- C21_lexical_repetition_guard: Outside the ring echo, is no single content word overused (e.g., >5 times or >8% of content words)?\n"
-        "- C22_coinage_variety: Do coinages show ≥4 distinct roots (no single coined suffix accounts for >50% of coinages)?\n\n"
-        "Canonical lexicon: "
-        + ", ".join(CANONICAL_LEXICON)
-        + "\n\n"
-        "Format your output exactly as follows:\n"
-        "<think>\n"
-        + "\n".join([f"<{k}_think>…your brief reasoning…</{k}_think>" for k in RUBRIC_SHORT]) + "\n"
-        "</think>\n\n"
-        "Then, on new lines, the final decision tags only (one per line), exactly these tags filled with yes/no, in order:\n"
-        + "\n".join([f"<{k}>yes|no</{k}>" for k in RUBRIC_SHORT])
-        + "\n\n"
-        "Calibration examples (do not copy answers; tags suffixed with _demo so they are not parsed):\n"
-        "<example>\n<poem>" + HIGH_EXAMPLE + "</poem>\n<think>\n"
-        "<C1_demo_think>Title present</C1_demo_think>\n"
-        "<C2_demo_think>stanzas=8; quatrains=8 (100.0%) -> yes</C2_demo_think>\n"
-        "<C3_demo_think>quatrains=8; alt_hits=6 (75.0%) -> yes</C3_demo_think>\n"
-        "<C4_demo_think>quatrains=8; rhyme(2,4) hits=7 (87.5%) -> yes</C4_demo_think>\n"
-        "<C5_demo_think>Ring echo present -> yes</C5_demo_think>\n"
-        "<C6_demo_think>Admonition present -> yes</C6_demo_think>\n"
-        "<C7_demo_think>Preparation present -> yes</C7_demo_think>\n"
-        "<C8_demo_think>Encounter present -> yes</C8_demo_think>\n"
-        "<C9_demo_think>Decisive action present -> yes</C9_demo_think>\n"
-        "<C10_demo_think>Return/celebration present -> yes</C10_demo_think>\n"
-        "<C11_demo_think>distinct_coinages=12 -> yes</C11_demo_think>\n"
-        "<C12_demo_think>stanzas_with_coinage=8/8 -> yes</C12_demo_think>\n"
-        "<C13_demo_think>Creature named (Sucrowock) -> yes</C13_demo_think>\n"
-        "<C14_demo_think>Onomatopoeia (Pop!, Hiss!, etc.) -> yes</C14_demo_think>\n"
-        "<C15_demo_think>Alliteration in multiple stanzas -> yes</C15_demo_think>\n"
-        "<C16_demo_think>Tone whimsical/mythic -> yes</C16_demo_think>\n"
-        "<C17_demo_think>No verbatim canonical lines -> yes</C17_demo_think>\n"
-        "<C18_demo_think>Canonical tokens <=8 -> yes</C18_demo_think>\n"
-        "<C19_demo_think>quatrains=8; syllable_hits=6 (75.0%); samples: 8/6/8/6 | 9/6/8/6 -> no</C19_demo_think>\n"
-        "<C20_demo_think>unique_endings=7; max_repeat=1 -> yes</C20_demo_think>\n"
-        "<C21_demo_think>content_tokens≈180; top_word='day' x3 (1.7%) -> yes</C21_demo_think>\n"
-        "<C22_demo_think>coinages=12; distinct_suffixes>=8; top_suffix_share<=33% -> yes</C22_demo_think>\n"
-        "</think>\n<answers_demo>\n"
-        + "\n".join([f"<{k}_demo>yes</{k}_demo>" for k in RUBRIC_SHORT]) + "\n</answers_demo>\n</example>\n\n"
-        "<example>\n<poem>" + MEDIUM_EXAMPLE + "</poem>\n<think>\n"
-        "<C1_demo_think>Title present</C1_demo_think>\n"
-        "<C2_demo_think>stanzas=8; quatrains=7 (87.5%) -> yes</C2_demo_think>\n"
-        "<C3_demo_think>quatrains=7; alt_hits=3 (42.9%) -> no</C3_demo_think>\n"
-        "<C4_demo_think>quatrains=7; rhyme(2,4) hits=5 (71.4%) -> yes</C4_demo_think>\n"
-        "<C5_demo_think>Ring echo weak but present -> yes</C5_demo_think>\n"
-        "<C6_demo_think>Admonition present -> yes</C6_demo_think>\n"
-        "<C7_demo_think>Preparation present -> yes</C7_demo_think>\n"
-        "<C8_demo_think>Encounter present -> yes</C8_demo_think>\n"
-        "<C9_demo_think>Decisive action present -> yes</C9_demo_think>\n"
-        "<C10_demo_think>Return present -> yes</C10_demo_think>\n"
-        "<C11_demo_think>distinct_coinages=9 -> yes</C11_demo_think>\n"
-        "<C12_demo_think>stanzas_with_coinage=6/8 -> no</C12_demo_think>\n"
-        "<C13_demo_think>Creature named -> yes</C13_demo_think>\n"
-        "<C14_demo_think>Onomatopoeia present -> yes</C14_demo_think>\n"
-        "<C15_demo_think>Alliteration present -> yes</C15_demo_think>\n"
-        "<C16_demo_think>Tone acceptable -> yes</C16_demo_think>\n"
-        "<C17_demo_think>No verbatim lines -> yes</C17_demo_think>\n"
-        "<C18_demo_think>Canonical budget ok -> yes</C18_demo_think>\n"
-        "<C19_demo_think>quatrains=7; syllable_hits=2 (28.6%); samples: 10/7/10/7 | 9/7/10/7 -> no</C19_demo_think>\n"
-        "<C20_demo_think>unique_endings=3; max_repeat=3 -> no</C20_demo_think>\n"
-        "<C21_demo_think>content_tokens≈170; top_word='diet' x4 (2.4%) -> yes</C21_demo_think>\n"
-        "<C22_demo_think>coinages=9; distinct_suffixes=5; top_suffix_share≈44% -> yes</C22_demo_think>\n"
-        "</think>\n<answers_demo>\n"
-        + "\n".join([
-            "<C1_demo>yes</C1_demo>", "<C2_demo>yes</C2_demo>", "<C3_demo>no</C3_demo>", "<C4_demo>yes</C4_demo>",
-            "<C5_demo>yes</C5_demo>", "<C6_demo>yes</C6_demo>", "<C7_demo>yes</C7_demo>", "<C8_demo>yes</C8_demo>",
-            "<C9_demo>yes</C9_demo>", "<C10_demo>yes</C10_demo>", "<C11_demo>yes</C11_demo>", "<C12_demo>no</C12_demo>",
-            "<C13_demo>yes</C13_demo>", "<C14_demo>yes</C14_demo>", "<C15_demo>yes</C15_demo>", "<C16_demo>yes</C16_demo>",
-            "<C17_demo>yes</C17_demo>", "<C18_demo>yes</C18_demo>", "<C19_demo>no</C19_demo>", "<C20_demo>no</C20_demo>",
-            "<C21_demo>yes</C21_demo>", "<C22_demo>yes</C22_demo>"
-        ]) + "\n</answers_demo>\n</example>\n\n"
-        "<example>\n<poem>" + VERY_LOW_EXAMPLE + "</poem>\n<think>\n"
-        + "\n".join([
-            "<C1_demo_think>Title present</C1_demo_think>",
-            "<C2_demo_think>stanzas=8; quatrains=3 (37.5%) -> no</C2_demo_think>",
-            "<C3_demo_think>quatrains=3; alt_hits=0 (0.0%) -> no</C3_demo_think>",
-            "<C4_demo_think>quatrains=3; rhyme(2,4) hits=1 (33.3%) -> no</C4_demo_think>",
-            "<C5_demo_think>No ring echo -> no</C5_demo_think>",
-            "<C6_demo_think>No admonition -> no</C6_demo_think>",
-            "<C7_demo_think>No preparation -> no</C7_demo_think>",
-            "<C8_demo_think>No clear encounter -> no</C8_demo_think>",
-            "<C9_demo_think>No decisive action -> no</C9_demo_think>",
-            "<C10_demo_think>No return/celebration -> no</C10_demo_think>",
-            "<C11_demo_think>distinct_coinages=2 -> no</C11_demo_think>",
-            "<C12_demo_think>stanzas_with_coinage=2/8 -> no</C12_demo_think>",
-            "<C13_demo_think>No named creature -> no</C13_demo_think>",
-            "<C14_demo_think>Onomatopoeia missing -> no</C14_demo_think>",
-            "<C15_demo_think>Alliteration weak -> no</C15_demo_think>",
-            "<C16_demo_think>Tone generic/flat -> no</C16_demo_think>",
-            "<C17_demo_think>No verbatim -> yes</C17_demo_think>",
-            "<C18_demo_think>Canonical budget ok -> yes</C18_demo_think>",
-            "<C19_demo_think>quatrains=3; syllable_hits=0 (0.0%); samples: 11/8/10/8 -> no</C19_demo_think>",
-            "<C20_demo_think>unique_endings=1; max_repeat=5 -> no</C20_demo_think>",
-            "<C21_demo_think>top_word='sweet' x10 (12.0%) -> no</C21_demo_think>",
-            "<C22_demo_think>coinages=2; distinct_suffixes=1; top_suffix_share=100% -> no",
-        ]) + "\n</think>\n<answers_demo>\n"
-        + "\n".join([
-            "<C1_demo>yes</C1_demo>", "<C2_demo>no</C2_demo>", "<C3_demo>no</C3_demo>", "<C4_demo>no</C4_demo>",
-            "<C5_demo>no</C5_demo>", "<C6_demo>no</C6_demo>", "<C7_demo>no</C7_demo>", "<C8_demo>no</C8_demo>",
-            "<C9_demo>no</C9_demo>", "<C10_demo>no</C10_demo>", "<C11_demo>no</C11_demo>", "<C12_demo>no</C12_demo>",
-            "<C13_demo>no</C13_demo>", "<C14_demo>no</C14_demo>", "<C15_demo>no</C15_demo>", "<C16_demo>no</C16_demo>",
-            "<C17_demo>yes</C17_demo>", "<C18_demo>yes</C18_demo>", "<C19_demo>no</C19_demo>", "<C20_demo>no</C20_demo>",
-            "<C21_demo>no</C21_demo>", "<C22_demo>no</C22_demo>"
-        ]) + "\n</answers_demo>\n</example>\n\n"
-    )
+    # XML rubric prompt (single source of truth)
+    judge_xml_prompt = build_judge_xml_prompt()
 
     rubric_xml_parser = vf.XMLParser(fields=RUBRIC_FIELDS, answer_field=RUBRIC_KEYS[0])
 
@@ -733,20 +827,33 @@ def load_environment(
         else:
             question = str(prompt)
         response_text = parser.parse_answer(completion) or ""
+
         # Extract a topic string from the user prompt; do not expose full instructions to the judge
         def _extract_topic(q: str) -> str:
             import re as _re
-            for pat in [r"about\s+(.+?)\s+in the style", r"on\s+(.+?)\s+in the style", r"about\s+(.+?)\s*\."]:
+
+            for pat in [
+                r"about\s+(.+?)\s+in the style",
+                r"on\s+(.+?)\s+in the style",
+                r"about\s+(.+?)\s*\.",
+            ]:
                 m = _re.search(pat, q, flags=_re.IGNORECASE)
                 if m:
                     return m.group(1).strip()
             return ""
+
         topic_only = _extract_topic(question)
         jp = (
             judge_xml_prompt
-            + "\n<topic>\n" + topic_only + "\n</topic>\n\n"
-            + "<reference_poem>\n" + answer + "\n</reference_poem>\n\n"
-            + "<model_poem>\n" + response_text + "\n</model_poem>\n"
+            + "\n<topic>\n"
+            + topic_only
+            + "\n</topic>\n\n"
+            + "<reference_poem>\n"
+            + answer
+            + "\n</reference_poem>\n\n"
+            + "<model_poem>\n"
+            + response_text
+            + "\n</model_poem>\n"
         )
         cache = state.get("jw_judge_xml_cache")
         if isinstance(cache, dict) and jp in cache:
@@ -755,18 +862,23 @@ def load_environment(
             jr = judge_client.chat.completions.create(
                 model=judge_model,
                 messages=[{"role": "user", "content": jp}],
-                timeout=judge_timeout,
                 **judge_sampling_args,
             )
             txt = str(jr.choices[0].message.content or "")
+            if not txt:
+                # Capture an explicit error when the API returned no content
+                state["jw_judge_error"] = "empty_response"
             if log_judge_debug:
                 logger.info("[judge-xml] %s", txt[:300])
         except Exception as e:
             if log_judge_debug:
                 logger.warning("[judge-xml-exc] %s", e)
+            # Store error string for downstream inspection
+            state["jw_judge_error"] = f"exception: {type(e).__name__}: {e}"
             txt = ""
         # normalize tags like "< C1 >yes</ C1 >" → "<C1>yes</C1>"
         import re as _re
+
         txt_norm = _re.sub(r"<\s*/\s*([A-Za-z0-9_]+)\s*>", r"</\1>", txt)
         txt_norm = _re.sub(r"<\s*([A-Za-z0-9_]+)\s*>", r"<\1>", txt_norm)
         parsed = rubric_xml_parser.parse(txt_norm)
@@ -813,12 +925,15 @@ def load_environment(
 
     # Add per-criterion metrics (weight 0.0) and label indicators
     for key in RUBRIC_KEYS:
+
         def make_fn(k):
             def f(prompt, completion, answer, state, **_kwargs) -> float:
                 jj = get_or_make_judge_xml(prompt, completion, answer, state)
                 return float(1.0 if int(jj.get(k, 0)) else 0.0)
+
             f.__name__ = k
             return f
+
         rubric.add_reward_func(make_fn(key), weight=0.0)
 
     def label_high(prompt, completion, answer, state, **_kwargs) -> float:

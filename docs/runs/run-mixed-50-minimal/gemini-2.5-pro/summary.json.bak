@@ -1,0 +1,42 @@
+{
+  "overall_reward": 0.5518181818181819,
+  "label_counts": {
+    "very_low": 20,
+    "low": 0,
+    "medium": 8,
+    "high": 22
+  },
+  "metrics_mean": {
+    "composite_score": 0.5518181818181819,
+    "C1_title_present": 0.6,
+    "C2_quatrain_shape": 0.6,
+    "C3_ballad_meter_echo": 0.5,
+    "C4_ballad_rhyme": 0.6,
+    "C5_ring_composition": 0.54,
+    "C6_warning_admonition": 0.6,
+    "C7_preparation_armament": 0.54,
+    "C8_encounter_confrontation": 0.52,
+    "C9_slaying_decisive_action": 0.42,
+    "C10_return_celebration": 0.4,
+    "C11_coinage_count": 0.58,
+    "C12_coinage_spread": 0.58,
+    "C13_creature_naming": 0.6,
+    "C14_onomatopoeia": 0.32,
+    "C15_alliteration_consonance": 0.6,
+    "C16_tone_alignment": 0.6,
+    "C17_no_verbatim_lines": 0.58,
+    "C18_canonical_budget": 0.56,
+    "C19_syllable_tightness": 0.6,
+    "C20_rhyme_variety": 0.6,
+    "C21_lexical_repetition_guard": 0.6,
+    "C22_coinage_variety": 0.6,
+    "label_high": 0.44,
+    "label_medium": 0.16,
+    "label_low": 0.0,
+    "label_very_low": 0.4
+  },
+  "spec": "gemini-2.5-pro",
+  "provider": "openrouter",
+  "model": "google/gemini-2.5-pro",
+  "num_samples": 50
+}

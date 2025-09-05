@@ -1,4 +1,6 @@
-const { useState, useEffect, useMemo, useCallback, useRef } = React;
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom';
+import Chart from 'chart.js/auto';
 
 // Utility functions
 function addCacheBust(url, cacheBust) {
@@ -259,7 +261,7 @@ function RadarViz({
 
   // Create chart only once
   useEffect(() => {
-    if (!canvasRef.current || !window.Chart) return;
+    if (!canvasRef.current) return;
 
     const ctx = canvasRef.current.getContext('2d');
     
@@ -283,7 +285,7 @@ function RadarViz({
       };
     });
 
-    chartRef.current = new Chart(ctx, {
+    chartRef.current = new Chart.Chart(ctx, {
       type: 'radar',
       data: {
         labels: CRITERIA_LABELS,
@@ -626,42 +628,69 @@ function Analysis({
 
       <div className="card">
         <h3>Rubric Spread — Pass Rates by Criterion</h3>
-        <div className="intro" style={{ marginBottom: ".5rem" }}>
+        <div className="intro" style={{ marginBottom: "1rem" }}>
           Aggregated across all models in this level. Higher bars mean models pass that check more often.
         </div>
-        <div className="criteria-bars">
-          {spread.map((row) => (
-            <div key={row.key} className="criteria-row">
-              <div className="criteria-label">{row.label}</div>
-              <div className="criteria-bar">
-                <div
-                  className="criteria-fill"
-                  style={{ width: `${Math.round(row.mean * 100)}%` }}
-                  title={`${row.label}: ${Math.round(row.mean * 100)}% (n=${row.n})`}
-                />
+        <div className="criteria-chart">
+          {spread.map((row, idx) => {
+            const percent = Math.round(row.mean * 100);
+            const isHardest = percent < 30;
+            const isEasiest = percent > 70;
+            return (
+              <div key={row.key} className="criteria-item">
+                <div className="criteria-header">
+                  <span className="criteria-number">C{idx + 1}</span>
+                  <span className="criteria-label">{row.label}</span>
+                  <span className={`criteria-percent ${isHardest ? 'hardest' : isEasiest ? 'easiest' : ''}`}>
+                    {percent}%
+                  </span>
+                </div>
+                <div className="criteria-bar-wrapper">
+                  <div className="criteria-bar">
+                    <div
+                      className={`criteria-fill ${isHardest ? 'hardest' : isEasiest ? 'easiest' : ''}`}
+                      style={{ 
+                        width: `${percent}%`,
+                        background: isHardest ? '#ef4444' : isEasiest ? '#10b981' : undefined
+                      }}
+                    >
+                      <span className="criteria-fill-label">{percent}%</span>
+                    </div>
+                  </div>
+                  <div className="criteria-markers">
+                    <span className="marker" style={{ left: '25%' }} />
+                    <span className="marker" style={{ left: '50%' }} />
+                    <span className="marker" style={{ left: '75%' }} />
+                  </div>
+                </div>
               </div>
-              <div className="criteria-stat">{Math.round(row.mean * 100)}%</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginTop: ".75rem" }}>
-          <div>
-            <div className="mini-title">Hardest (lowest pass rate)</div>
-            {hardest.map((r) => (
-              <div key={r.key} className="mini-row" style={{ gridTemplateColumns: "1fr 56px" }}>
-                <div style={{ fontWeight: 700 }}>{r.label}</div>
-                <div className="mini-val">{Math.round(r.mean * 100)}%</div>
-              </div>
-            ))}
+        <div className="criteria-summary">
+          <div className="summary-box hardest">
+            <h4>Hardest Criteria</h4>
+            <div className="summary-list">
+              {hardest.map((r, idx) => (
+                <div key={r.key} className="summary-item">
+                  <span className="summary-rank">#{idx + 1}</span>
+                  <span className="summary-label">{r.label}</span>
+                  <span className="summary-value">{Math.round(r.mean * 100)}%</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div>
-            <div className="mini-title">Easiest (highest pass rate)</div>
-            {easiest.map((r) => (
-              <div key={r.key} className="mini-row" style={{ gridTemplateColumns: "1fr 56px" }}>
-                <div style={{ fontWeight: 700 }}>{r.label}</div>
-                <div className="mini-val">{Math.round(r.mean * 100)}%</div>
-              </div>
-            ))}
+          <div className="summary-box easiest">
+            <h4>Easiest Criteria</h4>
+            <div className="summary-list">
+              {easiest.map((r, idx) => (
+                <div key={r.key} className="summary-item">
+                  <span className="summary-rank">#{idx + 1}</span>
+                  <span className="summary-label">{r.label}</span>
+                  <span className="summary-value">{Math.round(r.mean * 100)}%</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

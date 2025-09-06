@@ -228,6 +228,19 @@ CANONICAL_LINES_NORM = {
     _normalize_line(ln) for ln in JABBERWOCKY_TEXT.splitlines() if ln.strip()
 }
 
+def _tokenize_words(s: str) -> list[str]:
+    import re as _re
+    s = _normalize_line(s)
+    return _re.findall(r"[a-z]+(?:'[a-z]+)?", s)
+
+def _bigrams(tokens: list[str]) -> set[tuple[str, str]]:
+    return {(tokens[i], tokens[i+1]) for i in range(len(tokens) - 1)}
+
+_CANONICAL_TOKENS = [
+    _tokenize_words(ln) for ln in (ln for ln in JABBERWOCKY_TEXT.splitlines() if ln.strip())
+]
+_CANONICAL_BIGRAMS = [_bigrams(toks) for toks in _CANONICAL_TOKENS]
+
 HIGH_EXAMPLE = (
     "Dietwocky\n\n"
     "’Twas fizzlig, and the silv’ry cans\n"
@@ -360,7 +373,7 @@ def build_judge_xml_prompt() -> str:
         "- C14_onomatopoeia: Are there ≥2 onomatopoeic bursts (e.g., ‘snicker‑snack!’, ‘Pop!’, ‘Hiss!’)?\n"
         "- C15_alliteration_consonance: Do ≥2 stanzas show clear within‑line alliteration/consonance beyond incidental repeats?\n"
         "- C16_arc_order: Do the arc beats appear in canonical order (warning → preparation → encounter → decisive act → return/celebration)?\n"
-        "- C17_no_verbatim_lines: Does no line exactly match the canonical poem?\n"
+        "- C17_no_verbatim_lines: Does no line exactly match the canonical poem? Normalize quotes/dashes/whitespace; if any line equals a line in the reference poem, answer 'no'.\n"
         "- C18_canonical_budget: Are distinct canonical tokens ≤8, favoring new coinages?\n"
         "- C19_syllable_tightness: In every quatrain stanza, are longer lines ≈8–9 syllables and shorter lines ≈5–7 (Jabberwocky’s ~8/6 pattern)?\n"
     "- C20_rhyme_variety: Across stanzas, are (2,4) end‑rhymes varied (no exact end word reused >2 times excluding the ring echo)?\n"
@@ -779,7 +792,11 @@ def load_environment(
         raise ValueError(
             f"Missing judge API key. Set {judge_api_key_var} or override judge_api_key_var."
         )
-    judge_client = OpenAI(api_key=api_key, base_url=judge_base_url, timeout=judge_timeout)
+    # Build judge client with explicit per-request timeout and no internal retries
+    try:
+        judge_client = OpenAI(api_key=api_key, base_url=judge_base_url, timeout=judge_timeout, max_retries=0)
+    except TypeError:
+        judge_client = OpenAI(api_key=api_key, base_url=judge_base_url, timeout=judge_timeout)
     # Do not set temperature or other sampling knobs for the judge by default
     judge_sampling_args = judge_sampling_args or {}
     logger = logging.getLogger("jabberwocky")
@@ -953,16 +970,48 @@ def load_environment(
         # store raw for debugging
         state["jw_judge_xml_raw"] = txt
         out: dict[str, int] = {}
-        s = 0
+        # First, collect judge bits from XML
         for i, k in enumerate(RUBRIC_KEYS):
-            # accept either descriptive tag <C1_coinage_count> or short tag <C1>
             v = getattr(parsed, k, None)
             if not v:
                 short_tag = RUBRIC_SHORT[i]
                 v = getattr(parsed, short_tag, None)
-            bit = 1 if str(v or "").strip().lower() == "yes" else 0
-            out[k] = bit
-            s += bit
+            out[k] = 1 if str(v or "").strip().lower() == "yes" else 0
+
+        # Deterministic guard: if any model line matches canonical exactly (after normalization), force C17 to 0
+        try:
+            model_lines = [ln for ln in response_text.splitlines() if ln.strip()]
+            for ln in model_lines:
+                ln_norm = _normalize_line(ln)
+                # Exact normalized match
+                if ln_norm in CANONICAL_LINES_NORM:
+                    out["C17_no_verbatim_lines"] = 0
+                    break
+                # Near-verbatim: word bigram Jaccard + token overlap
+                toks = _tokenize_words(ln_norm)
+                if len(toks) < 3:
+                    continue
+                bgs = _bigrams(toks)
+                for ctoks, cbgs in zip(_CANONICAL_TOKENS, _CANONICAL_BIGRAMS):
+                    if not cbgs:
+                        continue
+                    # Require similar length (±1 token) to avoid false positives
+                    if abs(len(toks) - len(ctoks)) > 1:
+                        continue
+                    inter = len(bgs & cbgs)
+                    union = len(bgs | cbgs)
+                    j = inter / union if union else 0.0
+                    # Token coverage: proportion of toks that appear in ctoks
+                    cover = sum(1 for t in toks if t in ctoks) / max(1, len(toks))
+                    if j >= 0.6 and cover >= 0.75:
+                        out["C17_no_verbatim_lines"] = 0
+                        raise StopIteration
+        except StopIteration:
+            pass
+        except Exception:
+            pass
+
+        s = sum(int(out.get(k, 0)) for k in RUBRIC_KEYS)
         # Label thresholds proportional to rubric length
         total = len(RUBRIC_KEYS)
         ratio = s / total if total else 0.0
@@ -1035,9 +1084,8 @@ def load_environment(
         parser=parser,
         rubric=rubric,
         # Allow long generations by default; providers may clamp internally
-        sampling_args={
-            "max_tokens": 32000,
-        },
+        # Do not cap max_tokens here; let CLI (--actor-max-tokens) or provider defaults decide
+        sampling_args={},
         **kwargs,
     )
     return env

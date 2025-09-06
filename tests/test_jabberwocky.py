@@ -21,8 +21,8 @@ def test_xml_parser_normalizes_spaced_and_descriptive_tags():
     ]
     parser = vf.XMLParser(fields=fields, answer_field="C1_title_present")
     raw = """
-    < C1 > yes </ C1 >
-    <C2>no</C2>
+    < C1_title_present > yes </ C1_title_present >
+    <C2_quatrain_shape>no</C2_quatrain_shape>
     <C3_ballad_meter_echo>yes</C3_ballad_meter_echo>
     """
     parsed = parser.parse(normalize_xml(raw))
@@ -108,14 +108,28 @@ def test_rubric_includes_syllable_tightness():
     os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
     env = vf.load_environment("jabberwocky", num_train_examples=5, num_eval_examples=5, seed=42)
     # Reward functions include per-criterion metrics; look for C19
-    names = {getattr(f, "__name__", "") for f, _w in env.rubric.reward_funcs}
+    funcs = []
+    for item in env.rubric.reward_funcs:
+        try:
+            f = item[0]
+        except Exception:
+            f = item
+        funcs.append(f)
+    names = {getattr(f, "__name__", "") for f in funcs}
     assert any(name.startswith("C19_syllable_tightness") for name in names), "C19 syllable criterion missing"
 
 
 def test_rubric_includes_new_variety_checks():
     os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
     env = vf.load_environment("jabberwocky", num_train_examples=5, num_eval_examples=5, seed=42)
-    names = {getattr(f, "__name__", "") for f, _w in env.rubric.reward_funcs}
+    funcs = []
+    for item in env.rubric.reward_funcs:
+        try:
+            f = item[0]
+        except Exception:
+            f = item
+        funcs.append(f)
+    names = {getattr(f, "__name__", "") for f in funcs}
     assert any(name.startswith("C20_rhyme_variety") for name in names), "C20 rhyme variety missing"
     assert any(name.startswith("C21_lexical_repetition_guard") for name in names), "C21 repetition guard missing"
     assert any(name.startswith("C22_coinage_variety") for name in names), "C22 coinage variety missing"
@@ -152,3 +166,44 @@ def test_medium_template_distribution_is_balanced_with_seed():
     # With two templates and deterministic alternation, counts should be close
     diff = abs(c1 - c2)
     assert diff <= len(qs) * 0.3, f"unbalanced medium distribution: c1={c1}, c2={c2}"
+
+
+def test_near_verbatim_detector_flags_canonical_lines():
+    # Import jabberwocky helpers directly
+    import jabberwocky as jw
+
+    def is_near_verbatim(line: str) -> bool:
+        toks = jw._tokenize_words(line)
+        if len(toks) < 3:
+            return False
+        bgs = jw._bigrams(toks)
+        for ctoks, cbgs in zip(jw._CANONICAL_TOKENS, jw._CANONICAL_BIGRAMS):
+            if abs(len(toks) - len(ctoks)) > 1:
+                continue
+            inter = len(bgs & cbgs)
+            union = len(bgs | cbgs)
+            j = inter / union if union else 0.0
+            cover = sum(1 for t in toks if t in ctoks) / max(1, len(toks))
+            if j >= 0.6 and cover >= 0.75:
+                return True
+        return False
+
+    # Common near-verbatim lines that models regurgitate
+    l1 = "So rested he by the Tumtum tree"
+    l2 = "And stood awhile in thought."
+    # Exact canonical (case/punct variants) should be flagged
+    assert is_near_verbatim(l1)
+    assert is_near_verbatim(l2)
+    assert is_near_verbatim("so rested he by the tumtum tree")
+    assert is_near_verbatim("And stood awhile in thought")  # no period
+    assert is_near_verbatim("‘And stood awhile in thought’")  # smart quotes
+
+    # Canonical "vorpal sword" line vs near variants
+    assert is_near_verbatim("He took his vorpal sword in hand")
+    assert is_near_verbatim("He took his vorpal sword in hand;")
+    # Non-canonical minimal change should NOT be flagged
+    assert not is_near_verbatim("He took his vorpal saw in hand")
+
+    # A non-canonical novel line should not be flagged
+    l3 = "We brewed a brew of nonsense tea"
+    assert not is_near_verbatim(l3)

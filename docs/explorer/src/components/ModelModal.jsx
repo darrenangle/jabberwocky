@@ -35,6 +35,11 @@ export default function ModelModal({ model, samples, onClose }) {
         <div className="modal-header">
           <div className="modal-titlebar">
             <h2 className="modal-title">{model.id}</h2>
+            <div className="modal-metadata">
+              <span className="meta-item">Topic: {currentSample?.info?.topic || "—"}</span>
+              <span className="meta-item">Score: {normalizeScore(currentSample?.reward)}</span>
+              <span className="meta-item">Label: {currentSample?.label || "—"}</span>
+            </div>
             <div className="modal-arrows">
               <button
                 className="nav-btn"
@@ -116,11 +121,6 @@ export default function ModelModal({ model, samples, onClose }) {
                         <>
                           {title && <div className="poem-title">{title}</div>}
                           <div className="poem-body verse-content" dangerouslySetInnerHTML={{ __html: body.split("\n\n").map((s) => s.split("\n").map((line) => line.replace(/\*(.*?)\*/g, "<em>$1</em>")).join("<br />")).map((x) => `<p class=\"stanza\">${x}</p>`).join("") }} />
-                          <div className="page-meta">
-                            <span className="meta-pill">Topic: {topic}</span>
-                            <span className="meta-pill">Label: {label}</span>
-                            <span className="meta-pill score">{score}</span>
-                          </div>
                         </>
                       );
                     })()}

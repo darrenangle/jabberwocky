@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import RadarViz from "./RadarViz";
+import OverlayChips from "./OverlayChips";
+import { useIsMobile, useIsCompact } from "../hooks/useMedia";
 import { CRITERIA_KEYS, CRITERIA_LABELS, RADAR_COLORS } from "../utils/constants";
 
 export default function Analysis({ models, instructionLevel, onInstructionLevelChange }) {
@@ -18,6 +20,38 @@ export default function Analysis({ models, instructionLevel, onInstructionLevelC
   }, [allModels]);
 
   const enabledModels = useMemo(() => allModels.filter((m) => selected.has(m.slug)), [allModels, selected]);
+  const isMobile = useIsMobile();
+  const isCompact = useIsCompact();
+  const stackRef = useRef(null);
+  const overlayRef = useRef(null);
+  const [overlayH, setOverlayH] = useState(0);
+  const [stackWidth, setStackWidth] = useState(0);
+  const [vh, setVh] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
+
+  useEffect(() => {
+    const measure = () => {
+      const h = overlayRef.current ? Math.ceil(overlayRef.current.getBoundingClientRect().height) : 0;
+      setOverlayH(h);
+      const w = stackRef.current ? Math.floor(stackRef.current.clientWidth) : 0;
+      setStackWidth(w);
+    };
+    measure();
+    let rAF;
+    const onResize = () => { cancelAnimationFrame(rAF); rAF = requestAnimationFrame(measure); };
+    window.addEventListener('resize', onResize);
+    const t = setTimeout(measure, 60);
+    return () => { clearTimeout(t); cancelAnimationFrame(rAF); window.removeEventListener('resize', onResize); };
+  }, [allModels, selected, isMobile]);
+
+  useEffect(() => {
+    const onResize = () => setVh(window.innerHeight || 800);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, []);
 
   const spread = useMemo(() => {
     const rows = [];
@@ -50,6 +84,12 @@ export default function Analysis({ models, instructionLevel, onInstructionLevelC
     });
   };
 
+  const controlsH = overlayH || 0;
+  const minSquare = (isMobile || isCompact) ? 600 : 720;
+  const targetVH = vh; // fit to viewport height
+  const availH = Math.max(minSquare, targetVH - controlsH - 24);
+  const square = Math.max(minSquare, Math.min(availH, stackWidth || availH));
+
   return (
     <div className="analysis">
       <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: ".75rem", flexWrap: "wrap" }}>
@@ -63,26 +103,79 @@ export default function Analysis({ models, instructionLevel, onInstructionLevelC
         </div>
       </div>
 
-      <div className="card radar-card">
-        <div className="radar-toolbar">
-          <div className="radar-toolbar-left">
-            <button className="btn" onClick={allOn}>Enable all</button>
-            <button className="btn secondary" onClick={allOff}>Disable all</button>
-          </div>
-          <div className="radar-grid legend">
-            {allModels.map((m) => (
-              <label key={m.slug} className={`legend-check ${selected.has(m.slug) ? "active" : ""}`}>
-                <input type="checkbox" checked={selected.has(m.slug)} onChange={() => toggleOne(m.slug)} />
-                <span className="legend-swatch" style={{ background: colorMap[m.slug] }} />
-                <span>{m.id}</span>
-              </label>
-            ))}
+      {(isMobile || isCompact) ? (
+        <div className="card radar-card">
+          <div className="radar-stack" ref={stackRef} style={{ height: square, paddingTop: overlayH ? overlayH + 8 : 0 }}>
+            <RadarViz
+              models={enabledModels}
+              showLegend={false}
+              variant={"hero"}
+              hoverSlug={hoverSlug}
+              onHoverChange={setHoverSlug}
+              colorMap={colorMap}
+              style={{ width: square, height: square }}
+            />
+            <OverlayChips
+              allModels={allModels}
+              selected={selected}
+              colorMap={colorMap}
+              onToggle={toggleOne}
+              onAll={allOn}
+              onNone={allOff}
+              bottom={false}
+              onHover={setHoverSlug}
+              ref={overlayRef}
+              floating={true}
+            />
           </div>
         </div>
-        <div className="radar-wrap">
-          <RadarViz models={enabledModels} showLegend={false} variant="modal" hoverSlug={hoverSlug} onHoverChange={setHoverSlug} colorMap={colorMap} />
+      ) : (
+        <div className="analysis-grid">
+          <div className="card analysis-sidebar">
+            <h4 style={{ marginBottom: '.5rem', fontFamily: 'var(--serif)' }}>Models</h4>
+            <div style={{ display: 'flex', gap: '.5rem', marginBottom: '.5rem' }}>
+              <button className="chip action" onClick={allOn}>All</button>
+              <button className="chip action" onClick={allOff}>None</button>
+            </div>
+            <div className="chip-column">
+              {allModels.map((m) => {
+                const active = selected.has(m.slug);
+                return (
+                  <button
+                    key={m.slug}
+                    className={`chip ${active ? 'active' : ''}`}
+                    onClick={() => toggleOne(m.slug)}
+                    onMouseEnter={() => setHoverSlug(m.slug)}
+                    onMouseLeave={() => setHoverSlug(null)}
+                    title={m.id}
+                    style={{
+                      justifyContent: 'flex-start',
+                      borderColor: active ? colorMap[m.slug] : undefined,
+                      background: active ? `${colorMap[m.slug]}22` : undefined,
+                    }}
+                  >
+                    <span className="dot" style={{ background: colorMap[m.slug] }} />
+                    <span className="label">{m.id}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="card radar-card">
+            <div className="radar-stack" ref={stackRef} style={{ height: square }}>
+              <RadarViz
+                models={enabledModels}
+                showLegend={false}
+                variant={"modal"}
+                hoverSlug={hoverSlug}
+                onHoverChange={setHoverSlug}
+                colorMap={colorMap}
+                style={{ width: square, height: square }}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="card">
         <h3>Rubric spread</h3>
@@ -116,4 +209,3 @@ export default function Analysis({ models, instructionLevel, onInstructionLevelC
     </div>
   );
 }
-

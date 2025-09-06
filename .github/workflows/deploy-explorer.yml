@@ -34,10 +34,10 @@ jobs:
           cd docs/explorer
           npm install
           
-      - name: Build for GitHub Pages
+      - name: Build Explorer (unified target)
         run: |
           cd docs/explorer
-          npm run build:gh-pages
+          npm run build
           
       - name: Setup Pages
         uses: actions/configure-pages@v4

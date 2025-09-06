@@ -3,24 +3,22 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
-  const isGitHubPages = process.env.BUILD_TARGET === 'gh-pages';
   const isCustomDomain = process.env.BUILD_TARGET === 'custom-domain';
+  // Default to a single consistent target that serves under /explorer/
   
   // Different output paths for different targets
-  let outputPath, bundleFilename;
-  
+  let outputPath, bundleFilename, publicPath;
+
   if (isCustomDomain) {
-    // For custom domain: explorer at root
+    // Custom domain: explorer is served at root
     outputPath = path.resolve(__dirname, '..');
     bundleFilename = 'bundle.js';
-  } else if (isGitHubPages) {
-    // For GitHub Pages: explorer in subdirectory
+    publicPath = 'auto';
+  } else {
+    // Unified default: GitHub Pages style — explorer under /explorer/
     outputPath = path.resolve(__dirname, '..');
     bundleFilename = 'explorer/bundle.js';
-  } else {
-    // For local dev
-    outputPath = path.resolve(__dirname, 'dist');
-    bundleFilename = 'bundle.js';
+    publicPath = 'auto';
   }
 
   return {
@@ -28,21 +26,19 @@ module.exports = (env, argv) => {
     output: {
       filename: bundleFilename,
       path: outputPath,
+      publicPath,
     },
     devServer: {
       static: [
-        {
-          directory: path.join(__dirname, 'dist'),
-        },
-        {
-          directory: path.join(__dirname, '..'),
-          publicPath: '/',
-          watch: false
-        }
+        // Serve the docs root and explorer subdir for local browsing at /explorer/
+        { directory: path.join(__dirname, '..'), publicPath: '/', watch: false },
       ],
       port: 8000,
       hot: true,
-      open: false
+      open: ['/explorer/'],
+      historyApiFallback: {
+        index: '/explorer/index.html'
+      }
     },
     module: {
       rules: [
@@ -63,20 +59,17 @@ module.exports = (env, argv) => {
     },
     plugins: [
       new CopyWebpackPlugin({
-        patterns: isCustomDomain ? [
-          // For custom domain: files at root
-          { from: 'index.html', to: 'index.html' },
-          { from: 'styles.css', to: 'styles.css' },
-        ] : isGitHubPages ? [
-          // For GitHub Pages: copy to explorer subdirectory
-          { from: 'index.html', to: 'explorer/index.html' },
-          { from: 'styles.css', to: 'explorer/styles.css' },
-        ] : [
-          // For local dev: copy to dist
-          { from: 'index.html', to: 'index.html' },
-          { from: 'styles.css', to: 'styles.css' },
-        ]
-      })
-    ]
+        patterns: isCustomDomain
+          ? [
+              { from: 'index.html', to: 'index.html' },
+              { from: 'styles.css', to: 'styles.css' },
+            ]
+          : [
+              // Unified: copy under explorer/ consistently
+              { from: 'index.html', to: 'explorer/index.html' },
+              { from: 'styles.css', to: 'explorer/styles.css' },
+            ],
+      }),
+    ],
   };
 };

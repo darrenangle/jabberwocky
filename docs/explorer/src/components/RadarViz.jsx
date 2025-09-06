@@ -10,6 +10,7 @@ export default function RadarViz({
   hoverSlug,
   onHoverChange,
   colorMap,
+  style,
 }) {
   const colors = RADAR_COLORS;
   const canvasRef = useRef(null);
@@ -57,7 +58,7 @@ export default function RadarViz({
       data: { labels: CRITERIA_LABELS, datasets },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         interaction: { mode: "point", intersect: false },
         plugins: {
           legend: { display: false },
@@ -123,7 +124,8 @@ export default function RadarViz({
   }, [effectiveHover, models, colorMap]);
 
   return (
-    <div className={containerClass} aria-label="Top criteria radar" onClick={variant === "hero" ? onOpenModal : undefined} title={variant === "hero" ? "Click to expand" : undefined}>
+    <div className={containerClass} aria-label="Top criteria radar" onClick={variant === "hero" ? onOpenModal : undefined} title={variant === "hero" ? "Click to expand" : undefined} style={style}
+    >
       <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%" }} />
       {showLegend && (
         <div className="hero-legend">

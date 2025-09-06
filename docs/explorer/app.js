@@ -20,6 +20,67 @@ function addCacheBust(url, cacheBust) {
   }
 }
 
+// Extract provider/lab name from model ID
+function getProviderFromModelId(modelId) {
+  // Handle OpenAI models (gpt-*, o1-*, etc)
+  if (modelId.match(/^(gpt-|o1-|o3|o4|davinci|curie|babbage|ada)/)) {
+    return "OpenAI";
+  }
+  
+  // Handle Claude models
+  if (modelId.includes("claude") || modelId.includes("haiku") || modelId.includes("sonnet") || modelId.includes("opus")) {
+    return "Anthropic";
+  }
+  
+  // Handle specific known models
+  const modelMappings = {
+    "gemini": "Google",
+    "grok": "xAI", 
+    "llama": "Meta",
+    "qwen": "Alibaba",
+    "deepseek": "DeepSeek",
+    "mistral": "Mistral",
+    "kimi": "Moonshot",
+    "moonshot": "Moonshot",
+    "jamba": "AI21",
+    "glm": "Zhipu",
+    "ernie": "Baidu",
+    "hermes": "Nous"
+  };
+  
+  // Check known patterns
+  for (const [pattern, provider] of Object.entries(modelMappings)) {
+    if (modelId.toLowerCase().includes(pattern)) {
+      return provider;
+    }
+  }
+  
+  // For OpenRouter style IDs like "anthropic/claude-3.5"
+  if (modelId.includes("/")) {
+    const provider = modelId.split("/")[0];
+    // Map provider slugs to display names
+    const providerMappings = {
+      "anthropic": "Anthropic",
+      "openai": "OpenAI",
+      "google": "Google",
+      "x-ai": "xAI",
+      "meta-llama": "Meta",
+      "qwen": "Alibaba",
+      "deepseek": "DeepSeek",
+      "mistralai": "Mistral",
+      "moonshotai": "Moonshot",
+      "ai21": "AI21",
+      "z-ai": "Zhipu",
+      "baidu": "Baidu",
+      "nousresearch": "Nous"
+    };
+    return providerMappings[provider] || provider;
+  }
+  
+  // Default fallback
+  return "Unknown";
+}
+
 async function fetchJSON(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
@@ -796,7 +857,7 @@ function Trends({ models, loadSamples }) {
             }));
             data.push({
               id: model.id,
-              provider: model.provider,
+              provider: getProviderFromModelId(model.id),
               color: getModelColor(data.length),
               points: points,
               average: points.reduce((sum, p) => sum + p.y, 0) / points.length,
@@ -2125,7 +2186,7 @@ function Leaderboard({
               <div className="model-info">
                 <h3 className="model-name">{model.id}</h3>
                 <div className="model-meta">
-                  <span className="model-provider">{model.provider}</span>
+                  <span className="model-provider">{getProviderFromModelId(model.id)}</span>
                   <span className="click-hint">View poems →</span>
 
                   {/* per-model sparkline */}
@@ -2699,10 +2760,10 @@ function App() {
 
     const urlMinimal =
       getQueryParam("manifest") ||
-      `${basePath}/runs/run-mixed-50-minimal/manifest.json`;
+      `${basePath}/runs/run-50-20250905-2001/manifest.json`;
     const urlHigh =
       getQueryParam("manifest_high") ||
-      `${basePath}/runs/run-mixed-50-high/manifest.json`;
+      `${basePath}/runs/run-50-high-20250906-0017/manifest.json`;
     (async () => {
       try {
         setLoading(true);

@@ -1,0 +1,365 @@
+[
+  {
+    "spec": "gemini-2.5-flash",
+    "provider": "openrouter",
+    "model": "google/gemini-2.5-flash",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "gemini-2.5-flash/"
+  },
+  {
+    "spec": "gemini-2.5-flash-lite",
+    "provider": "openrouter",
+    "model": "google/gemini-2.5-flash-lite",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "gemini-2.5-flash-lite/"
+  },
+  {
+    "spec": "claude-3.5-haiku",
+    "provider": "openrouter",
+    "model": "anthropic/claude-3.5-haiku",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "claude-3.5-haiku/"
+  },
+  {
+    "spec": "claude-3.7-sonnet",
+    "provider": "openrouter",
+    "model": "anthropic/claude-3.7-sonnet",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "claude-3.7-sonnet/"
+  },
+  {
+    "spec": "claude-sonnet-4",
+    "provider": "openrouter",
+    "model": "anthropic/claude-sonnet-4",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "claude-sonnet-4/"
+  },
+  {
+    "spec": "deepseek-chat-v3.1",
+    "provider": "openrouter",
+    "model": "deepseek/deepseek-chat-v3.1",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "deepseek-chat-v3.1/"
+  },
+  {
+    "spec": "claude-opus-4.1",
+    "provider": "openrouter",
+    "model": "anthropic/claude-opus-4.1",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "claude-opus-4.1/"
+  },
+  {
+    "spec": "gpt-4.1",
+    "provider": "openai",
+    "model": "gpt-4.1",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "gpt-4.1/"
+  },
+  {
+    "spec": "gpt-4o",
+    "provider": "openrouter",
+    "model": "openai/gpt-4o",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "gpt-4o/"
+  },
+  {
+    "spec": "ernie-4.5-300b-a47b",
+    "provider": "openrouter",
+    "model": "baidu/ernie-4.5-300b-a47b",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "ernie-4.5-300b-a47b/"
+  },
+  {
+    "spec": "grok-3",
+    "provider": "openrouter",
+    "model": "x-ai/grok-3",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "grok-3/"
+  },
+  {
+    "spec": "grok-code-fast-1",
+    "provider": "openrouter",
+    "model": "x-ai/grok-code-fast-1",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "grok-code-fast-1/"
+  },
+  {
+    "spec": "hermes-4-405b",
+    "provider": "openrouter",
+    "model": "nousresearch/hermes-4-405b",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "hermes-4-405b/"
+  },
+  {
+    "spec": "hermes-4-70b",
+    "provider": "openrouter",
+    "model": "nousresearch/hermes-4-70b",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "hermes-4-70b/"
+  },
+  {
+    "spec": "jamba-large-1.7",
+    "provider": "openrouter",
+    "model": "ai21/jamba-large-1.7",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "jamba-large-1.7/"
+  },
+  {
+    "spec": "gemini-2.5-pro",
+    "provider": "openrouter",
+    "model": "google/gemini-2.5-pro",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "gemini-2.5-pro/"
+  },
+  {
+    "spec": "glm-4.5",
+    "provider": "openrouter",
+    "model": "z-ai/glm-4.5",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "glm-4.5/"
+  },
+  {
+    "spec": "kimi-k2",
+    "provider": "openrouter",
+    "model": "moonshotai/kimi-k2",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "kimi-k2/"
+  },
+  {
+    "spec": "kimi-k2-0905",
+    "provider": "openrouter",
+    "model": "moonshotai/kimi-k2-0905",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "kimi-k2-0905/"
+  },
+  {
+    "spec": "deepseek-r1-0528",
+    "provider": "openrouter",
+    "model": "deepseek/deepseek-r1-0528",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "deepseek-r1-0528/"
+  },
+  {
+    "spec": "llama-3.3-70b-instruct",
+    "provider": "openrouter",
+    "model": "meta-llama/llama-3.3-70b-instruct",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "llama-3.3-70b-instruct/"
+  },
+  {
+    "spec": "gpt-oss-120b",
+    "provider": "openrouter",
+    "model": "openai/gpt-oss-120b",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "gpt-oss-120b/"
+  },
+  {
+    "spec": "llama-3.1-405b-instruct",
+    "provider": "openrouter",
+    "model": "meta-llama/llama-3.1-405b-instruct",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "llama-3.1-405b-instruct/"
+  },
+  {
+    "spec": "mistral-medium-3.1",
+    "provider": "openrouter",
+    "model": "mistralai/mistral-medium-3.1",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "mistral-medium-3.1/"
+  },
+  {
+    "spec": "grok-4",
+    "provider": "openrouter",
+    "model": "x-ai/grok-4",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "grok-4/"
+  },
+  {
+    "spec": "qwen3-235b-a22b-2507",
+    "provider": "openrouter",
+    "model": "qwen/qwen3-235b-a22b-2507",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "qwen3-235b-a22b-2507/"
+  },
+  {
+    "spec": "qwen3-30b-a3b-instruct-2507",
+    "provider": "openrouter",
+    "model": "qwen/qwen3-30b-a3b-instruct-2507",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "qwen3-30b-a3b-instruct-2507/"
+  },
+  {
+    "spec": "qwen3-max",
+    "provider": "openrouter",
+    "model": "qwen/qwen3-max",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "qwen3-max/"
+  },
+  {
+    "spec": "sonnet-3.5",
+    "provider": "openrouter",
+    "model": "anthropic/claude-3.5-sonnet",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "sonnet-3.5/"
+  },
+  {
+    "spec": "gpt-5",
+    "provider": "openai",
+    "model": "gpt-5",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "gpt-5/"
+  },
+  {
+    "spec": "o3",
+    "provider": "openai",
+    "model": "o3",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "o3/"
+  },
+  {
+    "spec": "o4-mini",
+    "provider": "openai",
+    "model": "o4-mini",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "o4-mini/"
+  },
+  {
+    "spec": "kimi-dev-72b",
+    "provider": "openrouter",
+    "model": "moonshotai/kimi-dev-72b",
+    "summary": {
+      "overall_reward": 0.0,
+      "label_counts": {},
+      "metrics_mean": {}
+    },
+    "path": "kimi-dev-72b/"
+  }
+]

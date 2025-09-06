@@ -13,6 +13,8 @@
 
   --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --serif: "Libre Caslon Display", Georgia, "Times New Roman", Times, serif;
+  --book-serif: "Cormorant", Georgia, "Times New Roman", Times, serif;
+  --display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
   --xs: .25rem; --sm: .5rem; --md: 1rem; --lg: 1.5rem; --xl: 2rem; --xxl: 3rem;
@@ -276,7 +278,7 @@ body { font-family: var(--ui); color: var(--ink); background: linear-gradient(18
 .verse-card { background: #fff; border: 1px solid var(--hair); border-radius: 10px; padding: 1rem; margin-bottom: .75rem; }
 .verse-meta { display: flex; gap: .75rem; flex-wrap: wrap; color: var(--muted); font-family: var(--mono); font-size: .8rem; margin-bottom: .75rem; }
 .verse-prompt { color: #444; font-size: .95rem; border-bottom: 1px dashed var(--hair); padding-bottom: .6rem; margin-bottom: .6rem; }
-.verse-content { font-family: var(--mono); font-size: .95rem; line-height: 1.9; white-space: pre-wrap; }
+.verse-content { font-family: var(--book-serif); font-size: 1.05rem; line-height: 1.9; letter-spacing: .02em; color: #222; white-space: pre-wrap; }
 .verse-content em { font-style: italic; background: #fff7d6; padding: 0 .2rem; }
 
 /* Modal */
@@ -287,9 +289,11 @@ body { font-family: var(--ui); color: var(--ink); background: linear-gradient(18
 .modal-close { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--hair); background: #fff; color: #333; display: grid; place-items: center; cursor: pointer; }
 .modal-body { padding: 1rem; overflow: auto; }
 .modal-poem-meta { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .5rem 0; border-bottom: 1px dashed var(--hair); margin-bottom: 1rem; }
+.modal-poem-meta { background: #fff; border: 1px solid var(--hair); border-radius: 10px; padding: .75rem 1rem; box-shadow: var(--shadow); border-bottom: none; }
 .poem-score { display: flex; flex-direction: column; align-items: center; min-width: 100px; }
 .score-big { font-family: var(--mono); font-size: 1.6rem; font-weight: 800; }
 .modal-poem-content { background: #fff; border: 1px solid var(--hair); border-radius: 10px; padding: 1rem; }
+.modal-poem-content .verse-content { font-family: var(--book-serif); font-size: 1.25rem; font-weight: 500; line-height: 1.95; letter-spacing: .01em; color: #111; }
 .judge-block { margin-top: .75rem; }
 .judge-title { font-family: var(--serif); font-weight: 800; font-size: 1.1rem; margin-bottom: .25rem; }
 .judge-summary { color: var(--muted); font-size: .85rem; margin-bottom: .5rem; }
@@ -305,7 +309,21 @@ body { font-family: var(--ui); color: var(--ink); background: linear-gradient(18
 .judge-raw { background: #faf8f4; border: 1px solid var(--hair); border-radius: 8px; padding: .6rem .75rem; max-height: 40vh; overflow: auto; font-family: var(--mono); font-size: .75rem; white-space: pre-wrap; }
 
 /* Modal enhancements */
-.poem-title { font-family: var(--serif); font-weight: 800; font-size: 1.4rem; margin-bottom: .25rem; }
+.poem-title { font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: .08em; font-size: 1.1rem; margin-bottom: .25rem; }
+.poem-layout { display: grid; grid-template-columns: 1fr 320px; gap: 1rem; align-items: start; width: 100%; }
+.poem-main { background: #fff; border: 1px solid var(--hair); border-radius: var(--radius); padding: 1rem 1.25rem; }
+.poem-body { font-family: var(--book-serif); font-size: 1.15rem; line-height: 1.9; letter-spacing: .01em; max-width: 60ch; }
+.poem-body .stanza { margin: .9rem 0; }
+.poem-meta-card { background: #fff; border: 1px solid var(--hair); border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); display: grid; gap: .5rem; }
+.poem-meta-card .meta-line { display: flex; justify-content: space-between; gap: .5rem; font-size: .9rem; color: #333; }
+.poem-meta-card .badge { font-family: var(--mono); background: #f4f1ea; border: 1px solid var(--hair); padding: .15rem .35rem; border-radius: 6px; }
+.poem-meta-card .nav { display: flex; justify-content: space-between; align-items: center; margin-top: .5rem; }
+.poem-meta-card .nav .btn { padding: .3rem .6rem; font-size: .8rem; }
+.poem-meta-card .tag { margin-right: .25rem; }
+
+@media (max-width: 920px) {
+  .poem-layout { grid-template-columns: 1fr; }
+}
 .meta-right { display: flex; align-items: center; gap: .5rem; }
 .tag { display: inline-flex; align-items: center; gap: .25rem; padding: .2rem .5rem; border-radius: 999px; border: 1px solid var(--hair); font-size: .75rem; color: #333; background: #fff; }
 .badge-score { background: #111; color: #fff; border-color: #111; }

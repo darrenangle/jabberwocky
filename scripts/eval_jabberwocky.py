@@ -10,6 +10,7 @@ import re
 import json as _json
 from datetime import datetime
 import random as _random
+import re as _re
 
 from rich.console import Console
 from rich.table import Table
@@ -96,6 +97,21 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--save-actor-first", action="store_true", help="Generate poems and append to samples.jsonl before any judging (prevents data loss if judge stalls)")
     p.add_argument("--auto-judge-after-save", action="store_true", help="After saving actor outputs, run direct judge on just this model and recompute summaries/aggregate")
     return p
+
+
+def _extract_topic_from_prompt(prompt: str) -> str:
+    pats = [
+        r"your\s+prompt\s+is\s+[\"'\u201c\u2018]?(.+?)[\"'\u201d\u2019]?(?:\s*\.|$)",
+        r"about\s+(.+?)\s+in\s+the\s+style",
+        r"on\s+(.+?)\s+in\s+the\s+style",
+        r"about\s+(.+?)\s*\.",
+    ]
+    s = (prompt or "").strip()
+    for pat in pats:
+        m = _re.search(pat, s, flags=_re.IGNORECASE)
+        if m:
+            return m.group(1).strip()
+    return ""
 
 
 def mean(xs: list[float]) -> float:
@@ -623,6 +639,15 @@ def main():
                             print(f"[actor-error] {spec} row {idx+1}/{total_rows}: {e}")
                             poem = ""
                         info_i = infos[idx] if idx < len(infos) else {}
+                        try:
+                            if not isinstance(info_i, dict):
+                                info_i = {}
+                            if not info_i.get("topic"):
+                                topic = _extract_topic_from_prompt(q)
+                                if topic:
+                                    info_i["topic"] = topic
+                        except Exception:
+                            pass
                         row = {"i": idx, "prompt": q, "poem": poem, "info": info_i}
                         f.write(_json.dumps(row, ensure_ascii=False) + "\n")
                         f.flush()

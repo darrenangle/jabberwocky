@@ -90,7 +90,13 @@ RUBRIC_SHORT = jw.RUBRIC_SHORT
 
 
 def extract_topic_from_prompt(prompt: str) -> str:
-    patterns = [r"about\s+(.+?)\s+in the style", r"on\s+(.+?)\s+in the style", r"about\s+(.+?)\s*\."]
+    # Try several prompt grammars used across runs
+    patterns = [
+        r"your\s+prompt\s+is\s+[\"'\u201c\u2018]?(.+?)[\"'\u201d\u2019]?(?:\s*\.|$)",
+        r"about\s+(.+?)\s+in\s+the\s+style",
+        r"on\s+(.+?)\s+in\s+the\s+style",
+        r"about\s+(.+?)\s*\.",
+    ]
     for pat in patterns:
         m = re.search(pat, prompt, flags=re.IGNORECASE)
         if m:

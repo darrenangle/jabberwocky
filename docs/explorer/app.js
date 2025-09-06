@@ -26,57 +26,62 @@ function getProviderFromModelId(modelId) {
   if (modelId.match(/^(gpt-|o1-|o3|o4|davinci|curie|babbage|ada)/)) {
     return "OpenAI";
   }
-  
+
   // Handle Claude models
-  if (modelId.includes("claude") || modelId.includes("haiku") || modelId.includes("sonnet") || modelId.includes("opus")) {
+  if (
+    modelId.includes("claude") ||
+    modelId.includes("haiku") ||
+    modelId.includes("sonnet") ||
+    modelId.includes("opus")
+  ) {
     return "Anthropic";
   }
-  
+
   // Handle specific known models
   const modelMappings = {
-    "gemini": "Google",
-    "grok": "xAI", 
-    "llama": "Meta",
-    "qwen": "Alibaba",
-    "deepseek": "DeepSeek",
-    "mistral": "Mistral",
-    "kimi": "Moonshot",
-    "moonshot": "Moonshot",
-    "jamba": "AI21",
-    "glm": "Zhipu",
-    "ernie": "Baidu",
-    "hermes": "Nous"
+    gemini: "Google",
+    grok: "xAI",
+    llama: "Meta",
+    qwen: "Alibaba",
+    deepseek: "DeepSeek",
+    mistral: "Mistral",
+    kimi: "Moonshot",
+    moonshot: "Moonshot",
+    jamba: "AI21",
+    glm: "Zhipu",
+    ernie: "Baidu",
+    hermes: "Nous",
   };
-  
+
   // Check known patterns
   for (const [pattern, provider] of Object.entries(modelMappings)) {
     if (modelId.toLowerCase().includes(pattern)) {
       return provider;
     }
   }
-  
+
   // For OpenRouter style IDs like "anthropic/claude-3.5"
   if (modelId.includes("/")) {
     const provider = modelId.split("/")[0];
     // Map provider slugs to display names
     const providerMappings = {
-      "anthropic": "Anthropic",
-      "openai": "OpenAI",
-      "google": "Google",
+      anthropic: "Anthropic",
+      openai: "OpenAI",
+      google: "Google",
       "x-ai": "xAI",
       "meta-llama": "Meta",
-      "qwen": "Alibaba",
-      "deepseek": "DeepSeek",
-      "mistralai": "Mistral",
-      "moonshotai": "Moonshot",
-      "ai21": "AI21",
+      qwen: "Alibaba",
+      deepseek: "DeepSeek",
+      mistralai: "Mistral",
+      moonshotai: "Moonshot",
+      ai21: "AI21",
       "z-ai": "Zhipu",
-      "baidu": "Baidu",
-      "nousresearch": "Nous"
+      baidu: "Baidu",
+      nousresearch: "Nous",
     };
     return providerMappings[provider] || provider;
   }
-  
+
   // Default fallback
   return "Unknown";
 }
@@ -129,14 +134,12 @@ function computePoints(summary, attemptsFallback) {
 function Header({ activeTab, onTabChange }) {
   const [subtitle, setSubtitle] = useState(0);
 
-  const subtitles = [
-    "Quantifying the poetic skill of large language models",
-  ];
+  const subtitles = ["Quantifying the poetic skill of large language models"];
 
   const tabs = [
     { id: "leaderboard", label: "Overview" },
     { id: "analysis", label: "Analysis" },
-    { id: "verses", label: "Verses" },
+    { id: "verses", label: "Poems" },
     { id: "about", label: "Why" },
     { id: "methodology", label: "Methods" },
   ];
@@ -201,8 +204,8 @@ function Hero({ manifest, models, onPrimary, onSecondary, onOpenRadar }) {
           <p className="hero-copy">
             Can models write poetry that follows complex constraints while
             inventing new words? This benchmark uses 24 binary criteria to
-            evaluate poems in the style of Lewis Carroll's Jabberwocky,
-            testing whether LLMs can balance form, creativity, and coherence.
+            evaluate poems in the style of Lewis Carroll's Jabberwocky, testing
+            whether LLMs can balance form, creativity, and coherence.
           </p>
           <div className="hero-cta">
             <button className="btn" onClick={onPrimary}>
@@ -2186,7 +2189,9 @@ function Leaderboard({
               <div className="model-info">
                 <h3 className="model-name">{model.id}</h3>
                 <div className="model-meta">
-                  <span className="model-provider">{getProviderFromModelId(model.id)}</span>
+                  <span className="model-provider">
+                    {getProviderFromModelId(model.id)}
+                  </span>
                   <span className="click-hint">View poems →</span>
 
                   {/* per-model sparkline */}
@@ -2394,9 +2399,6 @@ function ModelModal({ model, samples, onClose }) {
                 <div className="verse-card">
                   <div className="modal-poem-meta">
                     <div>
-                      {parsed.title && (
-                        <div className="poem-title">{parsed.title}</div>
-                      )}
                       <div className="meta-right">
                         <span className="tag">Topic: {topic}</span>
                         <span className="tag">Label: {label}</span>
@@ -2431,6 +2433,9 @@ function ModelModal({ model, samples, onClose }) {
                     </div>
                   </div>
                   <div className="modal-poem-content">
+                    {parsed.title && (
+                      <div className="poem-title">{parsed.title}</div>
+                    )}
                     <div className="verse-content">
                       {stanzas.map((s, idx) => (
                         <p
@@ -2631,6 +2636,10 @@ function Verses({ models, samples, loadSamples }) {
               <span>{sample.__modelId}</span>
               <span>Score: {normalizeScore(sample.reward)}</span>
               <span>Label: {sample.label || "—"}</span>
+              {(() => {
+                const t = sample?.info?.topic;
+                return <span title="Prompt topic">Topic: {t || "—"}</span>;
+              })()}
             </div>
 
             <div className="verse-prompt">{sample.prompt}</div>

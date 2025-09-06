@@ -69,10 +69,7 @@ function Header({ activeTab, onTabChange }) {
   const [subtitle, setSubtitle] = useState(0);
 
   const subtitles = [
-    "Instruction-following under creative constraints",
-    "Can models invent and obey?",
-    "A benchmark for non-verifiable rewards",
-    "Style, structure, and surprise",
+    "Quantifying the poetic skill of large language models",
   ];
 
   const tabs = [
@@ -95,7 +92,6 @@ function Header({ activeTab, onTabChange }) {
       <div className="header-content">
         <div className="header-left">
           <h1 className="app-title">Jabberwocky Bench</h1>
-          <p className="app-subtitle">{subtitles[subtitle]}</p>
         </div>
         <nav className="header-nav">
           {tabs.map((tab) => (
@@ -139,15 +135,13 @@ function Hero({ manifest, models, onPrimary, onSecondary, onOpenRadar }) {
         <div>
           <div className="hero-kicker">Jabberwocky Bench</div>
           <h2 className="hero-title">
-            Quantifying poetic skill through structured imitation
+            Quantifying the poetic skill of large language models
           </h2>
           <p className="hero-copy">
-            Jabberwocky Bench transforms the subjective assessment of creative
-            writing into measurable binary outcomes. Using 24 criteria derived
-            from prosodic analysis and computational poetics, an LLM judge
-            evaluates whether models can simultaneously follow formal
-            constraints, invent linguistically plausible neologisms, and
-            maintain narrative coherence — all while avoiding memorization.
+            Can models write poetry that follows complex constraints while
+            inventing new words? This benchmark uses 24 binary criteria to
+            evaluate poems in the style of Lewis Carroll's Jabberwocky,
+            testing whether LLMs can balance form, creativity, and coherence.
           </p>
           <div className="hero-cta">
             <button className="btn" onClick={onPrimary}>

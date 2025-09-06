@@ -9,6 +9,7 @@ import os
 import re
 import json as _json
 from datetime import datetime
+import random as _random
 
 from rich.console import Console
 from rich.table import Table
@@ -33,6 +34,10 @@ from pathlib import Path as _Path
 _ENV_ROOT = str(_Path(__file__).resolve().parents[1])  # environments/jabberwocky
 if _ENV_ROOT not in _sys.path:
     _sys.path.insert(0, _ENV_ROOT)
+try:
+    import jabberwocky as jw  # type: ignore
+except Exception:
+    jw = None  # type: ignore
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -66,6 +71,10 @@ def build_argparser() -> argparse.ArgumentParser:
     # Timeout defaults: keep CLI simple; use env ACTOR_TIMEOUT_SECONDS if needed
     p.add_argument("--openrouter-http-referer", type=str, default=None, help="Optional OpenRouter HTTP-Referer header")
     p.add_argument("--openrouter-x-title", type=str, default=None, help="Optional OpenRouter X-Title header")
+    # Actor rate-limit & retry controls
+    p.add_argument("--actor-rpm-limit", type=int, default=None, help="Throttle actor requests to N per minute (thread-safe). Useful for OpenRouter limits like 20 RPM.")
+    p.add_argument("--actor-max-retries", type=int, default=3, help="Max retries on 429/5xx for actor calls (default 3)")
+    p.add_argument("--actor-retry-backoff-seconds", type=float, default=3.0, help="Base backoff seconds between actor retries (default 3.0)")
     # Merge behavior
     p.add_argument("--merge-into-existing", action="store_true", help="Merge results into an existing outdir without dropping prior models (updates/overwrites per-model files for models you run)")
     # Convenience: load all OpenRouter/OpenAI models from registry
@@ -75,6 +84,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--judge-base-url", type=str, default=None, help="Judge OpenAI-compatible base URL (default: OpenAI)")
     p.add_argument("--judge-api-key", type=str, default=None, help="Judge API key (or set via env OPENAI_API_KEY)")
     p.add_argument("--judge-timeout-seconds", type=float, default=60.0, help="Judge request timeout seconds")
+    p.add_argument("--log-judge-debug", action="store_true", help="Enable verbose judge logs and raw XML excerpts (debug)")
     p.add_argument("--seed", type=int, default=777, help="Seed for topic sampling (ensures same dataset across models)")
     p.add_argument("--parallel-models", type=int, default=1, help="Evaluate up to N models in parallel (use with care)")
     # Actor sampling overrides
@@ -82,6 +92,9 @@ def build_argparser() -> argparse.ArgumentParser:
     # Robustness + resume controls
     p.add_argument("--skip-existing", action="store_true", help="Skip models that already have samples.jsonl with >= n rows in outdir")
     p.add_argument("--actor-timeout-seconds", type=float, default=None, help="Per-request actor timeout seconds (overrides ACTOR_TIMEOUT_SECONDS env)")
+    # Safety: write actor outputs before judging, with optional auto-judge
+    p.add_argument("--save-actor-first", action="store_true", help="Generate poems and append to samples.jsonl before any judging (prevents data loss if judge stalls)")
+    p.add_argument("--auto-judge-after-save", action="store_true", help="After saving actor outputs, run direct judge on just this model and recompute summaries/aggregate")
     return p
 
 
@@ -284,11 +297,12 @@ def _make_actor_client(cfg, timeout: float | None = None) -> OpenAI:
         # OpenAI Python supports float seconds for default timeout
         kwargs["timeout"] = float(timeout)
     try:
-        return OpenAI(**kwargs)
+        base = OpenAI(**kwargs)
     except TypeError:
         # Older SDKs may not support default_headers; retry without
         kwargs.pop("default_headers", None)
-        return OpenAI(**kwargs)
+        base = OpenAI(**kwargs)
+    return base
 
 
 def _safe_slug(s: str) -> str:
@@ -379,6 +393,39 @@ def _dump_per_model(outdir: str, spec: str, cfg, results: vf.GenerateOutputs, su
             f.write(_json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def _append_actor_only(outdir: str, spec: str, cfg, results: vf.GenerateOutputs) -> str:
+    os.makedirs(outdir, exist_ok=True)
+    model_dir = os.path.join(outdir, _safe_slug(spec))
+    os.makedirs(model_dir, exist_ok=True)
+    spath = os.path.join(model_dir, "samples.jsonl")
+    # Append actor outputs without judge fields; backfill will fill later
+    mode = "a" if os.path.exists(spath) else "w"
+    with open(spath, mode, encoding="utf-8") as f:
+        n = len(results.prompt)
+        for i in range(n):
+            prm = results.prompt[i]
+            cpl = results.completion[i]
+            info = results.info[i]
+            if isinstance(prm, list) and prm:
+                user = next((m for m in prm[::-1] if m.get("role") == "user"), None)
+                prompt_text = user.get("content") if user else str(prm)
+            else:
+                prompt_text = str(prm)
+            if isinstance(cpl, list) and cpl:
+                last_assist = next((m for m in cpl[::-1] if m.get("role") == "assistant"), None)
+                completion_text = last_assist.get("content") if last_assist else str(cpl)
+            else:
+                completion_text = str(cpl)
+            row = {
+                "i": i,
+                "prompt": prompt_text,
+                "poem": completion_text,
+                "info": info,
+            }
+            f.write(_json.dumps(row, ensure_ascii=False) + "\n")
+    return spath
+
+
 def main():
     args = build_argparser().parse_args()
 
@@ -393,6 +440,8 @@ def main():
         judge_kwargs["judge_api_key_var"] = "JUDGE_API_KEY_CLI"
     # Judge timeout
     judge_kwargs["judge_timeout"] = float(args.judge_timeout_seconds)
+    if args.log_judge_debug:
+        judge_kwargs["log_judge_debug"] = True
 
     # We intentionally create an identical environment per model (inside _run_one)
     # to avoid any shared-state or concurrency effects. The parameters here are
@@ -524,17 +573,117 @@ def main():
             if args.n == 1 and args.rollouts > 1 and not args.topics:
                 eff_n = args.rollouts
                 eff_rollouts = 1
-            return local_env.evaluate(
-                client=client,
-                model=cfg.model,
-                num_examples=eff_n,
-                rollouts_per_example=eff_rollouts,
-                max_concurrent=args.max_concurrent,
-            )
-        results = run_eval()
-        summary = summarize(results, print_samples=args.print_samples)
-        # Optional dumping per-model
-        if args.outdir:
+            if args.save_actor_first and args.outdir:
+                # Generate via direct actor calls and append to samples.jsonl immediately
+                ds = getattr(local_env, "eval_dataset", None) or getattr(local_env, "dataset", None)
+                if ds is None:
+                    raise RuntimeError("Environment does not expose eval_dataset/dataset; cannot build inputs for --save-actor-first")
+                # Extract prompts and infos deterministically
+                try:
+                    questions = list(ds["question"])  # hf.Dataset supports column access
+                    infos = list(ds.get("info", [{}] * len(questions))) if hasattr(ds, "get") else [{}] * len(questions)
+                except Exception:
+                    questions = []
+                    infos = []
+                    n_avail = len(ds)
+                    for j in range(n_avail):
+                        row = ds[j]
+                        questions.append(row.get("question", ""))
+                        infos.append(row.get("info", {}))
+                # Choose a shuffled subset of prompts to avoid blocky repeats
+                idxs = list(range(min(len(questions), eff_n)))
+                _rnd = _random.Random(args.seed)
+                _rnd.shuffle(idxs)
+                prompts = [questions[i] for i in idxs]
+                infos = [infos[i] if i < len(infos) else {} for i in idxs]
+                # Append to samples.jsonl incrementally
+                model_dir = os.path.join(args.outdir, _safe_slug(spec))
+                os.makedirs(model_dir, exist_ok=True)
+                spath = os.path.join(model_dir, "samples.jsonl")
+                mode = "a" if os.path.exists(spath) else "w"
+                wrote = 0
+                with open(spath, mode, encoding="utf-8") as f:
+                    total_rows = len(prompts)
+                    for idx, q in enumerate(prompts):
+                        poem = ""
+                        try:
+                            try:
+                                jr = client.chat.completions.create(
+                                    model=cfg.model,
+                                    messages=[{"role": "user", "content": q}],
+                                    timeout=ACTOR_TIMEOUT,
+                                )
+                            except TypeError:
+                                jr = client.chat.completions.create(
+                                    model=cfg.model,
+                                    messages=[{"role": "user", "content": q}],
+                                )
+                            poem = str(jr.choices[0].message.content or "")
+                        except Exception as e:
+                            print(f"[actor-error] {spec} row {idx+1}/{total_rows}: {e}")
+                            poem = ""
+                        info_i = infos[idx] if idx < len(infos) else {}
+                        row = {"i": idx, "prompt": q, "poem": poem, "info": info_i}
+                        f.write(_json.dumps(row, ensure_ascii=False) + "\n")
+                        f.flush()
+                        wrote += 1
+                        if (idx + 1) % 5 == 0 or (idx + 1) == total_rows:
+                            print(f"[checkpoint] {spec}: {idx+1}/{total_rows} saved → {spath}")
+                print(f"[checkpoint] wrote {wrote} actor rows → {spath}")
+                # Build a minimal GenerateOutputs-like structure for downstream return
+                class _R:
+                    pass
+                results_gen = _R()
+                results_gen.prompt = prompts
+                results_gen.completion = [[{"role": "assistant", "content": ""}] for _ in prompts]
+                results_gen.info = infos[:len(prompts)]
+                results_gen.reward = [0.0 for _ in prompts]
+                results_gen.metrics = {}
+                results_gen.state = [{} for _ in prompts]
+                # Optionally auto-judge using direct judge backfill
+                if args.auto_judge_after_save:
+                    try:
+                        from backfill_judges_direct import backfill_file, rewrite_model_summary
+                        from backfill_judges_direct import compute_model_summary  # for summary if needed
+                        model_dir = os.path.join(args.outdir, _safe_slug(spec))
+                        sf = os.path.join(model_dir, "samples.jsonl")
+                        client_j = OpenAI(api_key=(args.judge_api_key or os.getenv("OPENAI_API_KEY")))
+                        # Backfill rows
+                        total, ch, errs = backfill_file(
+                            _Path(sf), client_j, args.judge_model or "gpt-4.1-mini",
+                            args.judge_timeout_seconds, retry=2, sleep=0.5,
+                            concurrency_rows=max(1, args.max_concurrent), qps=0.0,
+                            verbose=False, recompute_from_existing_raw=False, rejudge_existing=False)
+                        print(f"[judge] updated {ch}/{total} rows ({len(errs)} error types)")
+                        # Summarize
+                        # Load manifest entry if present to preserve provider/model metadata
+                        manifest_entry = {
+                            "id": spec,
+                            "provider": cfg.provider,
+                            "model": cfg.model,
+                        }
+                        rewrite_model_summary(_Path(model_dir), manifest_entry)
+                    except Exception as e:
+                        print(f"[warn] auto-judge-after-save failed: {e}")
+                # Return a minimal summary; downstream merge step will recompute summaries
+                dummy_summary = {"overall_reward": 0.0, "label_counts": {}, "metrics_mean": {}}
+                return results_gen, dummy_summary
+            else:
+                return local_env.evaluate(
+                    client=client,
+                    model=cfg.model,
+                    num_examples=eff_n,
+                    rollouts_per_example=eff_rollouts,
+                    max_concurrent=args.max_concurrent,
+                )
+        out = run_eval()
+        if isinstance(out, tuple):
+            results, summary = out
+        else:
+            results = out  # type: ignore
+            summary = summarize(results, print_samples=args.print_samples)
+        # Optional dumping per-model (standard evaluate path)
+        if args.outdir and not args.save_actor_first:
             _dump_per_model(args.outdir, spec, cfg, results, summary)
         print(f"[model-done] {spec} (n={len(results.prompt)})")
         return spec, results, summary

@@ -693,6 +693,20 @@ def load_environment(
             "hollow grind on an O1 blade", "spokeshave whisper", "honing burr and slurry", "quarter‑sawn shimmer",
             "letter kept in a cedar box", "childhood marble in a jar", "farewell at a platform", "rain on a tin roof",
             "alpenglow on scree", "murmuration over stubble", "noctilucent clouds", "blue hour on snow",
+            # Added to ensure ample unique eval topics (evocative subcultures)
+            "nixie tube warm glow", "theremin heterodyne wail", "modular synth patch spaghetti", "vactrol lag in filter",
+            "cassette wow and flutter", "tape splicing block", "oscilloscope lissajous bloom", "numbers station drift",
+            "Morse straight key click", "linocut brayer chatter", "burin bite on copper", "chine‑collé whisper",
+            "mezzotint rocker burr", "krenovian plane throat", "kumiko asanoha lattice", "urushi lacquer cure",
+            "sashiko boro patch", "shou sugi ban cedar", "mokume‑gane billet twist", "lost‑wax sprue tree",
+            "kiln witness cone bend", "scythe peening ring", "slipjoint walk and talk", "straight razor strop draw",
+            "badger knot bloom", "ebonite feed heat‑set", "nib tine micro‑mesh", "opal play‑of‑color flash",
+            "agate burnisher gleam", "forged leaf scroll", "anvil hardy hole", "quenching brine hiss",
+            "loom shuttle pick", "selvedge denim twill", "sourdough levain autolyse", "clay slip trailing",
+            "fishtail gouge sweep", "obsidian blade knap", "kiridashi scribe line", "washi hinge whisper",
+            "tatami edge heri", "orin bell hum", "zafu seam stitch", "pietra dura inlay",
+            "intarsia veneer curl", "tinsmith stake song", "pewter inlay ribbon", "plum brown blueing bath",
+            "plane iron camber",
         ]
     # Held-out topics for eval when using defaults
     rnd_topics = random.Random(seed)
@@ -709,6 +723,20 @@ def load_environment(
             else topics_shuffled[: max(1, len(topics_shuffled) // 10)]
         )
         train_topics = topics_shuffled[holdout_n:] if holdout_n > 0 else topics_shuffled
+        # Guarantee at least 50 unique eval topics so n=50 yields unique prompts
+        desired_eval_unique = min(len(topics_shuffled), max(50, 0))
+        if len(eval_topics) < desired_eval_unique:
+            # Pull additional unique topics from the remaining pool deterministically
+            extra = []
+            for t in topics_shuffled:
+                if t not in eval_topics:
+                    extra.append(t)
+                if len(eval_topics) + len(extra) >= desired_eval_unique:
+                    break
+            if extra:
+                eval_topics = list(eval_topics) + extra
+                # Remove extras from train to keep sets disjoint
+                train_topics = [t for t in train_topics if t not in set(extra)]
     else:
         train_topics = topics_shuffled
         eval_topics = topics_shuffled  # user-specified topics: no automatic holdout
@@ -858,23 +886,63 @@ def load_environment(
         cache = state.get("jw_judge_xml_cache")
         if isinstance(cache, dict) and jp in cache:
             return cache[jp]
-        try:
-            jr = judge_client.chat.completions.create(
-                model=judge_model,
-                messages=[{"role": "user", "content": jp}],
-                **judge_sampling_args,
-            )
-            txt = str(jr.choices[0].message.content or "")
-            if not txt:
-                # Capture an explicit error when the API returned no content
-                state["jw_judge_error"] = "empty_response"
+        # Try a few times to handle transient 429/5xx; enforce per-call timeout if supported
+        attempts = 3
+        backoff = 2.0
+        txt = ""
+        last_exc: Exception | None = None
+        for i in range(attempts):
+            try:
+                try:
+                    jr = judge_client.chat.completions.create(
+                        model=judge_model,
+                        messages=[{"role": "user", "content": jp}],
+                        timeout=judge_timeout,  # per-call timeout if SDK supports
+                        **judge_sampling_args,
+                    )
+                except TypeError:
+                    jr = judge_client.chat.completions.create(
+                        model=judge_model,
+                        messages=[{"role": "user", "content": jp}],
+                        **judge_sampling_args,
+                    )
+                txt = str(jr.choices[0].message.content or "")
+                if not txt:
+                    state["jw_judge_error"] = "empty_response"
+                if log_judge_debug:
+                    logger.info("[judge-xml] %s", txt[:300])
+                last_exc = None
+                break
+            except Exception as e:
+                last_exc = e
+                s = str(e)
+                if log_judge_debug:
+                    logger.warning("[judge-xml-exc attempt %d/%d] %s", i + 1, attempts, s)
+                transient = any(tok in s for tok in ["429", "Rate limit", "timeout", "ECONNRESET", "5xx", "Gateway", "Too Many Requests"])  # best-effort
+                if i < attempts - 1 and transient:
+                    # Heuristic pause; if a reset header appears in text, honor it
+                    sleep_s = backoff * (i + 1)
+                    try:
+                        import re as _re
+                        m = _re.search(r"X-RateLimit-Reset[^0-9]*([0-9]{10,13})", s)
+                        if m:
+                            ts = int(m.group(1))
+                            if ts > 1_000_000_000_000:
+                                ts = ts / 1000.0
+                            else:
+                                ts = float(ts)
+                            now = __import__("time").time()
+                            sleep_s = max(sleep_s, ts - now)
+                    except Exception:
+                        pass
+                    __import__("time").sleep(max(0.5, min(sleep_s, 30.0)))
+                    continue
+                # non-transient or last attempt: record and break
+                break
+        if last_exc is not None:
             if log_judge_debug:
-                logger.info("[judge-xml] %s", txt[:300])
-        except Exception as e:
-            if log_judge_debug:
-                logger.warning("[judge-xml-exc] %s", e)
-            # Store error string for downstream inspection
-            state["jw_judge_error"] = f"exception: {type(e).__name__}: {e}"
+                logger.warning("[judge-xml-final-exc] %s", last_exc)
+            state["jw_judge_error"] = f"exception: {type(last_exc).__name__}: {last_exc}"
             txt = ""
         # normalize tags like "< C1 >yes</ C1 >" → "<C1>yes</C1>"
         import re as _re

@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
+import { NavLink, useParams } from "react-router-dom";
 
-export default function Header({ activeTab, onTabChange }) {
+export default function Header() {
   const [subtitle, setSubtitle] = useState(0);
   const subtitles = ["Quantifying the poetic skill of large language models"];
+  const { level = "minimal" } = useParams();
   const tabs = [
-    { id: "leaderboard", label: "Overview" },
-    { id: "analysis", label: "Analysis" },
-    { id: "verses", label: "Poems" },
-    { id: "about", label: "Why" },
-    { id: "methodology", label: "Methods" },
+    { to: `/${level}/overview`, label: "Overview" },
+    { to: `/${level}/analysis`, label: "Analysis" },
+    { to: `/${level}/poem`, label: "Poems" },
+    { to: `/${level}/about`, label: "Why" },
+    { to: `/${level}/methods`, label: "Methods" },
   ];
 
   useEffect(() => {
@@ -24,17 +26,16 @@ export default function Header({ activeTab, onTabChange }) {
         </div>
         <nav className="header-nav">
           {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={`nav-button ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => onTabChange(tab.id)}
+            <NavLink
+              key={tab.to}
+              to={tab.to}
+              className={({ isActive }) => `nav-button ${isActive ? "active" : ""}`}
             >
               {tab.label}
-            </button>
+            </NavLink>
           ))}
         </nav>
       </div>
     </header>
   );
 }
-

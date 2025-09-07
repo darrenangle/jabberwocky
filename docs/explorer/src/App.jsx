@@ -1,27 +1,254 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Routes, Route, Navigate, Outlet, useNavigate, useParams, useOutletContext } from "react-router-dom";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Analysis from "./components/Analysis";
-import Verses from "./components/Verses";
 import Leaderboard from "./components/Leaderboard";
-import ModelModal from "./components/ModelModal";
 import Loading from "./components/Loading";
 import About from "./components/About";
 import Methodology from "./components/Methodology";
 import { addCacheBust, fetchJSON, getQueryParam } from "./utils/api";
 import { computePoints } from "./utils/scoring";
+import { CRITERIA_LABELS, CRITERIA_SHORT } from "./utils/constants";
+import { parseJudgeRawXML } from "./utils/judgeParsing";
 
-export default function App() {
+// ---------- PAGES (route-level components) ----------
+
+function OverviewPage() {
+  const { level = "minimal" } = useParams();
+  const navigate = useNavigate();
+  const ctx = useOutletContext();
+  const models = ctx.modelsByLevel[level] || [];
+  const manifest = ctx.manifests[level];
+  const hasHigh = (ctx.modelsByLevel.high || []).length > 0;
+  const attemptsCurrent = (ctx.manifests[level]?.num_examples || 0) * (ctx.manifests[level]?.rollouts_per_example || 1);
+  const attemptsMinimal = (ctx.manifests.minimal?.num_examples || 0) * (ctx.manifests.minimal?.rollouts_per_example || 1);
+  const attemptsHigh = (ctx.manifests.high?.num_examples || 0) * (ctx.manifests.high?.rollouts_per_example || 1);
+  if (ctx.loading) return <Loading />;
+  if (!manifest) return (<div className="empty-state"><h3>Loading Jabberwocky Data...</h3></div>);
+
+  return (
+    <>
+      <section>
+        <Hero
+          manifest={manifest}
+          models={models}
+          onPrimary={() => { const first = models[0]; if (first) navigate(`/${level}/poem/${first.slug}`); }}
+          onSecondary={() => window.scrollTo({ top: document.body.scrollHeight / 3, behavior: "smooth" })}
+          onOpenRadar={() => navigate(`/${level}/analysis`)}
+        />
+      </section>
+      <Leaderboard
+        models={models}
+        onModelClick={(model) => navigate(`/${level}/poem/${model.slug}`)}
+        instructionLevel={level}
+        onInstructionLevelChange={(lvl) => navigate(`/${lvl}/overview`)}
+        hasHigh={hasHigh}
+        minimalModels={ctx.modelsByLevel.minimal || []}
+        highModels={ctx.modelsByLevel.high || []}
+        attemptsCurrent={attemptsCurrent}
+        attemptsMinimal={attemptsMinimal}
+        attemptsHigh={attemptsHigh}
+      />
+    </>
+  );
+}
+
+function AnalysisPage() {
+  const { level = "minimal" } = useParams();
+  const navigate = useNavigate();
+  const ctx = useOutletContext();
+  if (ctx.loading && !(ctx.manifests[level])) return <Loading />;
+  return (
+    <Analysis
+      models={ctx.modelsByLevel[level] || []}
+      instructionLevel={level}
+      onInstructionLevelChange={(lvl) => navigate(`/${lvl}/analysis`)}
+    />
+  );
+}
+
+function AboutPage() { return <About />; }
+function MethodsPage() { return <Methodology />; }
+
+function PoemDefault() {
+  const { level = "minimal" } = useParams();
+  const navigate = useNavigate();
+  const ctx = useOutletContext();
+  const models = ctx.modelsByLevel[level] || [];
+  useEffect(() => {
+    if (models.length > 0) {
+      navigate(`/${level}/poem/${models[0].slug}`, { replace: true });
+    }
+  }, [models, level, navigate]);
+  return ctx.loading
+    ? <Loading />
+    : <div className="empty-state"><h3>Loading poems…</h3></div>;
+}
+
+function PoemPage() {
+  const { level = "minimal", modelSlug, i } = useParams();
+  const navigate = useNavigate();
+  const ctx = useOutletContext();
+  const models = ctx.modelsByLevel[level] || [];
+  const model = useMemo(() => models.find((m) => m.slug === modelSlug), [models, modelSlug]);
+
+  const [localLoading, setLocalLoading] = useState(false);
+  const [modelSamples, setModelSamples] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!model) return;
+      setLocalLoading(true);
+      const rows = await ctx.loadSamples(model, level);
+      if (!mounted) return;
+      setModelSamples(rows || []);
+      setLocalLoading(false);
+      if (!i && (rows || []).length > 0) {
+        // default to top by reward
+        const top = [...rows].sort((a, b) => (b.reward || 0) - (a.reward || 0))[0];
+        if (top && typeof top.i !== 'undefined') {
+          navigate(`/${level}/poem/${modelSlug}/${top.i}`, { replace: true });
+        }
+      }
+    })();
+    return () => { mounted = false; };
+  }, [model, level, i, modelSlug, navigate, ctx]);
+
+  const ordered = useMemo(() => {
+    const order = new URLSearchParams(window.location.search).get('order') || 'ranked';
+    const rows = [...(modelSamples || [])];
+    if (order === 'index') return rows.sort((a, b) => (a.i || 0) - (b.i || 0));
+    return rows.sort((a, b) => (b.reward || 0) - (a.reward || 0));
+  }, [modelSamples]);
+
+  const currentIndex = useMemo(() => {
+    const idx = ordered.findIndex((s) => String(s.i) === String(i));
+    return idx >= 0 ? idx : 0;
+  }, [ordered, i]);
+
+  const currentSample = ordered[currentIndex];
+
+  const goPrev = () => { if (currentIndex > 0) navigate(`/${level}/poem/${modelSlug}/${ordered[currentIndex - 1].i}`); };
+  const goNext = () => { if (currentIndex < ordered.length - 1) navigate(`/${level}/poem/${modelSlug}/${ordered[currentIndex + 1].i}`); };
+
+  // Keyboard navigation: ← → to move between samples
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.defaultPrevented) return;
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+      if (e.key === 'ArrowLeft') {
+        if (currentIndex > 0) { e.preventDefault(); navigate(`/${level}/poem/${modelSlug}/${ordered[currentIndex - 1].i}`); }
+      } else if (e.key === 'ArrowRight') {
+        if (currentIndex < ordered.length - 1) { e.preventDefault(); navigate(`/${level}/poem/${modelSlug}/${ordered[currentIndex + 1].i}`); }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [currentIndex, ordered, navigate, level, modelSlug]);
+
+  if (!ctx.manifests[level]) return <div className="empty-state"><h3>Loading Jabberwocky Data...</h3></div>;
+  if (!model) return <div className="empty-state"><h3>Model not found</h3></div>;
+  if (ctx.loading || localLoading) return <Loading />;
+
+  return (
+    <div className="poem-layout">
+      {(() => {
+        const s = currentSample || {};
+        const jr = String(s.judge_raw || "");
+        const parsed = parseJudgeRawXML(jr);
+        const p = s.poem || "";
+        const parts = p.split("\n\n");
+        const firstLine = parts[0] || "";
+        const hasTitleLine = /\S/.test(firstLine) && !firstLine.includes("\n");
+        const title = hasTitleLine ? firstLine.trim() : "";
+        const body = hasTitleLine ? parts.slice(1).join("\n\n") : p;
+        return (
+          <>
+            <div className="poem-left">
+              <div className="card poem-meta-card">
+                <div className="poem-model">
+                  <label htmlFor="modelSelect" className="sr-only">Model</label>
+                  <select
+                    id="modelSelect"
+                    className="model-select"
+                    value={modelSlug}
+                    onChange={(e) => navigate(`/${level}/poem/${e.target.value}`, { replace: true })}
+                  >
+                    {models.map((m) => (
+                      <option key={m.slug} value={m.slug}>{m.id}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="poem-meta">
+                  <div><span className="meta-label">Topic:</span> {s?.info?.topic || "—"}</div>
+                  <div><span className="meta-label">Score:</span> {Math.round((s?.reward || 0) * 1000)}</div>
+                  <div><span className="meta-label">Label:</span> {s?.label || "—"}</div>
+                </div>
+                <div className="poem-nav">
+                  <button className="nav-btn" disabled={currentIndex === 0} onClick={goPrev} aria-label="Previous" title="Previous">‹</button>
+                  <span className="poem-index">{currentIndex + 1}/{ordered.length}</span>
+                  <button className="nav-btn" disabled={currentIndex === ordered.length - 1} onClick={goNext} aria-label="Next" title="Next">›</button>
+                </div>
+              </div>
+              <div className="card judge-card">
+                <div className="judge-title" style={{ marginBottom: '.25rem' }}>Judge Decisions — {parsed.sumYes}/{parsed.total}</div>
+                <div className="judge-summary">Label: {s.label || "—"} • Score: {Math.round((s.reward || 0) * 1000)}</div>
+                <div className="judge-list">
+                  {CRITERIA_SHORT.map((short, i) => {
+                    const lbl = CRITERIA_LABELS[i] || short;
+                    const yn = parsed.decide[short];
+                    const think = parsed.think[short] || "";
+                    const good = yn === "yes";
+                    const bad = yn === "no";
+                    return (
+                      <details key={short} className="judge-item">
+                        <summary className="judge-line">
+                          <span className={`judge-pill ${good ? "good" : bad ? "bad" : ""}`} title={yn || "n/a"}>
+                            {good ? "Yes" : bad ? "No" : "—"}
+                          </span>
+                          <span className="judge-key">{short} — {lbl}</span>
+                        </summary>
+                        {think && <div className="judge-think">{think}</div>}
+                      </details>
+                    );
+                  })}
+                </div>
+                {jr && (
+                  <details className="judge-raw-wrap">
+                    <summary>Show raw judge XML</summary>
+                    <pre className="judge-raw">{jr}</pre>
+                  </details>
+                )}
+              </div>
+            </div>
+            <div className="poem-right">
+              <div className="poem-book-wrap">
+                <div className="poem-page">
+                  {title && <div className="poem-title">{title}</div>}
+                  <div className="poem-body verse-content" dangerouslySetInnerHTML={{ __html: body.split("\n\n").map((s) => s.split("\n").map((line) => line.replace(/\*(.*?)\*/g, "<em>$1</em>")).join("<br />")).map((x) => `<p class=\"stanza\">${x}</p>`).join("") }} />
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ---------- DATA LAYOUT (provides context and chrome) ----------
+
+function DataLayout() {
+  const { level = "minimal" } = useParams();
   const [manifests, setManifests] = useState({ minimal: null, high: null });
   const [modelsByLevel, setModelsByLevel] = useState({ minimal: [], high: [] });
   const [samplesByLevel, setSamplesByLevel] = useState({ minimal: {}, high: {} });
   const [manifestUrls, setManifestUrls] = useState({ minimal: null, high: null });
-  const [instructionLevel, setInstructionLevel] = useState("minimal");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("leaderboard");
-  const [selectedModel, setSelectedModel] = useState(null);
-  const [modelSamples, setModelSamples] = useState([]);
 
   const loadOneManifest = useCallback(async (url, level) => {
     const manifestData = await fetchJSON(addCacheBust(url));
@@ -39,7 +266,7 @@ export default function App() {
 
   const loadSamples = useCallback(
     async (model, level) => {
-      const lvl = level || instructionLevel;
+      const lvl = level;
       const cache = samplesByLevel[lvl] || {};
       if (cache[model.slug]) return cache[model.slug];
       try {
@@ -62,14 +289,8 @@ export default function App() {
         return [];
       }
     },
-    [samplesByLevel, instructionLevel, manifestUrls]
+    [samplesByLevel, manifestUrls]
   );
-
-  const handleModelClick = async (model) => {
-    const modelSamples = await loadSamples(model, instructionLevel);
-    setSelectedModel(model);
-    setModelSamples(modelSamples);
-  };
 
   useEffect(() => {
     const basePath = window.location.hostname === "jabberwocky.darren.computer" ? "" : "..";
@@ -90,80 +311,32 @@ export default function App() {
     })();
   }, [loadOneManifest]);
 
-  const renderContent = () => {
-    const models = modelsByLevel[instructionLevel] || [];
-    const manifest = manifests[instructionLevel];
-    if (loading) return <Loading />;
-    if (!manifest) return (<div className="empty-state"><h3>Loading Jabberwocky Data...</h3></div>);
-    switch (activeTab) {
-      case "leaderboard":
-        return (
-          <Leaderboard
-            models={models}
-            onModelClick={handleModelClick}
-            instructionLevel={instructionLevel}
-            onInstructionLevelChange={setInstructionLevel}
-            hasHigh={(modelsByLevel.high || []).length > 0}
-            minimalModels={modelsByLevel.minimal || []}
-            highModels={modelsByLevel.high || []}
-            attemptsCurrent={(manifests[instructionLevel]?.num_examples || 0) * (manifests[instructionLevel]?.rollouts_per_example || 1)}
-            attemptsMinimal={(manifests.minimal?.num_examples || 0) * (manifests.minimal?.rollouts_per_example || 1)}
-            attemptsHigh={(manifests.high?.num_examples || 0) * (manifests.high?.rollouts_per_example || 1)}
-          />
-        );
-      case "analysis":
-        return (
-          <Analysis
-            models={modelsByLevel[instructionLevel] || []}
-            instructionLevel={instructionLevel}
-            onInstructionLevelChange={setInstructionLevel}
-          />
-        );
-      case "methodology":
-        return <Methodology />;
-      case "verses":
-        return (
-          <Verses
-            models={modelsByLevel[instructionLevel] || []}
-            samples={samplesByLevel[instructionLevel] || {}}
-            loadSamples={(m) => loadSamples(m, instructionLevel)}
-          />
-        );
-      case "about":
-        return <About />;
-      default:
-        return null;
-    }
-  };
-
   const shareResults = () => {
-    const models = modelsByLevel[instructionLevel] || [];
+    const models = modelsByLevel[level] || [];
     const topModel = models[0];
     if (!topModel) return;
-    const attempts = (manifests[instructionLevel]?.num_examples || 0) * (manifests[instructionLevel]?.rollouts_per_example || 1);
+    const attempts = (manifests[level]?.num_examples || 0) * (manifests[level]?.rollouts_per_example || 1);
     const points = computePoints(topModel.summary || {}, attempts);
-    const text = `${topModel.id} leads the Jabberwocky Bench (${instructionLevel}) with a score of ${points}!`;
+    const text = `${topModel.id} leads the Jabberwocky Bench (${level}) with a score of ${points}!`;
     const url = window.location.href;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
   };
 
   return (
     <div className="app-container">
-      <Header activeTab={activeTab} onTabChange={setActiveTab} />
+      <Header />
       {error && <div className="error-banner">{error}</div>}
       <main className="main-content">
-        {activeTab === "leaderboard" && (
-          <Hero
-            manifest={manifests[instructionLevel]}
-            models={modelsByLevel[instructionLevel] || []}
-            onPrimary={() => setActiveTab("verses")}
-            onSecondary={() => window.scrollTo({ top: document.body.scrollHeight / 3, behavior: "smooth" })}
-            onOpenRadar={() => setActiveTab("analysis")}
-          />
-        )}
-        {renderContent()}
+        <Outlet context={{
+          manifests,
+          modelsByLevel,
+          samplesByLevel,
+          loadSamples,
+          manifestUrls,
+          loading,
+        }} />
       </main>
-      {manifests[instructionLevel] && (
+      {manifests[level] && (
         <button className="share-fab" onClick={shareResults}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
@@ -172,14 +345,27 @@ export default function App() {
           </svg>
         </button>
       )}
-      {selectedModel && modelSamples.length > 0 && (
-        <ModelModal
-          model={selectedModel}
-          samples={modelSamples}
-          onClose={() => { setSelectedModel(null); setModelSamples([]); }}
-        />
-      )}
     </div>
   );
 }
 
+// ---------- APP ROUTES ----------
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/minimal/overview" replace />} />
+      <Route path="/:level/*" element={<DataLayout />}>
+        <Route path="overview" element={<OverviewPage />} />
+        <Route path="analysis" element={<AnalysisPage />} />
+        <Route path="about" element={<AboutPage />} />
+        <Route path="methods" element={<MethodsPage />} />
+        <Route path="poem" element={<PoemDefault />} />
+        <Route path="poem/:modelSlug" element={<PoemPage />} />
+        <Route path="poem/:modelSlug/:i" element={<PoemPage />} />
+        <Route path="*" element={<Navigate to="/minimal/overview" replace />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/minimal/overview" replace />} />
+    </Routes>
+  );
+}

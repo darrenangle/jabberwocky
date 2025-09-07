@@ -11,6 +11,7 @@ import { addCacheBust, fetchJSON, getQueryParam } from "./utils/api";
 import { computePoints } from "./utils/scoring";
 import { CRITERIA_LABELS, CRITERIA_SHORT } from "./utils/constants";
 import { parseJudgeRawXML } from "./utils/judgeParsing";
+import { mdInline, mdBlock } from "./utils/markdown";
 
 // ---------- PAGES (route-level components) ----------
 
@@ -86,12 +87,12 @@ function PoemDefault() {
     : <div className="empty-state"><h3>Loading poems…</h3></div>;
 }
 
-function PoemPage() {
-  const { level = "minimal", modelSlug, i } = useParams();
-  const navigate = useNavigate();
-  const ctx = useOutletContext();
-  const models = ctx.modelsByLevel[level] || [];
-  const model = useMemo(() => models.find((m) => m.slug === modelSlug), [models, modelSlug]);
+  function PoemPage() {
+    const { level = "minimal", modelSlug, i } = useParams();
+    const navigate = useNavigate();
+    const ctx = useOutletContext();
+    const models = ctx.modelsByLevel[level] || [];
+    const model = useMemo(() => models.find((m) => m.slug === modelSlug), [models, modelSlug]);
 
   const [localLoading, setLocalLoading] = useState(false);
   const [modelSamples, setModelSamples] = useState([]);
@@ -169,6 +170,7 @@ function PoemPage() {
           <>
             <div className="poem-left">
               <div className="card poem-meta-card">
+                
                 <div className="poem-model">
                   <label htmlFor="modelSelect" className="sr-only">Model</label>
                   <select
@@ -185,7 +187,39 @@ function PoemPage() {
                 <div className="poem-meta">
                   <div><span className="meta-label">Topic:</span> {s?.info?.topic || "—"}</div>
                   <div><span className="meta-label">Score:</span> {Math.round((s?.reward || 0) * 1000)}</div>
-                  <div><span className="meta-label">Label:</span> {s?.label || "—"}</div>
+                  <div className="meta-row" style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+                    <span className="meta-label">Instruction:</span>
+                    <div className="segmented" aria-label="Instruction level">
+                      <button
+                        className={level === 'minimal' ? 'active' : ''}
+                        onClick={() => {
+                          if (level === 'minimal') return;
+                          const targetModels = ctx.modelsByLevel.minimal || [];
+                          const keepSlug = targetModels.some(m => m.slug === modelSlug) ? modelSlug : (targetModels[0]?.slug || '');
+                          const idx = currentSample?.i;
+                          const path = idx != null ? `/minimal/poem/${keepSlug}/${idx}` : `/minimal/poem/${keepSlug}`;
+                          if (keepSlug) navigate(path);
+                        }}
+                      >
+                        Minimal
+                      </button>
+                      <button
+                        className={level === 'high' ? 'active' : ''}
+                        onClick={() => {
+                          if (level === 'high') return;
+                          const targetModels = ctx.modelsByLevel.high || [];
+                          if (targetModels.length === 0) return;
+                          const keepSlug = targetModels.some(m => m.slug === modelSlug) ? modelSlug : (targetModels[0]?.slug || '');
+                          const idx = currentSample?.i;
+                          const path = idx != null ? `/high/poem/${keepSlug}/${idx}` : `/high/poem/${keepSlug}`;
+                          if (keepSlug) navigate(path);
+                        }}
+                        disabled={(ctx.modelsByLevel.high || []).length === 0}
+                      >
+                        High
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div className="poem-nav">
                   <button className="nav-btn" disabled={currentIndex === 0} onClick={goPrev} aria-label="Previous" title="Previous">‹</button>
@@ -227,8 +261,10 @@ function PoemPage() {
             <div className="poem-right">
               <div className="poem-book-wrap">
                 <div className="poem-page">
-                  {title && <div className="poem-title">{title}</div>}
-                  <div className="poem-body verse-content" dangerouslySetInnerHTML={{ __html: body.split("\n\n").map((s) => s.split("\n").map((line) => line.replace(/\*(.*?)\*/g, "<em>$1</em>")).join("<br />")).map((x) => `<p class=\"stanza\">${x}</p>`).join("") }} />
+                  <div className="poem-inner">
+                    {title && <div className="poem-title" dangerouslySetInnerHTML={{ __html: mdInline(title) }} />}
+                    <div className="poem-body" dangerouslySetInnerHTML={{ __html: body.split("\n\n").map((stanza) => `<div class=\"stanza\">${mdBlock(stanza)}<\/div>`).join("") }} />
+                  </div>
                 </div>
               </div>
             </div>

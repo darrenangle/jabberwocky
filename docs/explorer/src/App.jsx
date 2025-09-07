@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Analysis from "./components/Analysis";
 import Leaderboard from "./components/Leaderboard";
+import LeaderboardPro from "./components/LeaderboardPro";
 import Loading from "./components/Loading";
 import About from "./components/About";
 import Methodology from "./components/Methodology";
@@ -39,7 +40,7 @@ function OverviewPage() {
           onOpenRadar={() => navigate(`/${level}/analysis`)}
         />
       </section>
-      <Leaderboard
+      <LeaderboardPro
         models={models}
         onModelClick={(model) => navigate(`/${level}/poem/${model.slug}`)}
         instructionLevel={level}
@@ -118,10 +119,8 @@ function PoemDefault() {
   }, [model, level, i, modelSlug, navigate, ctx]);
 
   const ordered = useMemo(() => {
-    const order = new URLSearchParams(window.location.search).get('order') || 'ranked';
     const rows = [...(modelSamples || [])];
-    if (order === 'index') return rows.sort((a, b) => (a.i || 0) - (b.i || 0));
-    return rows.sort((a, b) => (b.reward || 0) - (a.reward || 0));
+    return rows.sort((a, b) => (b.reward || 0) - (a.reward || 0)); // ranked by score
   }, [modelSamples]);
 
   const currentIndex = useMemo(() => {
@@ -187,6 +186,7 @@ function PoemDefault() {
                 <div className="poem-meta">
                   <div><span className="meta-label">Topic:</span> {s?.info?.topic || "—"}</div>
                   <div><span className="meta-label">Score:</span> {Math.round((s?.reward || 0) * 1000)}</div>
+                  <div><span className="meta-label">ID:</span> #{(currentSample?.i ?? 0) + 1}</div>
                   <div className="meta-row" style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
                     <span className="meta-label">Instruction:</span>
                     <div className="segmented" aria-label="Instruction level">
@@ -221,11 +221,11 @@ function PoemDefault() {
                     </div>
                   </div>
                 </div>
-                <div className="poem-nav">
-                  <button className="nav-btn" disabled={currentIndex === 0} onClick={goPrev} aria-label="Previous" title="Previous">‹</button>
-                  <span className="poem-index">{currentIndex + 1}/{ordered.length}</span>
-                  <button className="nav-btn" disabled={currentIndex === ordered.length - 1} onClick={goNext} aria-label="Next" title="Next">›</button>
-                </div>
+              <div className="poem-nav">
+                <button className="nav-btn" disabled={currentIndex === 0} onClick={goPrev} aria-label="Previous" title="Previous">‹</button>
+                <span className="poem-index">Rank {currentIndex + 1}/{ordered.length}</span>
+                <button className="nav-btn" disabled={currentIndex === ordered.length - 1} onClick={goNext} aria-label="Next" title="Next">›</button>
+              </div>
               </div>
               <div className="card judge-card">
                 <div className="judge-title" style={{ marginBottom: '.25rem' }}>Judge Decisions — {parsed.sumYes}/{parsed.total}</div>

@@ -137,7 +137,14 @@ export default function LeaderboardPro({
               </div>
               <div className="pro-score">
                 <div className="pro-points">{Math.round(points)}</div>
-                {/* Legend is global; no per-row delta */}
+                {(() => {
+                  const hp = computePoints((highMap[m.slug] || {}).summary || {}, attemptsHigh);
+                  const mp = computePoints((minMap[m.slug] || {}).summary || {}, attemptsMinimal);
+                  if (!isFinite(hp) || !isFinite(mp)) return null;
+                  const d = Math.round(hp - mp);
+                  const sign = d > 0 ? '+' : '';
+                  return <div className="pro-delta">ΔH {sign}{d}</div>;
+                })()}
               </div>
               <div className="pro-bar-mobile">
                 <div className="pro-mobile-fill" style={{ width: `${pct}%` }}>

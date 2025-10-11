@@ -1,0 +1,23 @@
+{
+  "run_name": "run-20251011T204941Z",
+  "created_utc": "2025-10-11T20:49:41.180291Z",
+  "seed": 777,
+  "num_examples": 10,
+  "rollouts_per_example": 1,
+  "eval_hint_profile": "minimal",
+  "system_prompt_mode": "neutral",
+  "judge_model": "gpt-4.1-mini",
+  "actor_models": [
+    "gpt-4.1"
+  ],
+  "models": [
+    {
+      "id": "gpt-4.1",
+      "slug": "gpt-4.1",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "summary_path": "gpt-4.1/summary.json",
+      "samples_path": "gpt-4.1/samples.jsonl"
+    }
+  ]
+}

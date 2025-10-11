@@ -62,65 +62,68 @@ JABBERWOCKY_TEXT = (
 _PRETTY_INSTALLED = False
 
 # =========================
-# Exported judge rubric bits
+# Criteria registry (sustainable)
 # =========================
-# Composite binary rubric keys (descriptive) — kept in sync with XML prompt
-RUBRIC_KEYS = [
-    "C1_title_present",
-    "C2_quatrain_shape",
-    "C3_ballad_meter_echo",
-    "C4_ballad_rhyme",
-    "C5_ring_composition",
-    "C6_warning_admonition",
-    "C7_preparation_armament",
-    "C8_encounter_confrontation",
-    "C9_slaying_decisive_action",
-    "C10_return_celebration",
-    "C11_coinage_count",
-    "C12_coinage_spread",
-    "C13_creature_naming",
-    "C14_onomatopoeia",
-    "C15_alliteration_consonance",
-    "C16_arc_order",
-    "C17_no_verbatim_lines",
-    "C18_canonical_budget",
-    "C19_syllable_tightness",
-    "C20_rhyme_variety",
-    "C21_lexical_repetition_guard",
-    "C22_coinage_variety",
-    "C23_topic_adherence",
-    "C24_subtext",
+# Judge‑evaluated base criteria (structure-only items like quatrain shape are
+# moved to deterministic proxies later). Use base names to keep numbering stable
+# when we add/remove elements.
+_JUDGE_BASE = [
+    "title_present",
+    # quatrain_shape is deterministic
+    "ballad_meter_echo",
+    "ballad_rhyme",
+    "ring_composition",
+    "warning_admonition",
+    "preparation_armament",
+    "encounter_confrontation",
+    "slaying_decisive_action",
+    "return_celebration",
+    "coinage_count",
+    "coinage_spread",
+    "creature_naming",
+    "onomatopoeia",
+    "alliteration_consonance",
+    "arc_order",
+    "no_verbatim_lines",
+    "canonical_budget",
+    "syllable_tightness",
+    "rhyme_variety",
+    "lexical_repetition_guard",
+    "coinage_variety",
+    "topic_adherence",
+    "subtext",
 ]
 
-# Short tags to make formatting easy for small judges
-RUBRIC_SHORT = [
-    "C1",
-    "C2",
-    "C3",
-    "C4",
-    "C5",
-    "C6",
-    "C7",
-    "C8",
-    "C9",
-    "C10",
-    "C11",
-    "C12",
-    "C13",
-    "C14",
-    "C15",
-    "C16",
-    "C17",
-    "C18",
-    "C19",
-    "C20",
-    "C21",
-    "C22",
-    "C23",
-    "C24",
-]
+def _build_keys(prefix_list: list[str], start_idx: int = 1) -> tuple[list[str], list[str]]:
+    keys = []
+    shorts = []
+    for i, base in enumerate(prefix_list, start=start_idx):
+        shorts.append(f"C{i}")
+        keys.append(f"C{i}_{base}")
+    return keys, shorts
 
-# XML field definitions: canonical name + alternative short tag
+# Stable C-numbering with C2_quatrain_shape preserved (deterministic at runtime)
+_JUDGE_BASE_WITH_C2 = [
+    "title_present",
+    "quatrain_shape",  # placeholder; judged deterministically, but keep numbering stable
+    *_JUDGE_BASE[1:],   # rest of the judge criteria in order
+]
+RUBRIC_KEYS, RUBRIC_SHORT = _build_keys(_JUDGE_BASE_WITH_C2, 1)
+
+# Deterministic criteria (appended at the end of numbering)
+_DET_BASE = [
+    "stanza_count",
+    "quatrain_shape",
+    "indent_alternation",
+    "meter_alt_proxy",
+    "syllable_outliers",
+]
+DET_KEYS, _DET_SHORT = _build_keys(_DET_BASE, start_idx=len(RUBRIC_KEYS) + 1)
+
+# Combined registry for reporting order if needed
+ALL_CRITERIA_KEYS = RUBRIC_KEYS + DET_KEYS
+
+# XML field definitions only for the judge‑evaluated keys
 RUBRIC_FIELDS = [(RUBRIC_KEYS[i], RUBRIC_SHORT[i]) for i in range(len(RUBRIC_KEYS))]
 
 
@@ -241,6 +244,59 @@ _CANONICAL_TOKENS = [
 ]
 _CANONICAL_BIGRAMS = [_bigrams(toks) for toks in _CANONICAL_TOKENS]
 
+# ------------------------------
+# Syllable estimation (heuristic)
+# ------------------------------
+_VOWELS = set("aeiouy")
+
+def _estimate_syllables_word(w: str) -> int:
+    w = w.lower()
+    if not w:
+        return 0
+    # remove non-alpha and possessives
+    import re as _re
+    w = _re.sub(r"[^a-z]", "", w)
+    if not w:
+        return 0
+    # silent 'e' (care/alone) but keep if only syllable
+    if w.endswith("e") and len(w) > 2 and w[-2] not in _VOWELS:
+        w = w[:-1]
+    # count vowel groups
+    groups = 0
+    prev_v = False
+    for ch in w:
+        is_v = ch in _VOWELS
+        if is_v and not prev_v:
+            groups += 1
+        prev_v = is_v
+    # -le endings like "table"
+    if w.endswith("le") and len(w) > 2 and w[-3] not in _VOWELS:
+        groups += 1
+    return max(1, groups)
+
+def estimate_syllables_line(line: str) -> int:
+    toks = _tokenize_words(line)
+    return sum(_estimate_syllables_word(t) for t in toks)
+
+
+# Quantile helper without numpy
+def _percentile(values: list[float], p: float) -> float:
+    if not values:
+        return 0.0
+    xs = sorted(values)
+    if p <= 0:
+        return float(xs[0])
+    if p >= 1:
+        return float(xs[-1])
+    idx = int((len(xs) - 1) * p)
+    return float(xs[idx])
+
+# Normative syllable bounds based on canonical ballad feel
+SYLL_LONG_MIN = 8    # long lines should be at least 8 syllables
+SYLL_LONG_MAX = 10   # and not exceed ~10
+SYLL_SHORT_MAX = 7   # short lines should be 7 or fewer
+SYLL_HARD_CAP = 12   # any line above this is an outlier
+
 HIGH_EXAMPLE = (
     "Dietwocky\n\n"
     "’Twas fizzlig, and the silv’ry cans\n"
@@ -349,6 +405,7 @@ VERY_LOW_EXAMPLE = (
 
 
 def build_judge_xml_prompt() -> str:
+    tags = [t for t in RUBRIC_SHORT if t != "C2"]
     return (
         "You are grading whether a model-written poem matches the style of "
         "Lewis Carroll's 'Jabberwocky'.\n\n"
@@ -358,7 +415,7 @@ def build_judge_xml_prompt() -> str:
         "Questions (binary). Answer each with 'yes' or 'no' only in the final decision tags.\n"
         "Strictness: If a check is borderline, partially met, or uncertain, answer 'no'. Only answer 'yes' when the criterion is clearly and definitively satisfied.\n"
         "- C1_title_present: Is there a non-empty title line before the first stanza (not part of stanza text)?\n"
-        "- C2_quatrain_shape: Do all stanzas have 4 lines, and is the total stanza count between 5 and 8 (inclusive)?\n"
+        # C2 (quatrain shape) is judged deterministically, so omitted from the judge rubric.\n"
         "- C3_ballad_meter_echo: In ≥60% of stanzas, do lines alternate longer/shorter with ≥2 content-word difference?\n"
         "- C4_ballad_rhyme: In ≥60% of stanzas, do lines (2,4) rhyme (allowing slant rhyme), and avoid AABB dominance?\n"
         "- C5_ring_composition: Does the final stanza echo the opening with ≥2 repeated content words/phrases or a clear refrain?\n"
@@ -384,18 +441,15 @@ def build_judge_xml_prompt() -> str:
         "Canonical lexicon: " + ", ".join(CANONICAL_LEXICON) + "\n\n"
         "Format your output exactly as follows:\n"
         "<think>\n"
-        + "\n".join(
-            [f"<{k}_think>…your brief reasoning…</{k}_think>" for k in RUBRIC_SHORT]
-        )
+        + "\n".join([f"<{k}_think>…your brief reasoning…</{k}_think>" for k in tags])
         + "\n"
         "</think>\n\n"
         "Then, on new lines, the final decision tags only (one per line), exactly these tags filled with yes/no, in order:\n"
-        + "\n".join([f"<{k}>yes|no</{k}>" for k in RUBRIC_SHORT])
+        + "\n".join([f"<{k}>yes|no</{k}>" for k in tags])
         + "\n\n"
         "Calibration examples (do not copy answers; tags suffixed with _demo so they are not parsed):\n"
         "<example>\n<poem>" + HIGH_EXAMPLE + "</poem>\n<think>\n"
         "<C1_demo_think>Title present</C1_demo_think>\n"
-        "<C2_demo_think>stanzas=8; quatrains=8 (100.0%) -> yes</C2_demo_think>\n"
         "<C3_demo_think>quatrains=8; alt_hits=6 (75.0%) -> yes</C3_demo_think>\n"
         "<C4_demo_think>quatrains=8; rhyme(2,4) hits=7 (87.5%) -> yes</C4_demo_think>\n"
         "<C5_demo_think>Ring echo present -> yes</C5_demo_think>\n"
@@ -537,6 +591,63 @@ def build_judge_xml_prompt() -> str:
         + "\n</answers_demo>\n</example>\n\n"
     )
 
+def build_judge_xml_prompt_v2() -> str:
+    # Exclude structural C2 from the judge tag set
+    tags = [RUBRIC_SHORT[i] for i, k in enumerate(RUBRIC_KEYS) if not k.endswith("quatrain_shape")]
+    # Descriptions by base name for maintainability
+    descs = {
+        "title_present": "Is there a non-empty title line before the first stanza (not part of stanza text)?",
+        "ballad_meter_echo": "In ≥60% of stanzas, do lines alternate longer/shorter with ≥2 content-word difference?",
+        "ballad_rhyme": "In ≥60% of stanzas, do lines (2,4) rhyme (allowing slant rhyme), and avoid AABB dominance?",
+        "ring_composition": "Does the final stanza echo the opening with ≥2 repeated content words/phrases or a clear refrain?",
+        "warning_admonition": "Is there an early admonition (e.g., ‘Beware …’) or equivalent caution to the protagonist?",
+        "preparation_armament": "Before the encounter, does the protagonist prepare (tool/resolve/wait/plan)?",
+        "encounter_confrontation": "Is there a clear meeting between protagonist and adversary/obstacle?",
+        "slaying_decisive_action": "Is there a decisive act that resolves the central tension?",
+        "return_celebration": "Is there a return/homecoming and jubilant acknowledgement?",
+        "coinage_count": "Are there ≥8 distinct invented coinages (not canonical or standard English)?",
+        "coinage_spread": "Does each stanza contain ≥1 coinage?",
+        "creature_naming": "Is a non‑canonical creature/entity named and central to action (not ‘Jabberwock’)?",
+        "onomatopoeia": "Are there ≥2 onomatopoeic bursts (e.g., ‘snicker‑snack!’, ‘Pop!’, ‘Hiss!’)?",
+        "alliteration_consonance": "Do ≥2 stanzas show clear within‑line alliteration/consonance beyond incidental repeats?",
+        "arc_order": "Do the arc beats appear in canonical order (warning → preparation → encounter → decisive act → return/celebration)?",
+        "no_verbatim_lines": "Does no line exactly match the canonical poem? Normalize quotes/dashes/whitespace.",
+        "canonical_budget": "Are distinct canonical tokens ≤8, favoring new coinages?",
+        "syllable_tightness": "In quatrain stanzas, are longer lines ≈8–9 syllables and shorter lines ≈5–7?",
+        "rhyme_variety": "Across stanzas, are (2,4) end‑rhymes varied (no exact end word reused >2 times excluding the ring echo)?",
+        "lexical_repetition_guard": "Outside the ring echo, is no single content word overused (e.g., >5 times or >8%)?",
+        "coinage_variety": "Do coinages show ≥4 distinct roots (no single coined suffix accounts for >50%)?",
+        "topic_adherence": "Does the poem clearly address the given topic (named or evident) without substituting a different subject?",
+        "subtext": "Beyond surface action, is there a coherent implied layer across the poem?",
+    }
+    bullets = []
+    for i, key in enumerate(RUBRIC_KEYS):
+        base = key.split("_", 1)[1]
+        bullets.append(f"- {RUBRIC_SHORT[i]}_{base}: {descs.get(base, base)}\n")
+    think_list = "\n".join([f"<{k}_think>…your brief reasoning…</{k}_think>" for k in tags])
+    answer_list = "\n".join([f"<{k}>yes|no</{k}>" for k in tags])
+    demo_think = "\n".join([f"<{k}_demo_think>example reasoning</{k}_demo_think>" for k in tags])
+    return (
+        "You are grading whether a model-written poem matches the style of "
+        "Lewis Carroll's 'Jabberwocky'.\n\n"
+        "First, produce a structured <think> block. Then produce the final decision tags.\n"
+        "In the <think> block use <C1_think>…</C1_think> … to record brief reasoning for each criterion.\n"
+        "Do NOT use <C1> inside <think>.\n\n"
+        "Questions (binary). Answer each with 'yes' or 'no' only in the final decision tags.\n"
+        "Strictness: If a check is borderline, partially met, or uncertain, answer 'no'. Only answer 'yes' when the criterion is clearly and definitively satisfied.\n"
+        + "".join(bullets)
+        + "\n"
+        "Canonical lexicon: " + ", ".join(CANONICAL_LEXICON) + "\n\n"
+        "Format your output exactly as follows:\n"
+        "<think>\n" + think_list + "\n</think>\n\n"
+        "Then, on new lines, the final decision tags only (one per line), exactly these tags filled with yes/no, in order:\n"
+        + answer_list + "\n\n"
+        "Calibration example (tags suffixed with _demo so they are not parsed):\n"
+        "<example>\n<poem>" + HIGH_EXAMPLE + "</poem>\n<think>\n" + demo_think + "\n</think>\n</example>\n\n"
+        "<example>\n<poem>" + MEDIUM_EXAMPLE + "</poem>\n<think>\n" + demo_think + "\n</think>\n</example>\n\n"
+        "<example>\n<poem>" + LOW_EXAMPLE + "</poem>\n<think>\n" + demo_think + "\n</think>\n</example>\n"
+    )
+
 
 def _canon_profile(name: str) -> str:
     name = (name or "").strip().lower()
@@ -603,7 +714,7 @@ def _make_instructions(
         (
             "Write a poem in the style of Lewis Carroll's 'Jabberwocky'. Your prompt is \"{topic}\". "
             "Your poem will be graded for adherence to these criteria: "
-            "title; quatrains; meter; rhyme; ring (ending echoes the beginning); warning; preparation; encounter; decisive act; return; "
+            "title; meter; rhyme; ring (ending echoes the beginning); warning; preparation; encounter; decisive act; return; "
             "coinages; coinage spread; creature naming; onomatopoeia; alliteration; arc order; no verbatim copying; canonical budget "
             "(limit use of distinctive words from the original poem); syllable tightness; rhyme variety; repetition guard; coinage variety; "
             "topic adherence; subtext. Output only the titled poem."
@@ -680,6 +791,8 @@ def load_environment(
     judge_timeout: float = 60.0,
     judge_sampling_args: Dict[str, Any] | None = None,
     log_judge_debug: bool = False,
+    expected_stanzas: int = 7,
+    structure_floor_min: float = 0.5,
     **kwargs,
 ) -> vf.Environment:
     """Load the Jabberwocky environment.
@@ -802,9 +915,10 @@ def load_environment(
     logger = logging.getLogger("jabberwocky")
 
     # Composite binary rubric keys (descriptive) — keep in sync with XML prompt
+    # For parser stability and explorer compatibility, retain original numbering C1..C24
     RUBRIC_KEYS = [
         "C1_title_present",
-        "C2_quatrain_shape",
+        "C2_quatrain_shape",  # judged deterministically; judge likely returns empty
         "C3_ballad_meter_echo",
         "C4_ballad_rhyme",
         "C5_ring_composition",
@@ -828,38 +942,16 @@ def load_environment(
         "C23_topic_adherence",
         "C24_subtext",
     ]
-    # Short tags to make formatting easy for small judges
     RUBRIC_SHORT = [
-        "C1",
-        "C2",
-        "C3",
-        "C4",
-        "C5",
-        "C6",
-        "C7",
-        "C8",
-        "C9",
-        "C10",
-        "C11",
-        "C12",
-        "C13",
-        "C14",
-        "C15",
-        "C16",
-        "C17",
-        "C18",
-        "C19",
-        "C20",
-        "C21",
-        "C22",
-        "C23",
-        "C24",
+        "C1","C2","C3","C4","C5","C6","C7","C8","C9","C10",
+        "C11","C12","C13","C14","C15","C16","C17","C18","C19","C20",
+        "C21","C22","C23","C24",
     ]
     # XML field definitions: canonical name + alternative short tag
     RUBRIC_FIELDS = [(RUBRIC_KEYS[i], RUBRIC_SHORT[i]) for i in range(len(RUBRIC_KEYS))]
 
     # XML rubric prompt (single source of truth)
-    judge_xml_prompt = build_judge_xml_prompt()
+    judge_xml_prompt = build_judge_xml_prompt_v2()
 
     rubric_xml_parser = vf.XMLParser(fields=RUBRIC_FIELDS, answer_field=RUBRIC_KEYS[0])
 
@@ -872,6 +964,19 @@ def load_environment(
         else:
             question = str(prompt)
         response_text = parser.parse_answer(completion) or ""
+        # Persist raw parsed poem text for deterministic checks
+        try:
+            state["jw_poem_text"] = response_text
+        except Exception:
+            pass
+
+        # If no reference poem is provided (e.g., unit tests), skip the judge and return zeros
+        if not isinstance(answer, str) or not answer.strip():
+            zeros = {k: 0 for k in RUBRIC_KEYS}
+            zeros["sum"] = 0
+            zeros["label"] = "very_low"
+            state["jw_judge_xml_last"] = zeros
+            return zeros
 
         # Extract a topic string from the user prompt; do not expose full instructions to the judge
         def _extract_topic(q: str) -> str:
@@ -888,6 +993,15 @@ def load_environment(
             return ""
 
         topic_only = _extract_topic(question)
+        # Provide helpful quantitative hints for the judge (not binding):
+        # approximate syllables per line and per-stanza breakdown to aid C19.
+        try:
+            model_lines_raw = [ln for ln in response_text.splitlines()]
+            model_sylls = [str(estimate_syllables_line(ln)) for ln in model_lines_raw if ln.strip()]
+            approx_block = "<approx>\n" + ",".join(model_sylls) + "\n</approx>\n\n"
+        except Exception:
+            approx_block = ""
+
         jp = (
             judge_xml_prompt
             + "\n<topic>\n"
@@ -899,6 +1013,7 @@ def load_environment(
             + "<model_poem>\n"
             + response_text
             + "\n</model_poem>\n"
+            + approx_block
         )
         cache = state.get("jw_judge_xml_cache")
         if isinstance(cache, dict) and jp in cache:
@@ -1037,8 +1152,231 @@ def load_environment(
         jj = get_or_make_judge_xml(prompt, completion, answer, state)
         return float(jj.get("sum", 0)) / float(len(RUBRIC_KEYS))
 
+    #
+    # Scoring architecture
+    # ---------------------
+    # Historically the environment returned a single LLM‑judge composite over 24
+    # binary criteria. To support sustainable, lower‑variance scoring, we
+    # introduce deterministic rewards for structure that an algorithm can judge
+    # reliably. We retain the LLM rubric for the stylistic/semantic parts.
+    #
+    # Weights are chosen such that totals still live in [0,1]. The judge keeps
+    # the majority of signal (0.7), while deterministic structure contributes
+    # 0.3 split across stanza count, quatrain shape, and alternating indentation.
+    #
     rubric = vf.Rubric(parallelize_scoring=False)
-    rubric.add_reward_func(composite_score, weight=1.0)
+
+    # -------- Deterministic structure rewards --------
+    import re as _re
+
+    def _split_stanzas(poem: str) -> list[list[str]]:
+        """Robust stanza splitter.
+
+        - Normalizes CRLF/CR to LF and NBSPs
+        - Splits on one or more blank lines (spaces/tabs allowed)
+        - Drops a leading single-line block as title (heuristic)
+        - Returns stanzas as lists of non-empty lines (preserving leading indent)
+        """
+        s = str(poem or "")
+        s = s.replace("\r\n", "\n").replace("\r", "\n").replace("\u00A0", " ")
+        # Trim outer whitespace but keep internal newlines
+        s = s.strip(" \t\n")
+        blocks = _re.split(r"\n[ \t]*\n+", s)
+        out: list[list[str]] = []
+        for b in blocks:
+            raw_lines = b.split("\n")
+            lines = [ln for ln in raw_lines if ln.strip()]
+            if lines:
+                out.append([ln.rstrip("\r") for ln in raw_lines if ln.strip()])
+        # Heuristic: drop a leading single-line block as title
+        if out and len(out[0]) == 1 and len(out) > 1:
+            out = out[1:]
+        return out
+
+    def stanza_count_reward(prompt, completion, answer, state, **_kwargs) -> float:
+        stanzas = _split_stanzas(state.get("jw_poem_text") or completion)
+        n = len(stanzas)
+        # Target defaults to canonical 7 but can be overridden via expected_stanzas
+        expected = int(expected_stanzas or 7)
+        d = abs(n - expected)
+        if d == 0:
+            return 1.0
+        if d == 1:
+            return 0.6
+        if d == 2:
+            return 0.2
+        return 0.0
+    stanza_count_reward.__name__ = "R_stanza_count"
+
+    def quatrain_shape_reward(prompt, completion, answer, state, **_kwargs) -> float:
+        stanzas = _split_stanzas(state.get("jw_poem_text") or completion)
+        if not stanzas:
+            return 0.0
+        good = 0
+        total = 0
+        for sz in stanzas:
+            # count non‑empty logical lines — ignore accidental blank spacers
+            lines = [ln for ln in sz if ln.strip()]
+            if not lines:
+                continue
+            total += 1
+            if len(lines) == 4:
+                good += 1
+        return good / max(1, total)
+    quatrain_shape_reward.__name__ = "R_quatrain_shape"
+
+    def alternating_indent_reward(prompt, completion, answer, state, **_kwargs) -> float:
+        """Reward alternating indentation (lines 2 and 4 in each quatrain).
+
+        Tabs or 4/6 spaces count as 1.0; 2 spaces count as 0.5. Lines 1 & 3
+        are not penalized if indented; we simply reward correct even‑line
+        indentation when present.
+        """
+        stanzas = _split_stanzas(state.get("jw_poem_text") or completion)
+        scores: list[float] = []
+        for sz in stanzas:
+            lines = [ln for ln in sz if ln.strip()]
+            if len(lines) < 2:
+                continue
+            targets = []
+            if len(lines) >= 2:
+                targets.append(lines[1])  # line 2
+            if len(lines) >= 4:
+                targets.append(lines[3])  # line 4
+            for ln in targets:
+                # count leading whitespace
+                m = _re.match(r"^(\s+)", ln)
+                if not m:
+                    scores.append(0.0)
+                    continue
+                ws = m.group(1)
+                if "\t" in ws:
+                    scores.append(1.0)
+                else:
+                    nspaces = len(ws)
+                    if nspaces in (4, 6):
+                        scores.append(1.0)
+                    elif nspaces == 2:
+                        scores.append(0.5)
+                    else:
+                        scores.append(0.0)
+        if not scores:
+            return 0.0
+        return sum(scores) / len(scores)
+    alternating_indent_reward.__name__ = "R_indent_alternation"
+
+    # Single composite: equal-weight over judge bits + deterministic proxies
+    def composite_total(prompt, completion, answer, state, **_kwargs) -> float:
+        jj = get_or_make_judge_xml(prompt, completion, answer, state)
+        judge_yes = sum(int(jj.get(k, 0)) for k in RUBRIC_KEYS)
+        r_stanza = stanza_count_reward(prompt, completion, answer, state)
+        r_quatrain = quatrain_shape_reward(prompt, completion, answer, state)
+        det = [
+            r_stanza,
+            r_quatrain,
+            alternating_indent_reward(prompt, completion, answer, state),
+            meter_alt_proxy_reward(prompt, completion, answer, state),
+        ]
+        total = judge_yes + sum(det)
+        denom = len(RUBRIC_KEYS) + len(det)
+        # Simple composite: equal weight across judge + deterministic metrics
+        base = float(total) / float(max(1, denom))
+        return base
+
+    composite_total.__name__ = "overall_reward"
+    rubric.add_reward_func(composite_total, weight=1.0)
+
+    # Expose deterministic metrics (registration moved after all defs)
+
+    def meter_alt_proxy_reward(prompt, completion, answer, state, **_kwargs) -> float:
+        """Quintile-based echo of ballad meter (1&3 long, 2&4 short).
+
+        For the poem:
+          - Collect syllables per non-empty line
+          - Compute p20, p40, p60, p80 (quintile cuts)
+        For each stanza (first four lines only when available):
+          - Hard match: 1&3 ≥ p80 and 2&4 ≤ p20 → 1.0
+          - Medium:     1&3 ≥ p60 and 2&4 ≤ p40 → 0.6
+          - Soft:       1&3 ≥ median(p50) and 2&4 ≤ p50 → 0.3
+          - Else:       0.0
+        Returns mean over stanzas (0 if none).
+        """
+        stanzas = _split_stanzas(state.get("jw_poem_text") or completion)
+        if not stanzas:
+            return 0.0
+        all_lines = [ln for sz in stanzas for ln in sz if ln.strip()]
+        if not all_lines:
+            return 0.0
+        syll = [estimate_syllables_line(ln) for ln in all_lines]
+        p20 = _percentile(syll, 0.20)
+        p40 = _percentile(syll, 0.40)
+        p50 = _percentile(syll, 0.50)
+        p60 = _percentile(syll, 0.60)
+        p80 = _percentile(syll, 0.80)
+        scores = []
+        for sz in stanzas:
+            lines = [ln for ln in sz if ln.strip()]
+            if len(lines) < 4:
+                continue
+            s1, s2, s3, s4 = [estimate_syllables_line(x) for x in lines[:4]]
+            # Hard reject: any line too long
+            if max(s1, s2, s3, s4) > SYLL_HARD_CAP:
+                scores.append(0.0)
+                continue
+            hard = (s1 >= p80) + (s3 >= p80) + (s2 <= p20) + (s4 <= p20)
+            med  = (s1 >= p60) + (s3 >= p60) + (s2 <= p40) + (s4 <= p40)
+            soft = (s1 >= p50) + (s3 >= p50) + (s2 <= p50) + (s4 <= p50)
+            # Normative bounds: ensure long lines live in [8..10] and short in <=7
+            long_ok = (SYLL_LONG_MIN <= s1 <= SYLL_LONG_MAX) and (SYLL_LONG_MIN <= s3 <= SYLL_LONG_MAX)
+            short_ok = (s2 <= SYLL_SHORT_MAX) and (s4 <= SYLL_SHORT_MAX)
+            if hard == 4 and long_ok and short_ok:
+                scores.append(1.0)
+            elif med >= 3 and long_ok and (s2 <= SYLL_SHORT_MAX + 1) and (s4 <= SYLL_SHORT_MAX + 1):
+                scores.append(0.6)
+            elif soft >= 2 and (s1 >= SYLL_LONG_MIN) and (s3 >= SYLL_LONG_MIN) and (s2 <= SYLL_SHORT_MAX + 1) and (s4 <= SYLL_SHORT_MAX + 1):
+                scores.append(0.3)
+            else:
+                scores.append(0.0)
+        return sum(scores) / max(1, len(scores))
+    meter_alt_proxy_reward.__name__ = "R_meter_alt_proxy"
+    # Now that all deterministic functions exist, register them (weight 0)
+    rubric.add_reward_func(stanza_count_reward, weight=0.0)
+    rubric.add_reward_func(quatrain_shape_reward, weight=0.0)
+    rubric.add_reward_func(alternating_indent_reward, weight=0.0)
+    rubric.add_reward_func(meter_alt_proxy_reward, weight=0.0)
+
+    def syllable_outlier_reward(prompt, completion, answer, state, **_kwargs) -> float:
+        stanzas = _split_stanzas(state.get("jw_poem_text") or completion)
+        lines = [ln for sz in stanzas for ln in sz if ln.strip()]
+        if not lines:
+            return 0.0
+        counts = [estimate_syllables_line(ln) for ln in lines]
+        hard = sum(1 for c in counts if c > SYLL_HARD_CAP)
+        return max(0.0, 1.0 - hard / max(1, len(counts)))
+    syllable_outlier_reward.__name__ = "R_syllable_outliers"
+    rubric.add_reward_func(syllable_outlier_reward, weight=0.0)
+
+    # C-coded aliases for deterministic metrics so downstream tooling can rely on C-keys
+    for det_key, fn in zip(DET_KEYS, [
+        stanza_count_reward,
+        quatrain_shape_reward,
+        alternating_indent_reward,
+        meter_alt_proxy_reward,
+        syllable_outlier_reward,
+    ]):
+        def make_alias(k, f):
+            def _alias(prompt, completion, answer, state, **_kw):
+                return f(prompt, completion, answer, state, **_kw)
+            _alias.__name__ = k
+            return _alias
+        rubric.add_reward_func(make_alias(det_key, fn), weight=0.0)
+
+    # Back-compat alias so explorer radar (which expects C2_quatrain_shape) keeps working
+    def C2_quatrain_shape(prompt, completion, answer, state, **_kwargs) -> float:
+        # Return binary yes/no like the old judge: require all stanzas to be quatrains
+        v = quatrain_shape_reward(prompt, completion, answer, state)
+        return 1.0 if v >= 0.999 else 0.0
+    rubric.add_reward_func(C2_quatrain_shape, weight=0.0)
 
     # Add per-criterion metrics (weight 0.0) and label indicators
     for key in RUBRIC_KEYS:

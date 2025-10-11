@@ -207,3 +207,184 @@ def test_near_verbatim_detector_flags_canonical_lines():
     # A non-canonical novel line should not be flagged
     l3 = "We brewed a brew of nonsense tea"
     assert not is_near_verbatim(l3)
+
+
+def _make_simple_poem(stanzas: int, indent: str = "    ") -> str:
+    # Build a quatrain poem with optional indentation for lines 2 and 4
+    blocks = []
+    for i in range(stanzas):
+        q = [
+            f"Line A {i}",
+            f"{indent}Line B {i}",
+            f"Line C {i}",
+            f"{indent}Line D {i}",
+        ]
+        blocks.append("\n".join(q))
+    return "\n\n".join(blocks)
+
+
+def test_deterministic_rewards_happy_paths():
+    import jabberwocky as jw
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=1, num_eval_examples=1, expected_stanzas=7)
+    # Fetch reward functions by name
+    funcs = {}
+    for item in env.rubric.reward_funcs:
+        f = item[0] if isinstance(item, (list, tuple)) else item
+        funcs[getattr(f, "__name__", "")] = f
+    poem = _make_simple_poem(7, indent="    ")
+    # Quatrain shape should be perfect
+    assert funcs["R_quatrain_shape"](None, poem, None, {}) == 1.0
+    # Stanza count perfect
+    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
+    # Alternating indent with 4 spaces is full credit
+    assert funcs["R_indent_alternation"](None, poem, None, {}) == 1.0
+
+
+def test_deterministic_edge_cases_blank_lines_and_two_space_indent():
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=1, num_eval_examples=1, expected_stanzas=7)
+    funcs = {}
+    for item in env.rubric.reward_funcs:
+        f = item[0] if isinstance(item, (list, tuple)) else item
+        funcs[getattr(f, "__name__", "")] = f
+
+    # Poem with extra blank lines between stanzas should still count correctly
+    blocks = []
+    for i in range(7):
+        blocks.append("\n".join([f"A{i}", "  B", f"C{i}", "  D"]))
+    poem = ("\n\n\n").join(blocks)  # triple blank lines between stanzas
+    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
+    # Two-space indent should average 0.5 on targeted lines
+    val = funcs["R_indent_alternation"](None, poem, None, {})
+    assert 0.45 <= val <= 0.55
+
+
+def test_meter_alt_proxy_rewards_alternation():
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=1, num_eval_examples=1, expected_stanzas=4)
+    funcs = {}
+    for item in env.rubric.reward_funcs:
+        f = item[0] if isinstance(item, (list, tuple)) else item
+        funcs[getattr(f, "__name__", "")] = f
+    # Craft a poem where lines 1/3 are long-ish, 2/4 short-ish
+    # Use eight clear one-syllable tokens to hit the 8–10 target
+    long = "sun spark light gleam gold seam bright mend"
+    short = "whiffle"
+    st = []
+    for i in range(4):
+        st.append("\n".join([f"{long} {i}", f"    {short}", f"{long}", f"    {short}"]))
+    poem = "\n\n".join(st)
+    v = funcs["R_meter_alt_proxy"](None, poem, None, {})
+    assert v >= 0.6
+
+
+def test_runon_lines_penalized_structure():
+    # Visually looks like quatrains when wrapped, but actually 3-line stanzas
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=1, num_eval_examples=1, expected_stanzas=7)
+    funcs = {}
+    for item in env.rubric.reward_funcs:
+        f = item[0] if isinstance(item, (list, tuple)) else item
+        funcs[getattr(f, "__name__", "")] = f
+
+    stanza = (
+        "'Twas slithern on the Slithy Sea, the squidchells weak and drail,\n"
+        "All gorbling were the poltsnipes, the frantles brightly pale.\n"
+        '"Beware the slippery Slorg, my son! The jaws that grip, the claws that flay!"\n'
+    )  # only 3 explicit lines
+    poem = "\n\n".join([stanza]*5)
+    # Quatrain shape should be poor (<1.0)
+    assert funcs["R_quatrain_shape"](None, poem, None, {}) < 1.0
+    # Composite should decrease with poor quatrain shape (still judge-weighted)
+    overall = funcs["overall_reward"](None, poem, None, {})
+    assert overall < 0.85
+
+
+def test_syllable_estimator_reasonable_counts():
+    import jabberwocky as jw
+    # Basic checks: silent 'e', groups, 'table' kind of ending
+    assert jw._estimate_syllables_word("make") >= 1
+    assert 2 <= jw.estimate_syllables_line("The quick brown fox") <= 5
+    # Lines with punctuation and quotes
+    s = jw.estimate_syllables_line("'Twas brillig, and the slithy toves")
+    assert s > 4
+
+
+def test_title_block_dropped_and_counts_correct():
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=1, num_eval_examples=1, expected_stanzas=7)
+    funcs = {}
+    for item in env.rubric.reward_funcs:
+        f = item[0] if isinstance(item, (list, tuple)) else item
+        funcs[getattr(f, "__name__", "")] = f
+
+    # Title + blank line, then 7 strict quatrains
+    body = _make_simple_poem(7, indent="    ")
+    poem = "The Kintsugi Seam of Gold\n\n" + body
+    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
+    assert funcs["R_quatrain_shape"](None, poem, None, {}) == 1.0
+
+
+def test_crlf_and_spaced_blanklines_split_correctly():
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=1, num_eval_examples=1, expected_stanzas=6)
+    funcs = {}
+    for item in env.rubric.reward_funcs:
+        f = item[0] if isinstance(item, (list, tuple)) else item
+        funcs[getattr(f, "__name__", "")] = f
+    # Build 6 stanzas with CRLF endings and blank lines containing spaces
+    stanzas = []
+    for i in range(6):
+        stanzas.append("\r\n".join([f"A{i}", "\tB", f"C{i}", "    D"]))
+    poem = ("\r\n \r\n").join(stanzas)  # spaced blank line separators
+    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
+    assert funcs["R_quatrain_shape"](None, poem, None, {}) == 1.0
+
+
+def test_indent_tabs_and_six_spaces_get_full_credit():
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=1, num_eval_examples=1)
+    funcs = {}
+    for item in env.rubric.reward_funcs:
+        f = item[0] if isinstance(item, (list, tuple)) else item
+        funcs[getattr(f, "__name__", "")] = f
+    # Mix tabs and 6 spaces on even lines
+    blocks = []
+    for i in range(4):
+        even_indent = "\t" if i % 2 == 0 else "      "  # 6 spaces
+        blocks.append("\n".join([f"A{i}", f"{even_indent}B", f"C{i}", f"{even_indent}D"]))
+    poem = "\n\n".join(blocks)
+    val = funcs["R_indent_alternation"](None, poem, None, {})
+    assert val == 1.0
+
+
+def test_nbsp_and_weird_spaces_dont_break_stanzas():
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=1, num_eval_examples=1, expected_stanzas=2)
+    funcs = {}
+    for item in env.rubric.reward_funcs:
+        f = item[0] if isinstance(item, (list, tuple)) else item
+        funcs[getattr(f, "__name__", "")] = f
+    nbsp = "\u00A0"
+    stanza1 = "\n".join(["A", "  B", "C", "  D"]) + "\n"
+    stanza2 = "\n".join(["E", "\tF", "G", "\tH"]) + "\n"
+    poem = stanza1 + nbsp + "\n" + nbsp + "\n" + stanza2
+    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
+    assert funcs["R_quatrain_shape"](None, poem, None, {}) == 1.0
+
+
+def test_hard_caps_penalize_overlong_lines():
+    os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
+    env = vf.load_environment("jabberwocky", num_train_examples=1, num_eval_examples=1, expected_stanzas=1)
+    funcs = {}
+    for item in env.rubric.reward_funcs:
+        f = item[0] if isinstance(item, (list, tuple)) else item
+        funcs[getattr(f, "__name__", "")] = f
+    # Create a stanza with an overlong line (>12 syllables)
+    long_line = "one two three four five six seven eight nine ten eleven twelve thirteen"
+    poem = "\n".join([long_line, "  b", "c", "  d"])  # 1 stanza
+    # Alternation proxy should be 0 for this stanza due to hard cap
+    assert funcs["R_meter_alt_proxy"](None, poem, None, {}) == 0.0
+    # Outlier reward should be < 1
+    assert funcs["R_syllable_outliers"](None, poem, None, {}) < 1.0

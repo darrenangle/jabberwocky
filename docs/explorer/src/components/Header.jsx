@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useParams } from "react-router-dom";
 
-export default function Header() {
+export default function Header({ adminVisible=false, onToggleAdmin }) {
   const [subtitle, setSubtitle] = useState(0);
   const subtitles = ["Quantifying the poetic skill of large language models"];
   const { level = "minimal" } = useParams();
@@ -34,6 +34,14 @@ export default function Header() {
               {tab.label}
             </NavLink>
           ))}
+          <button
+            title="Admin"
+            className={`nav-button ${adminVisible ? "active" : ""}`}
+            onClick={() => onToggleAdmin && onToggleAdmin()}
+            aria-label="Toggle admin"
+          >
+            ⚙
+          </button>
         </nav>
       </div>
     </header>

@@ -86,23 +86,17 @@ class ActorRegistry:
 
         # Built-in model aliases (curated coverage across major labs; prefer paid, recent, larger models)
         self.models: Dict[str, Dict[str, Any]] = {
-            # OpenAI (direct) — keep only flagship to avoid OpenAI-heavy actor lists
-            "gpt-5": {"provider": "openai", "model": "gpt-5"},
+
             # Groq examples
-            "groq:llama-3.1-70b": {"provider": "groq", "model": "llama-3.1-70b"},
-            # OpenRouter examples (provider/model style)
-            "gpt-4o": {"provider": "openrouter", "model": "openai/gpt-4o"},
-            "sonnet-3.5": {"provider": "openrouter", "model": "anthropic/claude-3.5-sonnet"},
-            # Curated OpenRouter coverage (major labs + strong OSS); prefer paid endpoints and recent, larger models
             # Anthropic
-            "claude-sonnet-4": {"provider": "openrouter", "model": "anthropic/claude-sonnet-4"},
             "claude-opus-4.1": {"provider": "openrouter", "model": "anthropic/claude-opus-4.1"},
             "claude-3.7-sonnet": {"provider": "openrouter", "model": "anthropic/claude-3.7-sonnet"},
-            "claude-3.5-haiku": {"provider": "openrouter", "model": "anthropic/claude-3.5-haiku"},
+            "claude-4.5-sonnet": {"provider": "openrouter", "model": "anthropic/claude-4.5-sonnet"},
             # OpenAI (direct)
             "gpt-4.1": {"provider": "openai", "model": "gpt-4.1"},
             "o3": {"provider": "openai", "model": "o3"},
             "o4-mini": {"provider": "openai", "model": "o4-mini"},
+            "gpt-5": {"provider": "openai", "model": "gpt-5"},
             # Google Gemini
             "gemini-2.5-pro": {"provider": "openrouter", "model": "google/gemini-2.5-pro"},
             "gemini-2.5-flash": {"provider": "openrouter", "model": "google/gemini-2.5-flash"},
@@ -116,23 +110,23 @@ class ActorRegistry:
             "llama-3.3-70b-instruct": {"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct"},
             # Alibaba Qwen
             "qwen3-max": {"provider": "openrouter", "model": "qwen/qwen3-max"},
-            "qwen3-235b-a22b-2507": {"provider": "openrouter", "model": "qwen/qwen3-235b-a22b-2507"},
-            "qwen3-30b-a3b-instruct-2507": {"provider": "openrouter", "model": "qwen/qwen3-30b-a3b-instruct-2507"},
+            "qwen/qwen3-vl-235b-a22b-instruct": {"provider": "openrouter", "model": "qwen/qwen3-vl-235b-a22b-instruct"},
+            "qwen/qwen-plus-2025-07-28:thinking": {"provider": "openrouter", "model": "qwen/qwen-plus-2025-07-28:thinking"},
             # DeepSeek
             "deepseek-chat-v3.1": {"provider": "openrouter", "model": "deepseek/deepseek-chat-v3.1"},
             "deepseek-r1-0528": {"provider": "openrouter", "model": "deepseek/deepseek-r1-0528"},
-            # Mistral
-            "mistral-medium-3.1": {"provider": "openrouter", "model": "mistralai/mistral-medium-3.1"},
+            "deepseek-v3.2-exp": {"provider": "openrouter", "model": "deepseek/deepseek-v3.2-exp"},
+            "deepseek-v3.1-terminus": {"provider": "openrouter", "model": "deepseek/deepseek-v3.1-terminus"},
             # Moonshot
             "kimi-k2-0905": {"provider": "openrouter", "model": "moonshotai/kimi-k2-0905"},
             "kimi-k2": {"provider": "openrouter", "model": "moonshotai/kimi-k2"},
-            "kimi-dev-72b": {"provider": "openrouter", "model": "moonshotai/kimi-dev-72b"},
-            # AI21
-            "jamba-large-1.7": {"provider": "openrouter", "model": "ai21/jamba-large-1.7"},
             # Zhipu/GLM (Z.AI)
             "glm-4.5": {"provider": "openrouter", "model": "z-ai/glm-4.5"},
+            "glm-4.6": {"provider": "openrouter", "model": "z-ai/glm-4.6"},
             # Baidu ERNIE
             "ernie-4.5-300b-a47b": {"provider": "openrouter", "model": "baidu/ernie-4.5-300b-a47b"},
+            # NVIDIA
+            "nvidia/llama-3.3-nemotron-super-49b-v1.5": {"provider": "openrouter", "model": "nvidia/llama-3.3-nemotron-super-49b-v1.5"},
             # Nous OSS large
             "hermes-4-405b": {"provider": "openrouter", "model": "nousresearch/hermes-4-405b"},
             "hermes-4-70b": {"provider": "openrouter", "model": "nousresearch/hermes-4-70b"},

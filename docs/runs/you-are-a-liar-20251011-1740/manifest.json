@@ -1,0 +1,12 @@
+{
+  "run_name": "run-20251011T224043Z",
+  "created_utc": "2025-10-11T22:40:43.414947Z",
+  "seed": 777,
+  "num_examples": 10,
+  "rollouts_per_example": 1,
+  "eval_hint_profile": "minimal",
+  "system_prompt_mode": "neutral",
+  "judge_model": "gpt-4.1-mini",
+  "actor_models": [],
+  "models": []
+}

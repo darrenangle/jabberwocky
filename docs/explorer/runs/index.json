@@ -1,0 +1,14 @@
+[
+  {
+    "label": "run-50-20250905-2001 (minimal)",
+    "manifest": "../runs/run-50-20250905-2001/manifest.json"
+  },
+  {
+    "label": "run-50-high-20250906-0017 (high)",
+    "manifest": "../runs/run-50-high-20250906-0017/manifest.json"
+  },
+  {
+    "label": "run-mixed-50-minimal",
+    "manifest": "../runs/run-mixed-50-minimal/manifest.json"
+  }
+]

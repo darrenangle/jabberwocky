@@ -42,6 +42,15 @@ except Exception:
 
 
 def build_argparser() -> argparse.ArgumentParser:
+    # Diagnostics: show which jabberwocky module we loaded and first few C-keys
+    try:
+        if jw is not None:
+            print(f"[env] using jabberwocky module at: {getattr(jw, '__file__', '?')}")
+            if hasattr(jw, 'RUBRIC_KEYS'):
+                print("[env] RUBRIC_KEYS head:", getattr(jw, 'RUBRIC_KEYS')[:5])
+    except Exception:
+        pass
+
     p = argparse.ArgumentParser(description="Evaluate jabberwocky environment")
     p.add_argument("-n", "--n", type=int, default=10, help="Num eval examples")
     p.add_argument("-r", "--rollouts", type=int, default=2, help="Rollouts per example")

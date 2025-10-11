@@ -285,6 +285,8 @@ function DataLayout() {
   const [manifestUrls, setManifestUrls] = useState({ minimal: null, high: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [runsIndex, setRunsIndex] = useState([]);
 
   const loadOneManifest = useCallback(async (url, level) => {
     const manifestData = await fetchJSON(addCacheBust(url));
@@ -344,6 +346,13 @@ function DataLayout() {
         setLoading(false);
       }
       try { await loadOneManifest(urlHigh, "high"); } catch (e) { console.warn("High-instruction run not available:", e?.message || e); }
+      // Load runs index for admin dropdown
+      try {
+        const idx = await fetchJSON(addCacheBust(`runs/index.json`));
+        setRunsIndex(Array.isArray(idx) ? idx : []);
+      } catch (e) {
+        // optional
+      }
     })();
   }, [loadOneManifest]);
 
@@ -360,9 +369,41 @@ function DataLayout() {
 
   return (
     <div className="app-container">
-      <Header />
+      <Header adminVisible={adminOpen} onToggleAdmin={() => setAdminOpen((v) => !v)} />
       {error && <div className="error-banner">{error}</div>}
       <main className="main-content">
+        {adminOpen && (
+          <div className="card" style={{ marginBottom: '1rem' }}>
+            <h3>Admin</h3>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '.5rem' }}>
+              <span className="meta-label">Load run into</span>
+              <div className="segmented" aria-label="Target level">
+                <button className={level === 'minimal' ? 'active' : ''} onClick={() => { if (level !== 'minimal') window.location.hash = window.location.hash.replace('/high/', '/minimal/'); }}>Minimal</button>
+                <button className={level === 'high' ? 'active' : ''} onClick={() => { if (level !== 'high') window.location.hash = window.location.hash.replace('/minimal/', '/high/'); }}>High</button>
+              </div>
+              <select onChange={async (e) => {
+                const sel = e.target.value;
+                if (!sel) return;
+                try { setLoading(true); await loadOneManifest(sel, level); }
+                catch (err) { setError(`Failed loading run: ${err?.message || err}`); }
+                finally { setLoading(false); }
+              }} style={{ padding: '.4rem .6rem', border: '1px solid var(--hair)', borderRadius: '8px' }}>
+                <option value="">Select a run…</option>
+                {runsIndex.map((r, i) => (<option key={i} value={r.manifest}>{r.label}</option>))}
+              </select>
+              <span className="meta-label">or URL</span>
+              <input id="run-url" type="text" placeholder="../runs/your-run/manifest.json" style={{ padding: '.4rem .6rem', border: '1px solid var(--hair)', borderRadius: '8px', minWidth: '320px' }} />
+              <button className="btn" onClick={async () => {
+                const el = document.getElementById('run-url');
+                const val = el && 'value' in el ? el.value : '';
+                if (!val) return;
+                try { setLoading(true); await loadOneManifest(val, level); }
+                catch (err) { setError(`Failed loading run: ${err?.message || err}`); }
+                finally { setLoading(false); }
+              }}>Load</button>
+            </div>
+          </div>
+        )}
         <Outlet context={{
           manifests,
           modelsByLevel,

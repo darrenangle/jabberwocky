@@ -10,7 +10,7 @@ import About from "./components/About";
 import Methodology from "./components/Methodology";
 import { addCacheBust, fetchJSON, getQueryParam } from "./utils/api";
 import { computePoints } from "./utils/scoring";
-import { CRITERIA_LABELS, CRITERIA_SHORT } from "./utils/constants";
+import { JUDGE_LABELS, JUDGE_SHORT } from "./utils/constants";
 import { parseJudgeRawXML } from "./utils/judgeParsing";
 import { mdInline, mdBlock } from "./utils/markdown";
 
@@ -231,8 +231,8 @@ function PoemDefault() {
                 <div className="judge-title" style={{ marginBottom: '.25rem' }}>Judge Decisions — {parsed.sumYes}/{parsed.total}</div>
                 <div className="judge-summary">Label: {s.label || "—"} • Score: {Math.round((s.reward || 0) * 1000)}</div>
                 <div className="judge-list">
-                  {CRITERIA_SHORT.map((short, i) => {
-                    const lbl = CRITERIA_LABELS[i] || short;
+                  {JUDGE_SHORT.map((short, i) => {
+                    const lbl = JUDGE_LABELS[i] || short;
                     const yn = parsed.decide[short];
                     const think = parsed.think[short] || "";
                     const good = yn === "yes";
@@ -256,6 +256,35 @@ function PoemDefault() {
                     <pre className="judge-raw">{jr}</pre>
                   </details>
                 )}
+              </div>
+              {/* Structure panel */}
+              <div className="card" style={{ marginTop: '1rem' }}>
+                <div className="card-title" style={{ marginBottom: '.25rem' }}>Structure</div>
+                <div className="structure-grid">
+                  {(() => {
+                    const m = s.metrics || {};
+                    const rows = [
+                      { k: 'S1_stanza_count', label: 'Stanza count' },
+                      { k: 'S2_quatrain_shape', label: 'Quatrain rate' },
+                      { k: 'S3_indent_alternation', label: 'Indent alternation' },
+                      { k: 'S4_meter_alt_proxy', label: 'Meter proxy' },
+                      { k: 'S5_syllable_outliers', label: 'No outliers' },
+                      { k: 'S6_no_verbatim_lines', label: 'No verbatim' },
+                      { k: 'S7_title_present', label: 'Title present' },
+                      { k: 'S8_canonical_budget', label: 'Canonical budget' },
+                    ];
+                    return rows.map((r) => {
+                      const v = m[r.k];
+                      const pct = typeof v === 'number' ? Math.round(v * 100) : null;
+                      return (
+                        <div key={r.k} className="struct-line">
+                          <span className="meta-label">{r.label}:</span>
+                          <span>{pct != null ? `${pct}%` : '—'}</span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
             </div>
             <div className="poem-right">

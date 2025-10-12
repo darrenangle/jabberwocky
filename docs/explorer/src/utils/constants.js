@@ -1,5 +1,6 @@
 // Shared constants for criteria and colors
 
+// Legacy C-keys (back-compat for older runs)
 export const CRITERIA_KEYS = [
   "C1_title_present",
   "C2_quatrain_shape",
@@ -56,6 +57,74 @@ export const CRITERIA_LABELS = [
   "Subtext",
 ];
 
+// New S/J schema: Radar and Judge use only J-keys
+export const JUDGE_KEYS = [
+  "J1_ballad_meter_echo",
+  "J2_ballad_rhyme",
+  "J3_ring_composition",
+  "J4_warning_admonition",
+  "J5_preparation_armament",
+  "J6_encounter_confrontation",
+  "J7_slaying_decisive_action",
+  "J8_return_celebration",
+  "J9_coinage_count",
+  "J10_coinage_spread",
+  "J11_creature_naming",
+  "J12_onomatopoeia",
+  "J13_alliteration_consonance",
+  "J14_arc_order",
+  "J15_rhyme_variety",
+  "J16_lexical_repetition_guard",
+  "J17_coinage_variety",
+  "J18_topic_adherence",
+  "J19_subtext",
+];
+export const JUDGE_SHORT = JUDGE_KEYS.map((k) => k.split("_", 1)[0]);
+export const JUDGE_LABELS = [
+  "Meter",
+  "Rhyme",
+  "Ring",
+  "Warning",
+  "Prepare",
+  "Encounter",
+  "Act",
+  "Return",
+  "Coinages",
+  "Spread",
+  "Creature",
+  "Onomatopoeia",
+  "Alliteration",
+  "Arc order",
+  "Rhyme variety",
+  "Repetition",
+  "Coinage variety",
+  "Topic adherence",
+  "Subtext",
+];
+
+// Deterministic structure keys for radar inclusion
+export const S_KEYS = [
+  "S1_stanza_count",
+  "S2_quatrain_shape",
+  "S3_indent_alternation",
+  "S4_meter_alt_proxy",
+  "S5_syllable_outliers",
+  "S6_no_verbatim_lines",
+  "S7_title_present",
+  "S8_canonical_budget",
+];
+export const S_SHORT = S_KEYS.map((k) => k.split("_", 1)[0]);
+export const S_LABELS = [
+  "Stanzas",
+  "Quatrains",
+  "Indent",
+  "Meter",
+  "Outliers",
+  "No verbatim",
+  "Title",
+  "Canonical",
+];
+
 export const RADAR_COLORS = [
   "#10b981", // bright green (top performer)
   "#06b6d4", // bright cyan
@@ -68,4 +137,3 @@ export const RADAR_COLORS = [
   "#78716c", // gray
   "#1f2937", // dark gray (lowest performer)
 ];
-

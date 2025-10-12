@@ -104,10 +104,10 @@ def test_same_seed_same_topics_across_hint_levels():
     assert q_min != q_med or q_min != q_high
 
 
-def test_rubric_includes_syllable_tightness():
+def test_rubric_includes_meter_proxy_metric():
     os.environ.setdefault("OPENAI_API_KEY", "sk-dummy")
     env = vf.load_environment("jabberwocky", num_train_examples=5, num_eval_examples=5, seed=42)
-    # Reward functions include per-criterion metrics; look for C19
+    # Reward functions include per-criterion metrics; ensure S4 meter proxy is present
     funcs = []
     for item in env.rubric.reward_funcs:
         try:
@@ -116,7 +116,7 @@ def test_rubric_includes_syllable_tightness():
             f = item
         funcs.append(f)
     names = {getattr(f, "__name__", "") for f in funcs}
-    assert any(name.startswith("C19_syllable_tightness") for name in names), "C19 syllable criterion missing"
+    assert any(name.startswith("S4_meter_alt_proxy") for name in names), "S4 meter proxy missing"
 
 
 def test_rubric_includes_new_variety_checks():
@@ -130,9 +130,9 @@ def test_rubric_includes_new_variety_checks():
             f = item
         funcs.append(f)
     names = {getattr(f, "__name__", "") for f in funcs}
-    assert any(name.startswith("C20_rhyme_variety") for name in names), "C20 rhyme variety missing"
-    assert any(name.startswith("C21_lexical_repetition_guard") for name in names), "C21 repetition guard missing"
-    assert any(name.startswith("C22_coinage_variety") for name in names), "C22 coinage variety missing"
+    assert any(name.startswith("J15_rhyme_variety") for name in names), "J15 rhyme variety missing"
+    assert any(name.startswith("J16_lexical_repetition_guard") for name in names), "J16 repetition guard missing"
+    assert any(name.startswith("J17_coinage_variety") for name in names), "J17 coinage variety missing"
 
 
 def test_same_seed_same_questions_within_level():
@@ -234,11 +234,11 @@ def test_deterministic_rewards_happy_paths():
         funcs[getattr(f, "__name__", "")] = f
     poem = _make_simple_poem(7, indent="    ")
     # Quatrain shape should be perfect
-    assert funcs["R_quatrain_shape"](None, poem, None, {}) == 1.0
+    assert funcs["S2_quatrain_shape"](None, poem, None, {}) == 1.0
     # Stanza count perfect
-    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
+    assert funcs["S1_stanza_count"](None, poem, None, {}) == 1.0
     # Alternating indent with 4 spaces is full credit
-    assert funcs["R_indent_alternation"](None, poem, None, {}) == 1.0
+    assert funcs["S3_indent_alternation"](None, poem, None, {}) == 1.0
 
 
 def test_deterministic_edge_cases_blank_lines_and_two_space_indent():
@@ -254,9 +254,9 @@ def test_deterministic_edge_cases_blank_lines_and_two_space_indent():
     for i in range(7):
         blocks.append("\n".join([f"A{i}", "  B", f"C{i}", "  D"]))
     poem = ("\n\n\n").join(blocks)  # triple blank lines between stanzas
-    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
+    assert funcs["S1_stanza_count"](None, poem, None, {}) == 1.0
     # Two-space indent should average 0.5 on targeted lines
-    val = funcs["R_indent_alternation"](None, poem, None, {})
+    val = funcs["S3_indent_alternation"](None, poem, None, {})
     assert 0.45 <= val <= 0.55
 
 
@@ -275,7 +275,7 @@ def test_meter_alt_proxy_rewards_alternation():
     for i in range(4):
         st.append("\n".join([f"{long} {i}", f"    {short}", f"{long}", f"    {short}"]))
     poem = "\n\n".join(st)
-    v = funcs["R_meter_alt_proxy"](None, poem, None, {})
+    v = funcs["S4_meter_alt_proxy"](None, poem, None, {})
     assert v >= 0.6
 
 
@@ -295,7 +295,7 @@ def test_runon_lines_penalized_structure():
     )  # only 3 explicit lines
     poem = "\n\n".join([stanza]*5)
     # Quatrain shape should be poor (<1.0)
-    assert funcs["R_quatrain_shape"](None, poem, None, {}) < 1.0
+    assert funcs["S2_quatrain_shape"](None, poem, None, {}) < 1.0
     # Composite should decrease with poor quatrain shape (still judge-weighted)
     overall = funcs["overall_reward"](None, poem, None, {})
     assert overall < 0.85
@@ -322,8 +322,8 @@ def test_title_block_dropped_and_counts_correct():
     # Title + blank line, then 7 strict quatrains
     body = _make_simple_poem(7, indent="    ")
     poem = "The Kintsugi Seam of Gold\n\n" + body
-    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
-    assert funcs["R_quatrain_shape"](None, poem, None, {}) == 1.0
+    assert funcs["S1_stanza_count"](None, poem, None, {}) == 1.0
+    assert funcs["S2_quatrain_shape"](None, poem, None, {}) == 1.0
 
 
 def test_crlf_and_spaced_blanklines_split_correctly():
@@ -338,8 +338,8 @@ def test_crlf_and_spaced_blanklines_split_correctly():
     for i in range(6):
         stanzas.append("\r\n".join([f"A{i}", "\tB", f"C{i}", "    D"]))
     poem = ("\r\n \r\n").join(stanzas)  # spaced blank line separators
-    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
-    assert funcs["R_quatrain_shape"](None, poem, None, {}) == 1.0
+    assert funcs["S1_stanza_count"](None, poem, None, {}) == 1.0
+    assert funcs["S2_quatrain_shape"](None, poem, None, {}) == 1.0
 
 
 def test_indent_tabs_and_six_spaces_get_full_credit():
@@ -355,7 +355,7 @@ def test_indent_tabs_and_six_spaces_get_full_credit():
         even_indent = "\t" if i % 2 == 0 else "      "  # 6 spaces
         blocks.append("\n".join([f"A{i}", f"{even_indent}B", f"C{i}", f"{even_indent}D"]))
     poem = "\n\n".join(blocks)
-    val = funcs["R_indent_alternation"](None, poem, None, {})
+    val = funcs["S3_indent_alternation"](None, poem, None, {})
     assert val == 1.0
 
 
@@ -370,8 +370,8 @@ def test_nbsp_and_weird_spaces_dont_break_stanzas():
     stanza1 = "\n".join(["A", "  B", "C", "  D"]) + "\n"
     stanza2 = "\n".join(["E", "\tF", "G", "\tH"]) + "\n"
     poem = stanza1 + nbsp + "\n" + nbsp + "\n" + stanza2
-    assert funcs["R_stanza_count"](None, poem, None, {}) == 1.0
-    assert funcs["R_quatrain_shape"](None, poem, None, {}) == 1.0
+    assert funcs["S1_stanza_count"](None, poem, None, {}) == 1.0
+    assert funcs["S2_quatrain_shape"](None, poem, None, {}) == 1.0
 
 
 def test_hard_caps_penalize_overlong_lines():
@@ -385,6 +385,6 @@ def test_hard_caps_penalize_overlong_lines():
     long_line = "one two three four five six seven eight nine ten eleven twelve thirteen"
     poem = "\n".join([long_line, "  b", "c", "  d"])  # 1 stanza
     # Alternation proxy should be 0 for this stanza due to hard cap
-    assert funcs["R_meter_alt_proxy"](None, poem, None, {}) == 0.0
+    assert funcs["S4_meter_alt_proxy"](None, poem, None, {}) == 0.0
     # Outlier reward should be < 1
-    assert funcs["R_syllable_outliers"](None, poem, None, {}) < 1.0
+    assert funcs["S5_syllable_outliers"](None, poem, None, {}) < 1.0

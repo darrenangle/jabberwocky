@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
-import { CRITERIA_KEYS, CRITERIA_LABELS, RADAR_COLORS } from "../utils/constants";
+import { JUDGE_KEYS, JUDGE_SHORT, JUDGE_LABELS, S_KEYS, S_SHORT, S_LABELS, RADAR_COLORS } from "../utils/constants";
 
 export default function RadarViz({
   models,
@@ -18,9 +18,13 @@ export default function RadarViz({
   const [localHover, setLocalHover] = useState(null);
   const effectiveHover = hoverSlug !== undefined ? hoverSlug : localHover;
 
+  const ALL_KEYS = [...S_KEYS, ...JUDGE_KEYS];
+  const ALL_SHORT = [...S_SHORT, ...JUDGE_SHORT];
+  const ALL_LABELS = [...S_LABELS, ...JUDGE_LABELS];
+
   const getVec = (m) => {
     const mm = m.summary?.metrics_mean || {};
-    return CRITERIA_KEYS.map((k) => {
+    return ALL_KEYS.map((k) => {
       const v = mm[k];
       return typeof v === "number" ? Math.max(0, Math.min(1, v)) * 100 : 0;
     });
@@ -55,7 +59,7 @@ export default function RadarViz({
 
     chartRef.current = new Chart(ctx, {
       type: "radar",
-      data: { labels: CRITERIA_LABELS, datasets },
+      data: { labels: ALL_SHORT, datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -66,7 +70,9 @@ export default function RadarViz({
             enabled: variant !== "hero",
             callbacks: {
               label: function (context) {
-                return `${context.dataset.label}: ${Math.round(context.parsed.r)}%`;
+                const idx = context.dataIndex;
+                const name = ALL_LABELS[idx] || ALL_SHORT[idx];
+                return `${name} — ${context.dataset.label}: ${Math.round(context.parsed.r)}%`;
               },
             },
           },

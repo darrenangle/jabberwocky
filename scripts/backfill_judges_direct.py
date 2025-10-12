@@ -85,8 +85,8 @@ class RateLimiter:
             time.sleep(wait)
 
 
-RUBRIC_KEYS = jw.RUBRIC_KEYS
-RUBRIC_SHORT = jw.RUBRIC_SHORT
+JUDGE_KEYS = jw.JUDGE_KEYS  # e.g., ["J1_title_present", ...]
+JUDGE_SHORT = jw.JUDGE_SHORT  # e.g., ["J1", ...]
 
 
 def extract_topic_from_prompt(prompt: str) -> str:
@@ -105,7 +105,8 @@ def extract_topic_from_prompt(prompt: str) -> str:
 
 
 def make_judge_prompt(topic: str, poem_text: str) -> str:
-    header = jw.build_judge_xml_prompt()
+    # New J-tag prompt only
+    header = jw.build_judge_xml_prompt_v2()
     return (
         header
         + "<topic>\n" + topic + "\n</topic>\n\n"
@@ -115,16 +116,15 @@ def make_judge_prompt(topic: str, poem_text: str) -> str:
 
 
 def parse_decisions(xml_text: str) -> Dict[str, int]:
-    # Normalize tolerant tags like < C1 >yes</ C1 >
+    # Normalize tolerant tags (spacing)
     t = re.sub(r"<\s*/\s*([A-Za-z0-9_]+)\s*>", r"</\1>", xml_text)
     t = re.sub(r"<\s*([A-Za-z0-9_]+)\s*>", r"<\1>", t)
     out: Dict[str, int] = {}
-    for i, key in enumerate(RUBRIC_KEYS):
-        short = RUBRIC_SHORT[i]
+    for i, key in enumerate(JUDGE_KEYS):
+        short = JUDGE_SHORT[i] if i < len(JUDGE_SHORT) else None
         bit = 0
-        # Prefer descriptive key tag, fallback to short tag
         m = re.search(fr"<{key}>(yes|no)</{key}>", t, flags=re.IGNORECASE)
-        if not m:
+        if not m and short:
             m = re.search(fr"<{short}>(yes|no)</{short}>", t, flags=re.IGNORECASE)
         if m:
             bit = 1 if m.group(1).lower() == "yes" else 0
@@ -187,11 +187,18 @@ def process_row(
         jr = str(row.get("judge_raw") or "")
         decisions = parse_decisions(jr)
         yes_count = sum(1 for v in decisions.values() if v)
-        total = len(RUBRIC_KEYS) or 1
-        reward = yes_count / total
+        poem_text = str(row.get("poem", ""))
+        try:
+            s_metrics, _diag = jw.compute_structure_metrics(poem_text, expected_stanzas=7)
+        except Exception:
+            s_metrics, _diag = ({}, {})
+        total = (len(decisions) + len(s_metrics)) or 1
+        reward = (yes_count + sum(float(v) for v in s_metrics.values())) / total
         label_new = label_from_ratio(reward)
         metrics: Dict[str, float] = {"composite_score": reward}
         for k, v in decisions.items():
+            metrics[k] = float(v)
+        for k, v in s_metrics.items():
             metrics[k] = float(v)
         metrics["label_high"] = 1.0 if label_new == "high" else 0.0
         metrics["label_medium"] = 1.0 if label_new == "medium" else 0.0
@@ -234,12 +241,20 @@ def process_row(
     if judge_raw:
         decisions = parse_decisions(judge_raw)
         yes_count = sum(1 for v in decisions.values() if v)
-        total = len(RUBRIC_KEYS) or 1
-        reward = yes_count / total
+        # Deterministic structure metrics from poem text (S#)
+        try:
+            s_metrics, _diag = jw.compute_structure_metrics(poem_text, expected_stanzas=7)
+        except Exception:
+            s_metrics, _diag = ({}, {})
+        # Compose metrics and recompute reward with S + J equally weighted
+        total = (len(decisions) + len(s_metrics)) or 1
+        reward = (yes_count + sum(float(v) for v in s_metrics.values())) / total
         criteria_yes = yes_count
         label = label_from_ratio(reward)
         metrics["composite_score"] = reward
         for k, v in decisions.items():
+            metrics[k] = float(v)
+        for k, v in s_metrics.items():
             metrics[k] = float(v)
         metrics["label_high"] = 1.0 if label == "high" else 0.0
         metrics["label_medium"] = 1.0 if label == "medium" else 0.0
@@ -412,6 +427,9 @@ def compute_model_summary(samples_path: Path, manifest_entry: Dict[str, Any] | N
             metrics = row.get("metrics") or {}
             if isinstance(metrics, dict):
                 for k, v in metrics.items():
+                    # Filter out R_* duplicates and embedded overall/composite
+                    if k.startswith("R_") or k in ("overall_reward", "composite_score"):
+                        continue
                     try:
                         x = float(v)
                     except Exception:

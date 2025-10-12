@@ -42,12 +42,12 @@ except Exception:
 
 
 def build_argparser() -> argparse.ArgumentParser:
-    # Diagnostics: show which jabberwocky module we loaded and first few C-keys
+    # Diagnostics: show which jabberwocky module we loaded and first few criteria
     try:
         if jw is not None:
             print(f"[env] using jabberwocky module at: {getattr(jw, '__file__', '?')}")
-            if hasattr(jw, 'RUBRIC_KEYS'):
-                print("[env] RUBRIC_KEYS head:", getattr(jw, 'RUBRIC_KEYS')[:5])
+            if hasattr(jw, 'CRITERIA'):
+                print("[env] CRITERIA S/J head:", getattr(jw, 'CRITERIA')[:5])
     except Exception:
         pass
 
@@ -159,7 +159,15 @@ def summarize(results: vf.GenerateOutputs, print_samples: int = 2) -> Dict[str, 
                 pass
     overall = mean(usable_rewards)
     # Per-metric
-    metrics_mean = {k: mean(v) for k, v in results.metrics.items()}
+    metrics_mean_raw = {k: mean(v) for k, v in results.metrics.items()}
+    # Filter duplicates and noisy keys: drop R_* aliases and embedded overall/composite
+    metrics_mean = {}
+    for k, v in metrics_mean_raw.items():
+        if k.startswith("R_"):
+            continue
+        if k in ("overall_reward", "composite_score"):
+            continue
+        metrics_mean[k] = v
     # Extract judge labels from composite metrics if available
     label_counts: Dict[str, int] = {"very_low": 0, "low": 0, "medium": 0, "high": 0}
     # Prefer explicit label_* metrics if present
@@ -196,8 +204,9 @@ def summarize(results: vf.GenerateOutputs, print_samples: int = 2) -> Dict[str, 
     lc_str = ", ".join([f"{k}:{v}" for k, v in label_counts.items() if v]) or "(none)"
     table.add_row("labels", lc_str)
 
-    # show top criteria frequencies (up to 6)
-    crit_items = [(k, v) for k, v in metrics_mean.items() if k.startswith("C")]
+    # show top judge criteria frequencies (up to 6). Prefer J-keys; fallback to legacy C-keys
+    j_keys = [(k, v) for k, v in metrics_mean.items() if k.startswith("J")]
+    crit_items = j_keys if j_keys else [(k, v) for k, v in metrics_mean.items() if k.startswith("C")]
     crit_items.sort(key=lambda kv: kv[1], reverse=True)
     top = crit_items[:6]
     if top:
@@ -291,9 +300,9 @@ def summarize(results: vf.GenerateOutputs, print_samples: int = 2) -> Dict[str, 
         if raw:
             raw_str = raw if isinstance(raw, str) else str(raw)
             print("\n[Judge raw excerpt]\n" + raw_str[:600])
-        # Show which criteria were marked yes (>=0.5)
+        # Show which judge criteria were marked yes (>=0.5)
         c_yes = []
-        c_all = sorted([k for k in results.metrics.keys() if k.startswith("C")])
+        c_all = sorted([k for k in results.metrics.keys() if k.startswith("J")]) or sorted([k for k in results.metrics.keys() if k.startswith("C")])
         for k in c_all:
             try:
                 if results.metrics[k][i] >= 0.5:
@@ -303,10 +312,36 @@ def summarize(results: vf.GenerateOutputs, print_samples: int = 2) -> Dict[str, 
         print("[Criteria yes]", c_yes, "| count:", len(c_yes))
 
     # Return a compact dict for cross-model aggregation
+    # Optional structure diagnostics: aggregate jw_structure from states if present
+    struct = {}
+    try:
+        acc = {
+            "stanza_count": [],
+            "target_stanzas": [],
+            "quatrain_rate": [],
+            "indent_rate": [],
+            "meter_proxy": [],
+            "max_line_syllables": [],
+            "pct_over_hard_cap": [],
+        }
+        for st in (results.state or []):
+            if not isinstance(st, dict):
+                continue
+            d = st.get("jw_structure")
+            if not isinstance(d, dict):
+                continue
+            for k in acc.keys():
+                if k in d and isinstance(d[k], (int, float)):
+                    acc[k].append(float(d[k]))
+        struct = {k: (sum(v) / len(v) if v else 0.0) for k, v in acc.items()}
+    except Exception:
+        struct = {}
+
     return {
         "overall_reward": overall,
         "label_counts": label_counts,
         "metrics_mean": metrics_mean,
+        "structure": struct,
     }
 
 
@@ -716,6 +751,16 @@ def main():
         else:
             results = out  # type: ignore
             summary = summarize(results, print_samples=args.print_samples)
+        # Write criteria.json to the run folder once (S/J registry)
+        if args.outdir:
+            try:
+                os.makedirs(args.outdir, exist_ok=True)
+                crit_path = os.path.join(args.outdir, "criteria.json")
+                if not os.path.exists(crit_path) and jw is not None and hasattr(jw, "CRITERIA"):
+                    with open(crit_path, "w", encoding="utf-8") as f:
+                        f.write(_json.dumps(getattr(jw, "CRITERIA"), ensure_ascii=False, indent=2))
+            except Exception as e:
+                print(f"[warn] could not write criteria.json: {e}")
         # Optional dumping per-model (standard evaluate path)
         if args.outdir and not args.save_actor_first:
             _dump_per_model(args.outdir, spec, cfg, results, summary)

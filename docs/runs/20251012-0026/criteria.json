@@ -1,0 +1,145 @@
+[
+  {
+    "id": "S1",
+    "name": "stanza_count",
+    "type": "det",
+    "desc": "Exact target stanzas"
+  },
+  {
+    "id": "S2",
+    "name": "quatrain_shape",
+    "type": "det",
+    "desc": "All stanzas have 4 lines"
+  },
+  {
+    "id": "S3",
+    "name": "indent_alternation",
+    "type": "det",
+    "desc": "Even-line indentation correct"
+  },
+  {
+    "id": "S4",
+    "name": "meter_alt_proxy",
+    "type": "det",
+    "desc": "Quintile-based long/short pattern"
+  },
+  {
+    "id": "S5",
+    "name": "syllable_outliers",
+    "type": "det",
+    "desc": "Penalty for lines > 12 syllables"
+  },
+  {
+    "id": "S6",
+    "name": "no_verbatim_lines",
+    "type": "det",
+    "desc": "No near-verbatim copy of canonical lines"
+  },
+  {
+    "id": "S7",
+    "name": "title_present",
+    "type": "det",
+    "desc": "Has a non-empty title before first stanza"
+  },
+  {
+    "id": "S8",
+    "name": "canonical_budget",
+    "type": "det",
+    "desc": "Distinct canonical tokens ≤ 8"
+  },
+  {
+    "id": "J1",
+    "name": "ballad_meter_echo",
+    "type": "judge"
+  },
+  {
+    "id": "J2",
+    "name": "ballad_rhyme",
+    "type": "judge"
+  },
+  {
+    "id": "J3",
+    "name": "ring_composition",
+    "type": "judge"
+  },
+  {
+    "id": "J4",
+    "name": "warning_admonition",
+    "type": "judge"
+  },
+  {
+    "id": "J5",
+    "name": "preparation_armament",
+    "type": "judge"
+  },
+  {
+    "id": "J6",
+    "name": "encounter_confrontation",
+    "type": "judge"
+  },
+  {
+    "id": "J7",
+    "name": "slaying_decisive_action",
+    "type": "judge"
+  },
+  {
+    "id": "J8",
+    "name": "return_celebration",
+    "type": "judge"
+  },
+  {
+    "id": "J9",
+    "name": "coinage_count",
+    "type": "judge"
+  },
+  {
+    "id": "J10",
+    "name": "coinage_spread",
+    "type": "judge"
+  },
+  {
+    "id": "J11",
+    "name": "creature_naming",
+    "type": "judge"
+  },
+  {
+    "id": "J12",
+    "name": "onomatopoeia",
+    "type": "judge"
+  },
+  {
+    "id": "J13",
+    "name": "alliteration_consonance",
+    "type": "judge"
+  },
+  {
+    "id": "J14",
+    "name": "arc_order",
+    "type": "judge"
+  },
+  {
+    "id": "J15",
+    "name": "rhyme_variety",
+    "type": "judge"
+  },
+  {
+    "id": "J16",
+    "name": "lexical_repetition_guard",
+    "type": "judge"
+  },
+  {
+    "id": "J17",
+    "name": "coinage_variety",
+    "type": "judge"
+  },
+  {
+    "id": "J18",
+    "name": "topic_adherence",
+    "type": "judge"
+  },
+  {
+    "id": "J19",
+    "name": "subtext",
+    "type": "judge"
+  }
+]

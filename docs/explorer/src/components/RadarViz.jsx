@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
-import { JUDGE_KEYS, JUDGE_SHORT, JUDGE_LABELS, S_KEYS, S_SHORT, S_LABELS, RADAR_COLORS } from "../utils/constants";
+import { RADAR_COLORS } from "../utils/constants";
 
 export default function RadarViz({
   models,
@@ -18,13 +18,26 @@ export default function RadarViz({
   const [localHover, setLocalHover] = useState(null);
   const effectiveHover = hoverSlug !== undefined ? hoverSlug : localHover;
 
-  const ALL_KEYS = [...S_KEYS, ...JUDGE_KEYS];
-  const ALL_SHORT = [...S_SHORT, ...JUDGE_SHORT];
-  const ALL_LABELS = [...S_LABELS, ...JUDGE_LABELS];
+  // Derive radar axes dynamically from the data to support legacy/new schemas
+  const deriveAxes = () => {
+    const mm = (models[0]?.summary?.metrics_mean) || {};
+    const keys = Object.keys(mm);
+    const sKeys = keys.filter(k => /^S\d+_/.test(k)).sort((a,b)=>parseInt(a.slice(1)) - parseInt(b.slice(1)));
+    const jKeys = keys.filter(k => /^J\d+_/.test(k)).sort((a,b)=>parseInt(a.slice(1)) - parseInt(b.slice(1)));
+    const all = [...sKeys, ...jKeys];
+    const shorts = all.map(k => k.split('_',1)[0]);
+    const labels = all.map(k => {
+      const name = k.split('_',1)[1] ? k.split('_',2)[1] : k;
+      return name.replace(/_/g,' ');
+    });
+    return { allKeys: all, shortLabels: shorts, longLabels: labels };
+  };
+
+  const { allKeys, shortLabels, longLabels } = deriveAxes();
 
   const getVec = (m) => {
     const mm = m.summary?.metrics_mean || {};
-    return ALL_KEYS.map((k) => {
+    return allKeys.map((k) => {
       const v = mm[k];
       return typeof v === "number" ? Math.max(0, Math.min(1, v)) * 100 : 0;
     });
@@ -59,7 +72,7 @@ export default function RadarViz({
 
     chartRef.current = new Chart(ctx, {
       type: "radar",
-      data: { labels: ALL_SHORT, datasets },
+      data: { labels: shortLabels, datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -71,7 +84,7 @@ export default function RadarViz({
             callbacks: {
               label: function (context) {
                 const idx = context.dataIndex;
-                const name = ALL_LABELS[idx] || ALL_SHORT[idx];
+                const name = longLabels[idx] || shortLabels[idx];
                 return `${name} — ${context.dataset.label}: ${Math.round(context.parsed.r)}%`;
               },
             },

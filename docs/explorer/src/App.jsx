@@ -361,8 +361,9 @@ function DataLayout() {
 
   useEffect(() => {
     const basePath = window.location.hostname === "jabberwocky.darren.computer" ? "" : "..";
-    const urlMinimal = getQueryParam("manifest") || `${basePath}/runs/run-50-20250905-2001/manifest.json`;
-    const urlHigh = getQueryParam("manifest_high") || `${basePath}/runs/run-50-high-20250906-0017/manifest.json`;
+    // Default to the 20251011-2019 run by default
+    const urlMinimal = getQueryParam("manifest") || `${basePath}/runs/20251011-2019/manifest.json`;
+    const urlHigh = getQueryParam("manifest_high") || ``;
     (async () => {
       try {
         setLoading(true);
@@ -374,7 +375,7 @@ function DataLayout() {
       } finally {
         setLoading(false);
       }
-      try { await loadOneManifest(urlHigh, "high"); } catch (e) { console.warn("High-instruction run not available:", e?.message || e); }
+      try { if (urlHigh) { await loadOneManifest(urlHigh, "high"); } } catch (e) { console.warn("High-instruction run not available:", e?.message || e); }
       // Load runs index for admin dropdown
       try {
         const idx = await fetchJSON(addCacheBust(`runs/index.json`));
